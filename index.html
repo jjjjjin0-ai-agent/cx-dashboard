@@ -162,8 +162,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-name-edit .cal-kw-tag{font-weight:700;color:#4f46e5;background:#eef2ff;border-radius:4px;padding:0 3px}
 .cal-img-label.active,.cal-kw-btn.active{background:#eef2ff;border-color:#818cf8;color:#4f46e5}
 .cal-chip-wrap{display:flex;align-items:center;gap:2px}
-.cal-chip-link{font-size:9px;color:rgba(255,255,255,.85);text-decoration:none;line-height:14px;flex-shrink:0}
-.cal-chip-link:hover{color:#fff}
+.cal-chip-link-dot{width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;flex-shrink:0;transition:opacity .12s,transform .12s}
+.cal-chip-link-dot:hover{opacity:.8;transform:scale(1.15)}
 .cal-kw-btns{display:flex;gap:8px;flex-wrap:wrap}
 .cal-kw-btn{border:1.5px solid var(--line);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;background:var(--surface-2);color:var(--fg);cursor:pointer;transition:all .15s;font-family:inherit}
 .cal-kw-btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -186,10 +186,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-color-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s,border-color .12s;flex-shrink:0}
 .cal-color-swatch.selected{border-color:#111;transform:scale(1.25)}
 .cal-color-swatch[disabled]{opacity:.22;cursor:not-allowed;pointer-events:none}
-.cal-modal-btns{display:flex;gap:8px}
+.cal-modal-btns{display:flex;gap:8px;flex-wrap:nowrap;align-items:center}
 .cal-modal-btns button{padding:7px 18px;border-radius:9px;border:1px solid var(--line);cursor:pointer;font-size:13px;font-weight:600}
-.cal-modal-link-a{padding:7px 14px;border-radius:9px;border:1px solid var(--accent);color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap}
-.cal-modal-link-a:hover{background:var(--accent);color:#fff}
 #cal-modal-save{background:var(--accent);color:#fff;border-color:var(--accent)}
 #cal-modal-del{background:none;color:var(--muted)}
 /* 라이트박스 */
@@ -400,7 +398,6 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <div class="cal-modal-foot">
           <div class="cal-colors" id="cal-colors"></div>
           <div class="cal-modal-btns">
-            <a id="cal-modal-link-btn" class="cal-modal-link-a" target="_blank" rel="noopener" style="display:none">🔗 링크 열기</a>
             <button id="cal-modal-save">저장</button>
             <button id="cal-modal-del">삭제</button>
           </div>
@@ -633,7 +630,9 @@ window.addEventListener('DOMContentLoaded', () => {
           chipWrap.appendChild(chip);
           if(ev.url){
             const la=document.createElement('a'); la.href=ev.url; la.target='_blank'; la.rel='noopener';
-            la.className='cal-chip-link'; la.textContent='↗'; la.title=ev.url;
+            la.className='cal-chip-link-dot'; la.title=ev.url;
+            la.style.background=ev.color;
+            la.innerHTML='<svg viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="1.6" stroke-linecap="round"><path d="M4 6l2-2M3 5.5l-.7.7a1.5 1.5 0 0 0 2.1 2.1l.7-.7M7 4.5l.7-.7a1.5 1.5 0 0 0-2.1-2.1L4.9 2.4"/></svg>';
             la.addEventListener('click',e=>e.stopPropagation());
             chipWrap.appendChild(la);
           }
@@ -713,7 +712,6 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cal-modal-url').value='';
     document.getElementById('cal-link-row').style.display='none';
     document.getElementById('cal-link-toggle').classList.remove('active');
-    const lb=document.getElementById('cal-modal-link-btn'); lb.href=''; lb.style.display='none';
     document.querySelectorAll('#cal-brands input').forEach(cb=>cb.checked=false);
   }
 
@@ -757,7 +755,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if(ev.brands) ev.brands.forEach(b=>{ const cb=document.querySelector(`#cal-brands input[value="${b}"]`); if(cb) cb.checked=true; });
     const preview=document.getElementById('cal-modal-img-preview');
     if(ev.image){ preview.src=ev.image; preview.style.display=''; document.getElementById('cal-modal-img-clear').style.display=''; }
-    if(ev.url){ const _u=ev.url; document.getElementById('cal-modal-url').value=_u; document.getElementById('cal-link-row').style.display=''; document.getElementById('cal-link-toggle').classList.add('active'); const lb=document.getElementById('cal-modal-link-btn'); lb.href=_u; lb.style.display=''; }
+    if(ev.url){ document.getElementById('cal-modal-url').value=ev.url; document.getElementById('cal-link-row').style.display=''; document.getElementById('cal-link-toggle').classList.add('active'); }
     document.getElementById('cal-modal-del').style.display='';
     selectedColor=ev.color||COLORS[0];
     const others=loadEvents().filter(e=>e.id!==id);
@@ -842,11 +840,6 @@ window.addEventListener('DOMContentLoaded', () => {
     row.style.display=open?'':'none';
     btn.classList.toggle('active',open);
     if(open) setTimeout(()=>document.getElementById('cal-modal-url').focus(),50);
-  });
-  document.getElementById('cal-modal-url').addEventListener('input',()=>{
-    const v=document.getElementById('cal-modal-url').value.trim();
-    const lb=document.getElementById('cal-modal-link-btn');
-    lb.href=v; lb.style.display=v?'':'none';
   });
 
   /* ---- 라이트박스 ---- */
