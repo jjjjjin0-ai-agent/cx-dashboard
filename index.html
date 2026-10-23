@@ -170,7 +170,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-img-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
 .cal-img-label{padding:5px 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;cursor:pointer;background:var(--surface-2);white-space:nowrap}
 .cal-img-label:hover{background:var(--accent-soft);border-color:var(--accent)}
-#cal-modal-img-input{display:none}
+#cal-modal-img-input{position:absolute;width:0;height:0;opacity:0;overflow:hidden;pointer-events:none}
 #cal-modal-img-preview{max-height:56px;max-width:90px;border-radius:6px;object-fit:cover;display:none;cursor:zoom-in}
 #cal-modal-img-clear{display:none;background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px}
 .cal-range-row{flex-direction:row;align-items:center}
@@ -776,6 +776,10 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ---- 이미지 첨부 ---- */
+  document.querySelector('.cal-img-label').addEventListener('click',e=>{
+    e.preventDefault();
+    document.getElementById('cal-modal-img-input').click();
+  });
   document.getElementById('cal-modal-img-input').addEventListener('change',e=>{
     const file=e.target.files[0]; if(!file) return;
     resizeImage(file,b64=>{
@@ -818,7 +822,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if(text.includes(tag)){
         setNameHtml(text.replace(tag,'').replace(/^\s+/,''));
       } else {
-        setNameHtml(tag+(text?(' '+text):text));
+        setNameHtml((text?text+' ':'')+tag);
       }
       el.focus();
     });
