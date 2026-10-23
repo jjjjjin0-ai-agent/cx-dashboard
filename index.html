@@ -129,29 +129,42 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-title{font-size:20px;font-weight:700;flex:1;text-align:center}
 .cal-nav{background:none;border:1px solid var(--line);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;color:var(--fg);display:flex;align-items:center;justify-content:center;line-height:1}
 .cal-nav:hover{background:var(--surface-2)}
+.cal-add-btn{padding:6px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.cal-add-btn:hover{opacity:.88}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto repeat(6,1fr);gap:4px;flex:1}
 .cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
 .cal-dow:first-child{color:#e05252}
 .cal-dow:last-child{color:#4a90d9}
-.cal-day{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:pointer;transition:background .15s,border-color .15s;position:relative;display:flex;flex-direction:column;gap:2px}
-.cal-day:hover{background:var(--accent-soft);border-color:var(--accent)}
+.cal-day{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:default;position:relative;display:flex;flex-direction:column;gap:2px;overflow:hidden}
 .cal-day.today .cal-dn{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
 .cal-day.other-month .cal-dn{color:var(--muted)}
 .cal-day.sun .cal-dn{color:#e05252}
 .cal-day.sat .cal-dn{color:#4a90d9}
-.cal-dn{font-size:12px;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
-.cal-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);position:absolute;top:6px;right:8px}
-.cal-preview{font-size:10px;color:var(--muted);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:28px}
+.cal-dn{font-size:12px;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cal-chips{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.cal-chip{height:14px;border-radius:4px;font-size:9px;color:#fff;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:14px;cursor:pointer}
 #cal-modal{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;display:flex;align-items:center;justify-content:center}
 #cal-modal[hidden]{display:none}
-.cal-modal-box{background:var(--surface);border-radius:14px;padding:20px;width:360px;max-width:90vw;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 48px rgba(0,0,0,.22)}
+.cal-modal-box{background:var(--surface);border-radius:14px;padding:20px;width:420px;max-width:92vw;display:flex;flex-direction:column;gap:14px;box-shadow:0 16px 48px rgba(0,0,0,.22)}
 .cal-modal-head{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600}
 #cal-modal-close{background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)}
-#cal-modal-text{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;min-height:120px;resize:vertical;background:var(--surface-2);color:var(--fg);font-family:inherit}
-.cal-modal-foot{display:flex;justify-content:flex-end;gap:8px}
-.cal-modal-foot button{padding:7px 16px;border-radius:8px;border:1px solid var(--line);cursor:pointer;font-size:13px;font-weight:600}
-#cal-modal-del{background:none;color:var(--muted)}
+.cal-modal-dates{display:flex;align-items:center;gap:8px;font-size:13px}
+.cal-modal-dates input[type=date]{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--surface-2);color:var(--fg);cursor:pointer}
+#cal-modal-text{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;min-height:100px;resize:vertical;background:var(--surface-2);color:var(--fg);font-family:inherit}
+.cal-modal-img-row{display:flex;align-items:center;gap:10px}
+.cal-modal-img-row label{padding:6px 14px;border:1px solid var(--line);border-radius:8px;font-size:12px;cursor:pointer;background:var(--surface-2)}
+.cal-modal-img-row label:hover{background:var(--accent-soft)}
+#cal-modal-img-input{display:none}
+#cal-modal-img-preview{max-height:60px;max-width:100px;border-radius:6px;object-fit:cover;display:none}
+.cal-modal-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cal-colors{display:flex;gap:6px;align-items:center}
+.cal-color-swatch{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s,border-color .12s}
+.cal-color-swatch.selected{border-color:#000;transform:scale(1.2)}
+.cal-color-swatch:disabled,.cal-color-swatch[disabled]{opacity:.25;cursor:not-allowed;pointer-events:none}
+.cal-modal-btns{display:flex;gap:8px}
+.cal-modal-btns button{padding:7px 16px;border-radius:8px;border:1px solid var(--line);cursor:pointer;font-size:13px;font-weight:600}
 #cal-modal-save{background:var(--accent);color:#fff;border-color:var(--accent)}
+#cal-modal-del{background:none;color:var(--muted)}
 
 /* 플랫폼 섹션 */
 .plat-section{display:flex;flex-direction:column;gap:8px;margin-top:16px}
@@ -285,21 +298,36 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <button class="cal-nav" id="cal-prev">&#8249;</button>
         <span class="cal-title" id="cal-title"></span>
         <button class="cal-nav" id="cal-next">&#8250;</button>
+        <button class="cal-add-btn" id="cal-add">+ 등록</button>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </section>
 
-    <!-- 날짜 메모 모달 -->
+    <!-- 일정 등록/수정 모달 -->
     <div id="cal-modal" hidden>
       <div class="cal-modal-box">
         <div class="cal-modal-head">
-          <span id="cal-modal-date"></span>
+          <span id="cal-modal-title">일정 등록</span>
           <button id="cal-modal-close">✕</button>
         </div>
+        <div class="cal-modal-dates">
+          <input type="date" id="cal-modal-start">
+          <span>~</span>
+          <input type="date" id="cal-modal-end">
+        </div>
         <textarea id="cal-modal-text" placeholder="내용을 입력하세요…"></textarea>
+        <div class="cal-modal-img-row">
+          <label for="cal-modal-img-input">📎 이미지 첨부</label>
+          <input type="file" id="cal-modal-img-input" accept="image/*">
+          <img id="cal-modal-img-preview">
+          <button id="cal-modal-img-clear" style="display:none;background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px">✕ 삭제</button>
+        </div>
         <div class="cal-modal-foot">
-          <button id="cal-modal-del">삭제</button>
-          <button id="cal-modal-save">저장</button>
+          <div class="cal-colors" id="cal-colors"></div>
+          <div class="cal-modal-btns">
+            <button id="cal-modal-save">저장</button>
+            <button id="cal-modal-del">삭제</button>
+          </div>
         </div>
       </div>
     </div>
@@ -562,6 +590,8 @@ $$(".brand-nav").forEach((a,i)=>{
       $$(".brand-nav").forEach(b=>b.classList.remove("active"));
       $("#pageTitle").textContent="CX 대시보드"; const scT=$("#sc-section-title"); if(scT) scT.textContent="";
       updateBrandLinks(null);
+      const _cv2=document.getElementById('cal-view'), _bp2=document.getElementById('sc-pamicogen');
+      if(_cv2) _cv2.style.display='none'; if(_bp2) _bp2.style.display='';
     } else {
       activeBrand=a.dataset.brand;
       $$(".brand-nav").forEach(b=>b.classList.remove("active"));
@@ -569,6 +599,9 @@ $$(".brand-nav").forEach((a,i)=>{
       $("#pageTitle").textContent=name;
       const scT2=$("#sc-section-title"); if(scT2) scT2.textContent=name+" 관련 서비스";
       updateBrandLinks(activeBrand);
+      // 캘린더 탭에서 브랜드 클릭 시 대시보드로 복귀
+      const _cv=document.getElementById('cal-view'), _bp=document.getElementById('sc-pamicogen');
+      if(_cv) _cv.style.display='none'; if(_bp) _bp.style.display='';
     }
 
     runQuery();
