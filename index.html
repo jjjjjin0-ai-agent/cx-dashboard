@@ -255,78 +255,6 @@ function parse(v){
   const dt = new Date(y, m-1, day);
   return (dt.getFullYear()===y && dt.getMonth()===m-1 && dt.getDate()===day) ? dt : undefined;
 }
-["startInput","endInput"].forEach((id,i)=>{
-  const el = $("#"+id);
-  el.addEventListener("input", ()=>{
-    const pos = el.value.length;
-    el.value = mask(el.value);
-    hideMsg();
-    const d = parse(el.value);
-    if(d){
-      draft[i?"e":"s"] = d;
-      view = new Date(d.getFullYear(), d.getMonth()-(i?1:0), 1);
-      if(!$("#cal").hidden) drawCal();
-      if(!i && el.value.length===10 && pos>=10) $("#endInput").focus();   // 시작일 다 입력하면 종료일로 이동
-    }
-  });
-  el.addEventListener("focus", ()=> el.select());
-});
-
-function showMsg(t){ $("#msg").textContent=t; $("#msg").hidden=false; $("#field").classList.add("err"); }
-function hideMsg(){ $("#msg").hidden=true; $("#field").classList.remove("err"); }
-
-function validate(){
-  const s = parse($("#startInput").value), e = parse($("#endInput").value);
-  if(s===null||e===null){ showMsg("날짜를 8자리 숫자로 모두 입력해 주세요. 예: 20261001"); return null; }
-  if(s===undefined||e===undefined){ showMsg("존재하지 않는 날짜가 있습니다. 월과 일을 확인해 주세요."); return null; }
-  if(s>e){ showMsg("시작일이 종료일보다 늦습니다. 날짜 순서를 확인해 주세요."); return null; }
-  if(e>TODAY){ showMsg("종료일은 오늘("+fmt(TODAY)+") 이후로 지정할 수 없습니다."); return null; }
-  return {s,e};
-}
-
-/* ---------- 캘린더 ---------- */
-}
-  $("#months").innerHTML = html;
-  $("#calHint").textContent = picking==="s" ? "시작일을 선택하세요" : "종료일을 선택하세요";
-}
-function openCal(){
-  draft = { s:parse($("#startInput").value)||sel.s, e:parse($("#endInput").value)||sel.e };
-  view = new Date(draft.e.getFullYear(), draft.e.getMonth()-1, 1);
-  picking = "s";
-  $("#cal").hidden = false; $("#calBtn").setAttribute("aria-expanded","true");
-  drawCal();
-}
-function closeCal(){ $("#cal").hidden = true; $("#calBtn").setAttribute("aria-expanded","false"); }
-
-$("#calBtn").addEventListener("click", ()=> $("#cal").hidden ? openCal() : closeCal());
-$("#calClose").addEventListener("click", closeCal);
-$("#months").addEventListener("click", e=>{
-  const nav = e.target.closest("[data-nav]");
-  if(nav){ view = new Date(view.getFullYear(), view.getMonth()+ +nav.dataset.nav, 1); drawCal(); return; }
-  const b = e.target.closest("[data-t]"); if(!b) return;
-  const d = new Date(+b.dataset.t);
-  if(picking==="s"){ draft = {s:d, e:d}; picking="e"; }
-  else { if(d<draft.s){ draft={s:d,e:draft.s}; } else draft.e=d; picking="s"; }
-  $("#startInput").value = fmt(draft.s); $("#endInput").value = fmt(draft.e); hideMsg();
-  drawCal();
-});
-$("#calApply").addEventListener("click", ()=>{ closeCal(); runQuery(); });
-document.addEventListener("click", e=>{ const path=e.composedPath(); if(!$("#cal").hidden && !path.some(n=>n.id==="cal"||n.id==="calBtn")) closeCal(); });
-document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#cal").hidden){ closeCal(); $("#calBtn").focus(); } });
-
-/* ---------- 빠른 날짜 ---------- */
-function setQuick(s,e,id){
-  draft={s,e}; sel={s,e};
-  $("#startInput").value=fmt(s); $("#endInput").value=fmt(e);
-  $$(".qshort").forEach(b=>b.classList.remove("on"));
-  if(id) $("#"+id).classList.add("on");
-  try{ localStorage.setItem("cx-range",JSON.stringify({s:s.getTime(),e:e.getTime()})); }catch(err){}
-  closeCal(); runQuery();
-}
-$("#qs-today").addEventListener("click",()=>setQuick(TODAY,TODAY,"qs-today"));
-$("#qs-yesterday").addEventListener("click",()=>{ const y=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()-1); setQuick(y,y,"qs-yesterday"); });
-$("#qs-7d").addEventListener("click",()=>{ const s=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()-6); setQuick(s,TODAY,"qs-7d"); });
-$("#qs-30d").addEventListener("click",()=>{ const s=new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()-29); setQuick(s,TODAY,"qs-30d"); });
 
 /* ---------- 브랜드 선택 ---------- */
 $$(".brand-nav").forEach((a,i)=>{
@@ -343,6 +271,7 @@ $$(".brand-nav").forEach((a,i)=>{
       $$(".brand-nav").forEach(b=>b.classList.remove("active"));
       a.classList.add("active");
       $("#pageTitle").textContent=name;
+      const scT2=$("#sc-section-title"); if(scT2) scT2.textContent=name+" 관련 서비스";
     }
 
     runQuery();
