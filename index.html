@@ -323,6 +323,12 @@ function parse(v){
 /* ---------- 초기화 ---------- */
 updateBrandLinks(null);
 
+/* 기본 브랜드: 테라퓨젠 */
+window.addEventListener('DOMContentLoaded', () => {
+  const defaultNav = document.querySelector('.brand-nav[data-brand="terafugen"]');
+  if(defaultNav) defaultNav.click();
+});
+
 
 /* ---------- 브랜드 선택 ---------- */
 $$(".brand-nav").forEach((a,i)=>{
@@ -421,8 +427,8 @@ runQuery();
     passwdBtn.dataset.secret = info.passwd;
     popup.hidden = false;
     const rect = anchorEl.getBoundingClientRect();
-    const top = rect.bottom + window.scrollY + 6;
-    const left = Math.min(rect.left + window.scrollX, window.innerWidth - 260);
+    const top = rect.bottom + 6;
+    const left = Math.min(rect.left, window.innerWidth - 260);
     popup.style.top = top + 'px';
     popup.style.left = left + 'px';
   }
