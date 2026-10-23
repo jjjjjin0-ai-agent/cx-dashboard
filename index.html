@@ -123,13 +123,43 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 
 @media (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* 캘린더 */
+#cal-view{padding:0}
+.cal-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.cal-title{font-size:20px;font-weight:700;flex:1;text-align:center}
+.cal-nav{background:none;border:1px solid var(--line);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;color:var(--fg);display:flex;align-items:center;justify-content:center;line-height:1}
+.cal-nav:hover{background:var(--surface-2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
+.cal-dow:first-child{color:#e05252}
+.cal-dow:last-child{color:#4a90d9}
+.cal-day{min-height:68px;border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:pointer;transition:background .15s,border-color .15s;position:relative;display:flex;flex-direction:column;gap:2px}
+.cal-day:hover{background:var(--accent-soft);border-color:var(--accent)}
+.cal-day.today .cal-dn{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-day.other-month{opacity:.35}
+.cal-day.sun .cal-dn{color:#e05252}
+.cal-day.sat .cal-dn{color:#4a90d9}
+.cal-dn{font-size:12px;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.cal-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);position:absolute;top:6px;right:8px}
+.cal-preview{font-size:10px;color:var(--muted);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:28px}
+#cal-modal{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;display:flex;align-items:center;justify-content:center}
+#cal-modal[hidden]{display:none}
+.cal-modal-box{background:var(--surface);border-radius:14px;padding:20px;width:360px;max-width:90vw;display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 48px rgba(0,0,0,.22)}
+.cal-modal-head{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:600}
+#cal-modal-close{background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)}
+#cal-modal-text{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;min-height:120px;resize:vertical;background:var(--surface-2);color:var(--fg);font-family:inherit}
+.cal-modal-foot{display:flex;justify-content:flex-end;gap:8px}
+.cal-modal-foot button{padding:7px 16px;border-radius:8px;border:1px solid var(--line);cursor:pointer;font-size:13px;font-weight:600}
+#cal-modal-del{background:none;color:var(--muted)}
+#cal-modal-save{background:var(--accent);color:#fff;border-color:var(--accent)}
+
 /* 플랫폼 섹션 */
 .plat-section{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-.plat-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
-.plat-row{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;padding-bottom:4px}
+.plat-label{font-size:16px;font-weight:600;color:var(--fg);margin:0}
+.plat-row{display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding-bottom:4px;margin-top:8px}
 .plat-row::-webkit-scrollbar{height:4px}.plat-row::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
-.plat-card{flex:0 0 80px;height:72px;border:1.5px dashed var(--line);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--surface);color:var(--faint);font-size:11px;text-align:center;cursor:pointer;text-decoration:none;transition:border-color .15s,background .15s;padding:6px}
-.plat-card:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.plat-card{flex:0 0 auto;min-width:120px;border:1.5px dashed var(--line);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--surface);color:var(--faint);font-size:13px;text-align:center;cursor:pointer;text-decoration:none;transition:border-color .15s,background .15s,box-shadow .18s;padding:12px 16px;will-change:transform}
+.plat-card:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);box-shadow:0 4px 12px rgba(0,0,0,.10)}
 .plat-card .plat-ico{font-size:20px;line-height:1}
 
 /* 카페24 자격증명 팝업 */
@@ -206,9 +236,9 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     <div class="navgroup">
       <div class="navlabel">메뉴</div>
       <nav class="nav">
-        <a href="#" class="on" aria-current="page">
-          <span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2"/></svg></span>
-          <span><b>메뉴</b><small>브랜드 대시보드</small></span>
+        <a href="#" id="nav-calendar" class="on" aria-current="page">
+          <span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><line x1="1.5" y1="6" x2="14.5" y2="6"/><line x1="5" y1="1" x2="5" y2="4"/><line x1="11" y1="1" x2="11" y2="4"/></svg></span>
+          <span><b>캘린더</b><small>일정 관리</small></span>
         </a>
       </nav>
     </div>
@@ -247,6 +277,31 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         </div>
       </div>
     </section>
+
+    <!-- 캘린더 뷰 -->
+    <section id="cal-view" style="display:none">
+      <div class="cal-header">
+        <button class="cal-nav" id="cal-prev">&#8249;</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="cal-nav" id="cal-next">&#8250;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </section>
+
+    <!-- 날짜 메모 모달 -->
+    <div id="cal-modal" hidden>
+      <div class="cal-modal-box">
+        <div class="cal-modal-head">
+          <span id="cal-modal-date"></span>
+          <button id="cal-modal-close">✕</button>
+        </div>
+        <textarea id="cal-modal-text" placeholder="내용을 입력하세요…"></textarea>
+        <div class="cal-modal-foot">
+          <button id="cal-modal-del">삭제</button>
+          <button id="cal-modal-save">저장</button>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -363,6 +418,136 @@ window.addEventListener('DOMContentLoaded', () => {
   const defaultNav = document.querySelector('.brand-nav[data-brand="terafugen"]');
   if(defaultNav) defaultNav.click();
 });
+
+/* ===== 캘린더 ===== */
+(function(){
+  const DAYS = ['일','월','화','수','목','금','토'];
+  const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const STORE_KEY = 'cx-cal-notes';
+
+  function loadNotes(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'{}'); }catch(e){ return {}; } }
+  function saveNotes(n){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(n)); }catch(e){} }
+
+  const today = new Date();
+  let curYear = today.getFullYear();
+  let curMonth = today.getMonth();
+
+  function renderCal(){
+    const notes = loadNotes();
+    document.getElementById('cal-title').textContent = curYear + '년 ' + MONTHS[curMonth];
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+    // 요일 헤더
+    DAYS.forEach((d,i) => {
+      const el = document.createElement('div');
+      el.className = 'cal-dow';
+      el.textContent = d;
+      if(i===0) el.style.color='#e05252';
+      if(i===6) el.style.color='#4a90d9';
+      grid.appendChild(el);
+    });
+    // 달력 날짜
+    const first = new Date(curYear, curMonth, 1);
+    const startOffset = first.getDay();
+    const daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
+    const daysInPrev = new Date(curYear, curMonth, 0).getDate();
+    const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+    for(let i = 0; i < totalCells; i++){
+      const cell = document.createElement('div');
+      cell.className = 'cal-day';
+      let d, m, y, otherMonth = false;
+      if(i < startOffset){
+        d = daysInPrev - startOffset + i + 1;
+        m = curMonth - 1; y = curYear;
+        if(m < 0){ m = 11; y--; }
+        otherMonth = true;
+      } else if(i >= startOffset + daysInMonth){
+        d = i - startOffset - daysInMonth + 1;
+        m = curMonth + 1; y = curYear;
+        if(m > 11){ m = 0; y++; }
+        otherMonth = true;
+      } else {
+        d = i - startOffset + 1;
+        m = curMonth; y = curYear;
+      }
+      const dow = new Date(y, m, d).getDay();
+      if(dow===0) cell.classList.add('sun');
+      if(dow===6) cell.classList.add('sat');
+      if(otherMonth) cell.classList.add('other-month');
+      const isToday = !otherMonth && d===today.getDate() && curMonth===today.getMonth() && curYear===today.getFullYear();
+      if(isToday) cell.classList.add('today');
+
+      const dn = document.createElement('div');
+      dn.className = 'cal-dn';
+      dn.textContent = d;
+      cell.appendChild(dn);
+
+      const key = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      if(notes[key]){
+        const dot = document.createElement('div'); dot.className = 'cal-dot'; cell.appendChild(dot);
+        const prev = document.createElement('div'); prev.className = 'cal-preview'; prev.textContent = notes[key]; cell.appendChild(prev);
+      }
+      cell.dataset.key = key;
+      cell.dataset.label = y + '년 ' + (m+1) + '월 ' + d + '일';
+      cell.addEventListener('click', openModal);
+      grid.appendChild(cell);
+    }
+  }
+
+  function openModal(e){
+    const cell = e.currentTarget;
+    const key = cell.dataset.key;
+    const notes = loadNotes();
+    document.getElementById('cal-modal-date').textContent = cell.dataset.label;
+    document.getElementById('cal-modal-text').value = notes[key] || '';
+    document.getElementById('cal-modal').hidden = false;
+    document.getElementById('cal-modal').dataset.key = key;
+    setTimeout(()=>document.getElementById('cal-modal-text').focus(), 50);
+  }
+
+  document.getElementById('cal-modal-close').addEventListener('click', ()=>{ document.getElementById('cal-modal').hidden = true; });
+  document.getElementById('cal-modal').addEventListener('click', e=>{ if(e.target===document.getElementById('cal-modal')) document.getElementById('cal-modal').hidden=true; });
+  document.getElementById('cal-modal-save').addEventListener('click', ()=>{
+    const key = document.getElementById('cal-modal').dataset.key;
+    const text = document.getElementById('cal-modal-text').value.trim();
+    const notes = loadNotes();
+    if(text) notes[key]=text; else delete notes[key];
+    saveNotes(notes); renderCal();
+    document.getElementById('cal-modal').hidden = true;
+  });
+  document.getElementById('cal-modal-del').addEventListener('click', ()=>{
+    const key = document.getElementById('cal-modal').dataset.key;
+    const notes = loadNotes(); delete notes[key]; saveNotes(notes); renderCal();
+    document.getElementById('cal-modal').hidden = true;
+  });
+  document.getElementById('cal-prev').addEventListener('click', ()=>{ curMonth--; if(curMonth<0){curMonth=11;curYear--;} renderCal(); });
+  document.getElementById('cal-next').addEventListener('click', ()=>{ curMonth++; if(curMonth>11){curMonth=0;curYear++;} renderCal(); });
+
+  // 캘린더 탭 클릭
+  const navCal = document.getElementById('nav-calendar');
+  const brandSection = document.getElementById('sc-pamicogen');
+  const calView = document.getElementById('cal-view');
+  const headDiv = document.querySelector('.main .head');
+  const brandNavsRow = document.querySelector('.head');
+
+  // 기본: 브랜드 대시보드 표시, 캘린더 숨김
+  function showCalendar(){
+    if(brandSection) brandSection.style.display = 'none';
+    if(calView) calView.style.display = '';
+    renderCal();
+  }
+  function showDashboard(){
+    if(brandSection) brandSection.style.display = '';
+    if(calView) calView.style.display = 'none';
+  }
+
+  navCal.addEventListener('click', e=>{
+    e.preventDefault();
+    const isActive = calView.style.display !== 'none';
+    if(isActive){ showDashboard(); } else { showCalendar(); }
+  });
+})();
 
 
 /* ---------- 브랜드 선택 ---------- */
