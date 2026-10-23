@@ -267,7 +267,7 @@ function loginCafe24(brand){
   f.method="POST";
   f.action="https://eclogin.cafe24.com/Shop/?url=Init&login_mode=2";
   f.target="_blank";
-  [["loginId",info.mallId],["userid",info.userId],["loginPasswd",info.passwd]].forEach(([n,v])=>{
+  [["loginId",info.mallId],["userid",info.userId],["loginPasswd",info.passwd],["login_mode","2"],["mobile","F"]].forEach(([n,v])=>{
     const i=document.createElement("input");
     i.type="hidden"; i.name=n; i.value=v; f.appendChild(i);
   });
