@@ -124,19 +124,19 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 @media (max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* 캘린더 */
-#cal-view{padding:0}
-.cal-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+#cal-view{padding:0;display:flex;flex-direction:column;flex:1;min-height:0}
+.cal-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .cal-title{font-size:20px;font-weight:700;flex:1;text-align:center}
 .cal-nav{background:none;border:1px solid var(--line);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;color:var(--fg);display:flex;align-items:center;justify-content:center;line-height:1}
 .cal-nav:hover{background:var(--surface-2)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto repeat(6,1fr);gap:4px;flex:1}
 .cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
 .cal-dow:first-child{color:#e05252}
 .cal-dow:last-child{color:#4a90d9}
-.cal-day{min-height:68px;border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:pointer;transition:background .15s,border-color .15s;position:relative;display:flex;flex-direction:column;gap:2px}
+.cal-day{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:pointer;transition:background .15s,border-color .15s;position:relative;display:flex;flex-direction:column;gap:2px}
 .cal-day:hover{background:var(--accent-soft);border-color:var(--accent)}
 .cal-day.today .cal-dn{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
-.cal-day.other-month{opacity:.35}
+.cal-day.other-month .cal-dn{color:var(--muted)}
 .cal-day.sun .cal-dn{color:#e05252}
 .cal-day.sat .cal-dn{color:#4a90d9}
 .cal-dn{font-size:12px;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
@@ -169,6 +169,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .c24-popup-head b{font-size:13px}
 .c24-popup-close{border:none;background:transparent;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:0 2px}
 .c24-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.c24-row[hidden]{display:none!important}
 .c24-row .lbl{font-size:11px;color:var(--muted);width:52px;flex:none}
 .c24-row .val{font-size:13px;font-family:var(--mono);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .c24-copy{border:1px solid var(--line);background:var(--surface-2);border-radius:7px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);white-space:nowrap;transition:background .12s,color .12s}
@@ -451,7 +452,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const startOffset = first.getDay();
     const daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
     const daysInPrev = new Date(curYear, curMonth, 0).getDate();
-    const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    const totalCells = 42;
 
     for(let i = 0; i < totalCells; i++){
       const cell = document.createElement('div');
