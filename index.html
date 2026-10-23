@@ -156,6 +156,14 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-label{font-size:12px;font-weight:600;color:var(--fg)}
 .cal-opt{font-weight:400;color:var(--muted);margin-left:4px}
 .cal-input{border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:13px;background:var(--surface-2);color:var(--fg);font-family:inherit;width:100%}
+.cal-name-edit{min-height:36px;cursor:text;outline:none;line-height:1.4;box-sizing:border-box}
+.cal-name-edit:empty:before{content:attr(data-ph);color:var(--muted);pointer-events:none}
+.cal-name-edit:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+.cal-name-edit .cal-kw-tag{font-weight:700;color:#4f46e5;background:#eef2ff;border-radius:4px;padding:0 3px}
+.cal-kw-btns{display:flex;gap:8px;flex-wrap:wrap}
+.cal-kw-btn{border:1.5px solid var(--line);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;background:var(--surface-2);color:var(--fg);cursor:pointer;transition:all .15s;font-family:inherit}
+.cal-kw-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cal-kw-btn.active{background:#eef2ff;border-color:#818cf8;color:#4f46e5}
 .cal-input:focus{outline:none;border-color:var(--accent)}
 .cal-textarea{border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13px;min-height:80px;resize:vertical;background:var(--surface-2);color:var(--fg);font-family:inherit;width:100%}
 .cal-textarea:focus{outline:none;border-color:var(--accent)}
@@ -517,6 +525,50 @@ window.addEventListener('DOMContentLoaded', () => {
   const STORE_KEY = 'cx-cal-events';
   const COLORS = ['#e05252','#f5a623','#f8e71c','#7ed321','#4a90d9','#9b59b6'];
 
+  /* ---- 일정명 rich-text 헬퍼 ---- */
+  function nameToHtml(text){
+    return (text||'').replace(/\[([^\]]*)\]/g,'<span class="cal-kw-tag">[$1]</span>');
+  }
+  function setNameHtml(text){
+    const el=document.getElementById('cal-modal-name');
+    el.innerHTML=nameToHtml(text);
+    syncKwBtns();
+  }
+  function formatNameEl(){
+    const el=document.getElementById('cal-modal-name');
+    const sel=window.getSelection();
+    let offset=0;
+    if(sel.rangeCount){
+      const pre=document.createRange();
+      pre.selectNodeContents(el);
+      pre.setEnd(sel.getRangeAt(0).startContainer,sel.getRangeAt(0).startOffset);
+      offset=pre.toString().length;
+    }
+    el.innerHTML=nameToHtml(el.textContent);
+    // 커서 복원
+    let rem=offset;
+    const walk=(node)=>{
+      if(node.nodeType===3){
+        if(rem<=node.length){
+          const r=document.createRange();
+          r.setStart(node,rem); r.collapse(true);
+          sel.removeAllRanges(); sel.addRange(r);
+          return true;
+        }
+        rem-=node.length; return false;
+      }
+      for(const c of node.childNodes) if(walk(c)) return true;
+    };
+    walk(el);
+    syncKwBtns();
+  }
+  function syncKwBtns(){
+    const text=document.getElementById('cal-modal-name').textContent;
+    document.querySelectorAll('.cal-kw-btn').forEach(btn=>{
+      btn.classList.toggle('active', text.includes('['+btn.dataset.kw+']'));
+    });
+  }
+
   function loadEvents(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }catch(e){ return []; } }
   function saveEvents(ev){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(ev)); }catch(e){} }
   function toKey(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
@@ -647,7 +699,7 @@ window.addEventListener('DOMContentLoaded', () => {
     editingId=null;
     const tk=todayKey();
     document.getElementById('cal-modal-title').textContent='일정 등록';
-    document.getElementById('cal-modal-name').value='';
+    setNameHtml('');
     document.getElementById('cal-modal-start').value=tk;
     document.getElementById('cal-modal-end').value=tk;
     document.getElementById('cal-modal-text').value='';
@@ -665,7 +717,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const ev=loadEvents().find(e=>e.id===id); if(!ev) return;
     editingId=id;
     document.getElementById('cal-modal-title').textContent='일정 편집';
-    document.getElementById('cal-modal-name').value=ev.name||'';
+    setNameHtml(ev.name||'');
     document.getElementById('cal-modal-start').value=ev.start;
     document.getElementById('cal-modal-text').value=ev.text||'';
     resetModal();
@@ -693,7 +745,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   /* ---- 저장 ---- */
   document.getElementById('cal-modal-save').addEventListener('click',()=>{
-    const name=document.getElementById('cal-modal-name').value.trim();
+    const name=document.getElementById('cal-modal-name').textContent.trim();
     if(!name) { document.getElementById('cal-modal-name').focus(); return; }
     const start=document.getElementById('cal-modal-start').value; if(!start) return;
     const isRange=document.getElementById('cal-modal-range').checked;
@@ -756,6 +808,24 @@ window.addEventListener('DOMContentLoaded', () => {
 
   /* ---- 라이트박스 ---- */
   document.getElementById('cal-lightbox').addEventListener('click',()=>{ document.getElementById('cal-lightbox').hidden=true; });
+
+  /* ---- 키워드 태그 버튼 ---- */
+  document.querySelectorAll('.cal-kw-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const el=document.getElementById('cal-modal-name');
+      const tag='['+btn.dataset.kw+']';
+      const text=el.textContent;
+      if(text.includes(tag)){
+        setNameHtml(text.replace(tag,'').replace(/^\s+/,''));
+      } else {
+        setNameHtml(tag+(text?(' '+text):text));
+      }
+      el.focus();
+    });
+  });
+
+  /* ---- 일정명 contenteditable 실시간 포맷 ---- */
+  document.getElementById('cal-modal-name').addEventListener('input', formatNameEl);
 
   document.getElementById('cal-modal-close').addEventListener('click',()=>{ document.getElementById('cal-modal').hidden=true; });
   document.getElementById('cal-modal').addEventListener('click',e=>{ if(e.target===document.getElementById('cal-modal')) document.getElementById('cal-modal').hidden=true; });
