@@ -667,22 +667,11 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ---- 이미지 리사이즈 ---- */
-  function resizeImage(file,cb){
+  /* ---- 이미지 읽기 ---- */
+  function readImage(file,cb){
     const reader=new FileReader();
-    reader.onload=e=>{
-      const img=new Image();
-      img.onload=()=>{
-        const maxW=400,maxH=300;
-        let w=img.width,h=img.height;
-        if(w>maxW){h=h*maxW/w;w=maxW;}
-        if(h>maxH){w=w*maxH/h;h=maxH;}
-        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        cb(canvas.toDataURL('image/jpeg',0.75));
-      };
-      img.src=e.target.result;
-    };
+    reader.onload=e=>cb(e.target.result);
+    reader.onerror=()=>alert('이미지를 읽을 수 없습니다.');
     reader.readAsDataURL(file);
   }
 
@@ -804,7 +793,7 @@ window.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('cal-modal-img-input').addEventListener('change',e=>{
     const file=e.target.files[0]; if(!file) return;
-    resizeImage(file,b64=>{
+    readImage(file,b64=>{
       const preview=document.getElementById('cal-modal-img-preview');
       preview.src=b64; preview.style.display='';
       document.getElementById('cal-modal-img-clear').style.display='';
