@@ -12,7 +12,7 @@
 /* Layout: 고정 사이드바 + 스크롤 본문. 상단 기간 조회 바 → KPI 카드 그리드 */
 :root{
   --bg:#f4f6f9; --surface:#ffffff; --surface-2:#f0f3f8; --line:#e3e8ef;
-  --fg:#18202b; --muted:#6b7686; --faint:#9aa4b2;
+  --fg:rgba(42,44,47,1); --muted:rgba(42,44,47,0.72); --faint:rgba(42,44,47,0.55);
   --accent:#2563eb; --accent-soft:#e8effd; --on-accent:#ffffff;
   --good:#16a34a; --bad:#d93a3a; --bad-soft:#fdecec;
   --sans:"Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -21,12 +21,12 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0f1319; --surface:#171c24; --surface-2:#1e2530; --line:#29313d;
-  --fg:#e6ebf2; --muted:#98a3b3; --faint:#6b7686;
+  --fg:#f3f4f6; --muted:rgba(243,244,246,0.72); --faint:rgba(243,244,246,0.55);
   --accent:#6b9cff; --accent-soft:#1c2a45; --on-accent:#0f1319;
   --good:#4ade80; --bad:#f27272; --bad-soft:#341b1d; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f1319; --surface:#171c24; --surface-2:#1e2530; --line:#29313d;
-  --fg:#e6ebf2; --muted:#98a3b3; --faint:#6b7686;
+  --fg:#f3f4f6; --muted:rgba(243,244,246,0.72); --faint:rgba(243,244,246,0.55);
   --accent:#6b9cff; --accent-soft:#1c2a45; --on-accent:#0f1319;
   --good:#4ade80; --bad:#f27272; --bad-soft:#341b1d; color-scheme:dark}
 *{box-sizing:border-box}
@@ -198,33 +198,6 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
       <div class="sync" id="syncText">마지막 동기화 —</div>
     </div>
 
-    <form class="toolbar" id="queryForm" autocomplete="off" novalidate>
-      <div class="qrow">
-        <span class="lbl">기간</span>
-        <div class="field" id="field">
-          <input id="startInput" inputmode="numeric" placeholder="YYYY.MM.DD" maxlength="10" aria-label="시작일">
-          <span class="sep">~</span>
-          <input id="endInput" inputmode="numeric" placeholder="YYYY.MM.DD" maxlength="10" aria-label="종료일">
-          <button type="button" class="calbtn" id="calBtn" aria-label="달력 열기" aria-expanded="false" aria-controls="cal">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.8" y="3" width="12.4" height="11" rx="2"/><path d="M1.8 6.5h12.4M5 1.5v3M11 1.5v3"/></svg>
-          </button>
-        </div>
-        <button type="submit" class="go">조회</button>
-      </div>
-      <div class="qshorts">
-        <button type="button" class="qshort" id="qs-today">오늘</button>
-        <button type="button" class="qshort" id="qs-yesterday">어제</button>
-        <button type="button" class="qshort" id="qs-7d">7일</button>
-        <button type="button" class="qshort" id="qs-30d">30일</button>
-      </div>
-      <div class="msg" id="msg" hidden></div>
-
-      <div class="cal" id="cal" role="dialog" aria-label="기간 선택 달력" hidden>
-        <div class="months" id="months"></div>
-        <div class="cfoot"><span id="calHint">시작일을 선택하세요</span><span style="display:flex;gap:6px"><button type="button" id="calClose">닫기</button><button type="button" class="go" id="calApply">이 기간으로 조회</button></span></div>
-      </div>
-    </form>
-
     <section>
       <div class="grid" id="gNet"></div>
     </section>
@@ -312,33 +285,7 @@ function validate(){
 }
 
 /* ---------- 캘린더 ---------- */
-function drawCal(){
-  const wds = ["일","월","화","수","목","금","토"];
-  let html = "";
-  for(let k=0;k<2;k++){
-    const m = new Date(view.getFullYear(), view.getMonth()+k, 1);
-    const first = m.getDay(), last = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
-    const canNext = new Date(view.getFullYear(), view.getMonth()+2, 1) <= TODAY;
-    html += `<div class="month"><div class="mh">
-      <button type="button" class="navb${k?" ghost":""}" data-nav="-1" aria-label="이전 달">‹</button>
-      <b>${m.getFullYear()}년 ${m.getMonth()+1}월</b>
-      <button type="button" class="navb${(!k||!canNext)?" ghost":""}" data-nav="1" aria-label="다음 달">›</button></div>
-      <div class="days">${wds.map((w,i)=>`<span class="wd${i?"":" sun"}">${w}</span>`).join("")}`;
-    for(let i=0;i<first;i++) html += `<button type="button" class="day out" tabindex="-1" aria-hidden="true"></button>`;
-    for(let d=1; d<=last; d++){
-      const dt = new Date(m.getFullYear(), m.getMonth(), d);
-      const c = ["day"];
-      if(dt>TODAY) c.push("future");
-      if(same(dt,TODAY)) c.push("today");
-      const s=draft.s, e=draft.e;
-      if(same(dt,s)) c.push("s");
-      if(same(dt,e)) c.push("e");
-      if(s&&e&&dt>s&&dt<e) c.push("in");
-      if(s&&e&&!same(s,e)){ if(same(dt,s)) c.push("in-r"); if(same(dt,e)) c.push("in-l"); }
-      html += `<button type="button" class="${c.join(" ")}" data-t="${dt.getTime()}" ${dt>TODAY?"disabled":""} aria-label="${fmt(dt)}">${d}</button>`;
-    }
-    html += `</div></div>`;
-  }
+}
   $("#months").innerHTML = html;
   $("#calHint").textContent = picking==="s" ? "시작일을 선택하세요" : "종료일을 선택하세요";
 }
@@ -406,15 +353,9 @@ $$(".brand-nav").forEach((a,i)=>{
 $("#queryForm").addEventListener("submit", e=>{ e.preventDefault(); closeCal(); runQuery(); });
 
 async function runQuery(){
-  const r = validate(); if(!r) return;
-  sel = r;
-  try{ localStorage.setItem("cx-range", JSON.stringify({s:r.s.getTime(), e:r.e.getTime()})); }catch(e){}
-  let data = null;
-  try{ data = await loadData(r.s, r.e); }catch(err){ showMsg("데이터를 불러오지 못했습니다. 시트 연결 상태를 확인해 주세요."); }
-  render(data);
+  const D=await loadData(null,null);
+  render(D);
 }
-
-/* ---------- 렌더 ---------- */
 function won(v){
   if(v==null||isNaN(v)) return "—";
   const a=Math.abs(v), sg=v<0?"-":"";
