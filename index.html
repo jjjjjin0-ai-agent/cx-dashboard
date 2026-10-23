@@ -135,7 +135,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
 .cal-dow:first-child{color:#e05252}
 .cal-dow:last-child{color:#4a90d9}
-.cal-day{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:default;position:relative;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.cal-day{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;cursor:default;position:relative;display:flex;flex-direction:column;gap:2px;overflow:hidden;transition:background .15s,box-shadow .15s}
+.cal-day:hover{background:#f4f6ff;box-shadow:0 2px 10px rgba(99,102,241,.13)}
 .cal-day.today .cal-dn{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
 .cal-day.other-month .cal-dn{color:var(--muted)}
 .cal-day.sun .cal-dn{color:#e05252}
@@ -143,6 +144,9 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-dn{font-size:12px;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .cal-chips{display:flex;flex-direction:column;gap:2px;margin-top:2px}
 .cal-chip{height:14px;border-radius:4px;font-size:9px;color:#fff;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:14px;cursor:pointer}
+.cal-edit-btn{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.95);border:1.2px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s,border-color .12s;z-index:2;padding:0;color:#6b7280}
+.cal-day:hover .cal-edit-btn{opacity:1}
+.cal-edit-btn:hover{background:#eef2ff;border-color:#818cf8;color:#4f46e5}
 #cal-modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:300;display:flex;align-items:center;justify-content:center}
 #cal-modal[hidden]{display:none}
 .cal-modal-box{background:var(--surface);border-radius:16px;padding:22px 24px;width:440px;max-width:94vw;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
@@ -557,6 +561,12 @@ window.addEventListener('DOMContentLoaded', () => {
           chips.appendChild(chip);
         });
         cell.appendChild(chips);
+        const editBtn=document.createElement('button');
+        editBtn.className='cal-edit-btn';
+        editBtn.title='일정 편집';
+        editBtn.innerHTML='<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H2v-3L11.5 2.5z"/></svg>';
+        editBtn.addEventListener('click',e=>{e.stopPropagation();openEdit(dayEvs[0].id);});
+        cell.appendChild(editBtn);
       }
       grid.appendChild(cell);
     }
@@ -646,7 +656,7 @@ window.addEventListener('DOMContentLoaded', () => {
   function openEdit(id){
     const ev=loadEvents().find(e=>e.id===id); if(!ev) return;
     editingId=id;
-    document.getElementById('cal-modal-title').textContent='일정 수정';
+    document.getElementById('cal-modal-title').textContent='일정 편집';
     document.getElementById('cal-modal-name').value=ev.name||'';
     document.getElementById('cal-modal-start').value=ev.start;
     document.getElementById('cal-modal-text').value=ev.text||'';
