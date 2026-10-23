@@ -460,8 +460,17 @@ runQuery();
       const info = BRAND_CAFE24[activeBrand];
       if(info && info.mallId && info.mallId !== '___'){
         e.preventDefault();
-        loginCafe24(activeBrand);
+        e.stopPropagation();
         showPopup(activeBrand, cafe24Card);
+      }
+    });
+    cafe24Card.addEventListener('dblclick', e => {
+      if(!activeBrand) return;
+      const info = BRAND_CAFE24[activeBrand];
+      if(info && info.mallId && info.mallId !== '___'){
+        e.preventDefault();
+        popup.hidden = true;
+        loginCafe24(activeBrand);
       }
     });
   }
