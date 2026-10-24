@@ -1181,7 +1181,7 @@ runQuery();
 
 
 <!-- Toss popup -->
-<div id="toss-popup" hidden style="position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:16px;min-width:200px;display:flex;flex-direction:column;gap:10px">
+<div id="toss-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:16px;min-width:200px;flex-direction:column;gap:10px">
   <div class="c24-popup-head">
     <b style="font-size:13px">토스 서비스</b>
     <button class="c24-popup-close" onclick="hideTossPopup()">×</button>
@@ -1204,10 +1204,10 @@ function showTossPopup(e){
   p.style.left=cx+'px';
   p.style.top=(r.bottom+6)+'px';
   p.style.transform='translateX(-50%)';
-  p.removeAttribute('hidden');
+  p.style.display='flex';
 }
-function hideTossPopup(){document.getElementById('toss-popup').setAttribute('hidden','');}
-document.addEventListener('click',function(e){if(!document.getElementById('toss-popup').hidden&&!document.getElementById('toss-popup').contains(e.target))hideTossPopup();});
+function hideTossPopup(){document.getElementById('toss-popup').style.display='none';}
+document.addEventListener('click',function(e){if(document.getElementById('toss-popup').style.display!=='none'&&!document.getElementById('toss-popup').contains(e.target))hideTossPopup();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopup();});
 </script>
 </html>
