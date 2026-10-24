@@ -1119,8 +1119,9 @@ runQuery();
     passwdBtn.dataset.secret = info.passwd;
     popup.hidden = false;
     const rect = anchorEl.getBoundingClientRect();
+    const pw = popup.offsetWidth || 260;
     const top = rect.bottom + 6;
-    const left = Math.min(rect.left, window.innerWidth - 260);
+    const left = Math.max(8, Math.min(rect.left + rect.width/2 - pw/2, window.innerWidth - pw - 8));
     popup.style.top = top + 'px';
     popup.style.left = left + 'px';
   }
@@ -1200,15 +1201,11 @@ function showTossPopup(e){
   e.stopPropagation();
   var p=document.getElementById('toss-popup');
   var r=e.currentTarget.getBoundingClientRect();
-  // 먼저 화면 밖에 렌더링해서 실제 크기 측정
   p.style.left='-9999px'; p.style.top='-9999px';
   p.removeAttribute('hidden');
   var pw=p.offsetWidth, ph=p.offsetHeight;
-  // 카드 가로 중앙 정렬
-  var left=r.left+r.width/2-pw/2;
-  var top=r.bottom+8;
-  if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
-  if(left<8) left=8;
+  var left=Math.max(8,Math.min(r.left+r.width/2-pw/2,window.innerWidth-pw-8));
+  var top=r.bottom+6;
   if(top+ph>window.innerHeight-8) top=r.top-ph-8;
   p.style.left=left+'px';
   p.style.top=top+'px';
