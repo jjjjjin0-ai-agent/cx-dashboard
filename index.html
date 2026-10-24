@@ -1117,11 +1117,12 @@ runQuery();
     }
     const passwdBtn = popup.querySelector('[data-target="c24-passwd"]');
     passwdBtn.dataset.secret = info.passwd;
-    var rect = anchorEl.getBoundingClientRect();
-    popup.style.left = (rect.left + rect.width/2) + 'px';
-    popup.style.top = (rect.bottom + 6) + 'px';
-    popup.style.transform = 'translateX(-50%)';
     popup.hidden = false;
+    var rect = anchorEl.getBoundingClientRect();
+    var pw = popup.offsetWidth;
+    popup.style.left = Math.max(4, rect.left + rect.width/2 - pw/2) + 'px';
+    popup.style.top = (rect.bottom + 6) + 'px';
+    popup.style.transform = '';
   }
 
   popup.querySelectorAll('.c24-copy').forEach(btn => {
@@ -1182,7 +1183,7 @@ runQuery();
 <!-- Toss popup -->
 
 <script>
-function showTossPopup(e){e.stopPropagation();var p=document.getElementById('toss-popup');var r=e.currentTarget.getBoundingClientRect();p.style.left=(r.left+r.width/2)+'px';p.style.top=(r.bottom+6)+'px';p.style.transform='translateX(-50%)';p.style.display='flex';}
+function showTossPopup(e){e.stopPropagation();var p=document.getElementById('toss-popup');p.style.display='flex';var r=e.currentTarget.getBoundingClientRect();var pw=p.offsetWidth;p.style.left=Math.max(4,r.left+r.width/2-pw/2)+'px';p.style.top=(r.bottom+6)+'px';p.style.transform='';}
 function hideTossPopup(){document.getElementById('toss-popup').style.display='none';}
 document.addEventListener('click',function(e){if(document.getElementById('toss-popup').style.display!=='none'&&!document.getElementById('toss-popup').contains(e.target))hideTossPopup();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopup();});
