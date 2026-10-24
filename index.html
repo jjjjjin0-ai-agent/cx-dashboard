@@ -156,6 +156,12 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-label{font-size:12px;font-weight:600;color:var(--fg)}
 .cal-opt{font-weight:400;color:var(--muted);margin-left:4px}
 .cal-input{border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:13px;background:var(--surface-2);color:var(--fg);font-family:inherit;width:100%}
+.cal-time-wrap{display:flex;align-items:center;gap:6px}
+.cal-time-sel{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:14px;font-weight:600;background:var(--surface-2);color:var(--fg);font-family:inherit;cursor:pointer;min-width:60px;text-align:center;-webkit-appearance:none;appearance:none}
+.cal-time-sel:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+.cal-time-colon{font-size:16px;font-weight:700;color:var(--fg);margin:0 2px}
+.cal-time-ampm{border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;background:var(--surface-2);color:var(--muted);cursor:pointer;font-family:inherit;transition:background .15s,color .15s,border-color .15s}
+.cal-time-ampm.is-pm{background:var(--accent);color:#fff;border-color:var(--accent)}
 .cal-name-edit{min-height:36px;cursor:text;outline:none;line-height:1.4;box-sizing:border-box}
 .cal-name-edit:empty:before{content:attr(data-ph);color:var(--muted);pointer-events:none}
 .cal-name-edit:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.15)}
@@ -360,7 +366,21 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         </div>
         <div class="cal-field">
           <label class="cal-label">시간 <span class="cal-opt">선택</span></label>
-          <input type="time" id="cal-modal-time" class="cal-input">
+          <div class="cal-time-wrap">
+            <select class="cal-time-sel" id="cal-th-s">
+              <option value="">--</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+              <option>5</option><option>6</option><option>7</option><option>8</option>
+              <option>9</option><option>10</option><option>11</option><option>12</option>
+            </select>
+            <span class="cal-time-colon">:</span>
+            <select class="cal-time-sel" id="cal-tm-s">
+              <option>00</option><option>05</option><option>10</option><option>15</option>
+              <option>20</option><option>25</option><option>30</option><option>35</option>
+              <option>40</option><option>45</option><option>50</option><option>55</option>
+            </select>
+            <button type="button" class="cal-time-ampm" id="cal-tap-s" data-val="오전">오전</button>
+          </div>
         </div>
         <div class="cal-field cal-range-row">
           <label class="cal-check-label"><input type="checkbox" id="cal-modal-range"> 기간 일정</label>
@@ -371,7 +391,21 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         </div>
         <div class="cal-field" id="cal-end-time-field" style="display:none">
           <label class="cal-label">시간 <span class="cal-opt">선택</span></label>
-          <input type="time" id="cal-modal-time-end" class="cal-input">
+          <div class="cal-time-wrap">
+            <select class="cal-time-sel" id="cal-th-e">
+              <option value="">--</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option>
+              <option>5</option><option>6</option><option>7</option><option>8</option>
+              <option>9</option><option>10</option><option>11</option><option>12</option>
+            </select>
+            <span class="cal-time-colon">:</span>
+            <select class="cal-time-sel" id="cal-tm-e">
+              <option>00</option><option>05</option><option>10</option><option>15</option>
+              <option>20</option><option>25</option><option>30</option><option>35</option>
+              <option>40</option><option>45</option><option>50</option><option>55</option>
+            </select>
+            <button type="button" class="cal-time-ampm" id="cal-tap-e" data-val="오전">오전</button>
+          </div>
         </div>
         <div class="cal-field">
           <label class="cal-label">브랜드</label>
@@ -517,6 +551,45 @@ window.addEventListener('DOMContentLoaded', () => {
   const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   const STORE_KEY = 'cx-cal-events';
   const COLORS = ['#e05252','#f5a623','#f8e71c','#7ed321','#4a90d9','#9b59b6'];
+
+  /* ---- 시간 피커 헬퍼 ---- */
+  function _apBtn(p){ return document.getElementById('cal-tap-'+p); }
+  function _updateApBtn(btn){
+    if(btn.dataset.val==='오후'){ btn.classList.add('is-pm'); }
+    else { btn.classList.remove('is-pm'); }
+  }
+  function getTimeVal(p){
+    const h=document.getElementById('cal-th-'+p).value;
+    if(!h) return '';
+    const m=document.getElementById('cal-tm-'+p).value||'00';
+    const ap=_apBtn(p).dataset.val;
+    let hh=parseInt(h);
+    if(ap==='오전'&&hh===12) hh=0;
+    else if(ap==='오후'&&hh!==12) hh+=12;
+    return String(hh).padStart(2,'0')+':'+m;
+  }
+  function setTimeVal(p,val){
+    const hEl=document.getElementById('cal-th-'+p);
+    const mEl=document.getElementById('cal-tm-'+p);
+    const apEl=_apBtn(p);
+    if(!val){ hEl.value=''; mEl.value='00'; apEl.dataset.val='오전'; apEl.textContent='오전'; _updateApBtn(apEl); return; }
+    const [hh,mm]=val.split(':');
+    let h=parseInt(hh);
+    const ap=h>=12?'오후':'오전';
+    if(h>12) h-=12; else if(h===0) h=12;
+    hEl.value=String(h);
+    const mins=['00','05','10','15','20','25','30','35','40','45','50','55'];
+    const mv=mm?String(parseInt(mm)).padStart(2,'0'):'00';
+    mEl.value=mins.includes(mv)?mv:'00';
+    apEl.dataset.val=ap; apEl.textContent=ap; _updateApBtn(apEl);
+  }
+  ['s','e'].forEach(function(p){
+    document.getElementById('cal-tap-'+p).addEventListener('click',function(){
+      const btn=_apBtn(p);
+      const next=btn.dataset.val==='오전'?'오후':'오전';
+      btn.dataset.val=next; btn.textContent=next; _updateApBtn(btn);
+    });
+  });
 
   /* ---- 일정명 rich-text 헬퍼 ---- */
   function nameToHtml(text){
@@ -669,8 +742,8 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cal-modal-range').checked=false;
     document.getElementById('cal-end-field').style.display='none';
     document.getElementById('cal-end-time-field').style.display='none';
-    document.getElementById('cal-modal-time').value='';
-    document.getElementById('cal-modal-time-end').value='';
+    setTimeVal('s','');
+    setTimeVal('e','');
     document.getElementById('cal-modal-url').value='';
     document.getElementById('cal-link-row').style.display='none';
     document.getElementById('cal-link-toggle').classList.remove('active');
@@ -704,13 +777,13 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cal-modal-start').value=ev.start;
     document.getElementById('cal-modal-text').value=ev.text||'';
     resetModal();
-    document.getElementById('cal-modal-time').value=ev.time||'';
+    setTimeVal('s',ev.time||'');
     if(ev.end&&ev.end!==ev.start){
       document.getElementById('cal-modal-range').checked=true;
       document.getElementById('cal-end-field').style.display='';
       document.getElementById('cal-end-time-field').style.display='';
       document.getElementById('cal-modal-end').value=ev.end;
-      document.getElementById('cal-modal-time-end').value=ev.timeEnd||'';
+      setTimeVal('e',ev.timeEnd||'');
     } else {
       document.getElementById('cal-modal-end').value=ev.start;
     }
@@ -734,8 +807,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const rawEnd=document.getElementById('cal-modal-end').value;
     const end=isRange&&rawEnd&&rawEnd>=start?rawEnd:start;
     const text=document.getElementById('cal-modal-text').value.trim();
-    const time=document.getElementById('cal-modal-time').value;
-    const timeEnd=document.getElementById('cal-modal-time-end').value;
+    const time=getTimeVal('s');
+    const timeEnd=getTimeVal('e');
     const url=document.getElementById('cal-modal-url').value.trim();
     const brands=[...document.querySelectorAll('#cal-brands input:checked')].map(cb=>cb.value);
     const events=loadEvents();
