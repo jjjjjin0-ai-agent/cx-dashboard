@@ -1181,16 +1181,37 @@ runQuery();
 
 
 <!-- Toss popup -->
-<div id="toss-popup" onclick="if(event.target===this)hideTossPopup()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center">
-  <div style="background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:20px 24px;min-width:200px;display:flex;flex-direction:column;gap:10px">
-    <p style="font-size:13px;font-weight:600;color:var(--muted);margin:0 0 4px">토스 서비스 선택</p>
-    <a href="https://business.toss.im/account/sign-in" target="_blank" onclick="hideTossPopup()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface-2);border-radius:8px;text-decoration:none;color:var(--fg);font-size:13px;font-weight:500">🛒 토스 쇼핑</a>
-    <a href="https://app.tosspayments.com/signin?redirectUrl=https%3A%2F%2Fapp.tosspayments.com%2F" target="_blank" onclick="hideTossPopup()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface-2);border-radius:8px;text-decoration:none;color:var(--fg);font-size:13px;font-weight:500">💳 토스 페이먼츠</a>
+<div id="toss-popup" hidden style="position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:16px;min-width:200px;display:flex;flex-direction:column;gap:10px">
+  <div class="c24-popup-head">
+    <b style="font-size:13px">토스 서비스</b>
+    <button class="c24-popup-close" onclick="hideTossPopup()">×</button>
   </div>
+  <a href="https://business.toss.im/account/sign-in" target="_blank" onclick="hideTossPopup()" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:var(--fg);padding:6px 0;border-bottom:1px solid var(--line)">
+    <span style="font-size:12px;color:var(--muted);width:80px;flex:none">토스 쇼핑</span>
+    <span style="font-size:12px;color:var(--accent)">바로가기 →</span>
+  </a>
+  <a href="https://app.tosspayments.com/signin?redirectUrl=https%3A%2F%2Fapp.tosspayments.com%2F" target="_blank" onclick="hideTossPopup()" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:var(--fg);padding:6px 0">
+    <span style="font-size:12px;color:var(--muted);width:80px;flex:none">토스 페이먼츠</span>
+    <span style="font-size:12px;color:var(--accent)">바로가기 →</span>
+  </a>
 </div>
 <script>
-function showTossPopup(e){e.stopPropagation();var p=document.getElementById('toss-popup');p.style.display='flex';}
-function hideTossPopup(){document.getElementById('toss-popup').style.display='none';}
+function showTossPopup(e){
+  e.stopPropagation();
+  var p=document.getElementById('toss-popup');
+  var r=e.currentTarget.getBoundingClientRect();
+  p.removeAttribute('hidden');
+  var pw=p.offsetWidth, ph=p.offsetHeight;
+  var left=r.left+r.width/2-pw/2;
+  var top=r.bottom+8;
+  if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+  if(left<8) left=8;
+  if(top+ph>window.innerHeight-8) top=r.top-ph-8;
+  p.style.left=left+'px';
+  p.style.top=top+'px';
+}
+function hideTossPopup(){document.getElementById('toss-popup').setAttribute('hidden','');}
+document.addEventListener('click',function(e){if(!document.getElementById('toss-popup').hidden&&!document.getElementById('toss-popup').contains(e.target))hideTossPopup();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopup();});
 </script>
 </html>
