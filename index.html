@@ -131,6 +131,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-nav:hover{background:var(--surface-2)}
 .cal-add-btn{padding:6px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
 .cal-add-btn:hover{opacity:.88}
+.cal-io-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.cal-io-btn:hover{background:var(--surface);border-color:var(--accent);color:var(--accent)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto repeat(6,1fr);gap:4px;flex:1}
 .cal-dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
 .cal-dow:first-child{color:#e05252}
@@ -326,6 +328,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <button class="cal-nav" id="cal-prev">&#8249;</button>
         <span class="cal-title" id="cal-title"></span>
         <button class="cal-nav" id="cal-next">&#8250;</button>
+        <button class="cal-io-btn" id="cal-export" title="일정 내보내기">&#8593; 내보내기</button>
+        <label class="cal-io-btn" id="cal-import-label" title="일정 가져오기">&#8595; 가져오기<input type="file" id="cal-import-input" accept=".json" style="display:none"></label>
         <button class="cal-add-btn" id="cal-add">+ 등록</button>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
@@ -637,6 +641,37 @@ window.addEventListener('DOMContentLoaded', () => {
 
   function loadEvents(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }catch(e){ return []; } }
   function saveEvents(ev){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(ev)); }catch(e){} }
+
+  /* ---- 내보내기 / 가져오기 ---- */
+  document.getElementById('cal-export').addEventListener('click',function(){
+    const data = JSON.stringify(loadEvents(), null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cx-calendar-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  document.getElementById('cal-import-input').addEventListener('change',function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        const imported = JSON.parse(ev.target.result);
+        if(!Array.isArray(imported)) throw new Error('invalid');
+        const existing = loadEvents();
+        const existingIds = new Set(existing.map(x=>x.id));
+        const merged = [...existing, ...imported.filter(x=>!existingIds.has(x.id))];
+        saveEvents(merged);
+        renderCal();
+        alert('일정을 가져왔습니다. (중복 제외 '+imported.filter(x=>!existingIds.has(x.id)).length+'개 추가)');
+      }catch(err){ alert('파일 형식이 올바르지 않습니다.'); }
+    };
+    reader.readAsText(file);
+    e.target.value='';
+  });
+
   function toKey(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
   function todayKey(){ const t=new Date(); return toKey(t.getFullYear(),t.getMonth(),t.getDate()); }
 
