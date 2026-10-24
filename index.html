@@ -1119,9 +1119,11 @@ runQuery();
     passwdBtn.dataset.secret = info.passwd;
     popup.hidden = false;
     var rect = anchorEl.getBoundingClientRect();
-    var pw = popup.offsetWidth;
-    popup.style.left = Math.max(4, rect.left + rect.width/2 - pw/2) + 'px';
-    popup.style.top = (rect.bottom + 6) + 'px';
+    var pbcr = popup.getBoundingClientRect();
+    var sc = popup.offsetWidth > 0 ? pbcr.width / popup.offsetWidth : 1;
+    var lv = rect.left + rect.width/2 - pbcr.width/2;
+    popup.style.left = Math.max(4, lv/sc) + 'px';
+    popup.style.top = (rect.bottom + 6) / sc + 'px';
     popup.style.transform = '';
   }
 
@@ -1183,7 +1185,7 @@ runQuery();
 <!-- Toss popup -->
 
 <script>
-function showTossPopup(e){e.stopPropagation();var p=document.getElementById('toss-popup');p.style.display='flex';var r=e.currentTarget.getBoundingClientRect();var pw=p.offsetWidth;p.style.left=Math.max(4,r.left+r.width/2-pw/2)+'px';p.style.top=(r.bottom+6)+'px';p.style.transform='';}
+function showTossPopup(e){e.stopPropagation();var p=document.getElementById('toss-popup');p.style.display='flex';var r=e.currentTarget.getBoundingClientRect();var pb=p.getBoundingClientRect();var sc=p.offsetWidth>0?pb.width/p.offsetWidth:1;var lv=r.left+r.width/2-pb.width/2;p.style.left=Math.max(4,lv/sc)+'px';p.style.top=(r.bottom+6)/sc+'px';p.style.transform='';}
 function hideTossPopup(){document.getElementById('toss-popup').style.display='none';}
 document.addEventListener('click',function(e){if(document.getElementById('toss-popup').style.display!=='none'&&!document.getElementById('toss-popup').contains(e.target))hideTossPopup();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopup();});
