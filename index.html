@@ -211,6 +211,11 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 
 .plat-logo{width:44px;height:44px;object-fit:contain;object-position:center;display:block;flex-shrink:0;border-radius:10px}
 .plat-card span{font-size:13px;font-weight:500;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;display:block}
+/* 앱 아이콘 형태: 배경색 + 여백 */
+#sc-plat-smartstore .plat-logo{background:linear-gradient(145deg,#2DD55B,#1AB040);padding:8px;box-sizing:border-box;object-fit:contain}
+#sc-plat-cj .plat-logo{background:#6B21A8;padding:8px;box-sizing:border-box;object-fit:contain}
+/* 카카오쇼핑부터 올웨이즈와 동일 크기 (cover로 꽉 채움) */
+#sc-plat-kakao .plat-logo,#sc-plat-talkco .plat-logo,#sc-plat-toss .plat-logo,#sc-plat-npay .plat-logo,#sc-plat-talktalk .plat-logo,#sc-plat-innopay .plat-logo{object-fit:cover}
 
 /* 카페24 자격증명 팝업 */
 .c24-popup{position:fixed;z-index:200;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:16px;min-width:240px;display:flex;flex-direction:column;gap:10px}
