@@ -58,7 +58,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .dot.ok{background:var(--good)}
 
 /* Main */
-.main{padding-block:24px 64px;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:24px;min-width:0}
+.main{padding-block:24px 64px;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:24px;min-width:0}.head{display:none}
 .head h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.35}
 .head .sync{color:var(--muted);font-size:12px}
 
@@ -107,7 +107,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .cal .cfoot button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:13px}
 .cal .cfoot .go{border:none;background:var(--accent);color:var(--on-accent)}
 
-section h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.45}
+section h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.45}#sc-section-title{margin-bottom:8px}
 section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0;display:flex;flex-direction:column;gap:4px;transition:box-shadow .18s var(--ease),transform .18s var(--ease);cursor:pointer}
@@ -203,7 +203,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 /* 플랫폼 섹션 */
 .plat-section{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 .plat-label{font-size:16px;font-weight:600;color:var(--fg);margin:0}
-.plat-row{display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding-bottom:4px;margin-top:8px}
+.plat-row{display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding-bottom:4px;margin-top:0}
 
 .plat-card{flex:0 0 auto;width:130px;border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--surface);color:var(--fg);font-size:13px;font-weight:500;letter-spacing:-.02em;text-align:center;cursor:pointer;text-decoration:none;transition:background .18s var(--ease),box-shadow .18s var(--ease),border-color .18s var(--ease),transform .18s var(--ease);padding:16px 12px;will-change:transform}
 .plat-card:hover{background:var(--surface);box-shadow:var(--shadow-md);border-color:var(--line);transform:translateY(-1px)}
