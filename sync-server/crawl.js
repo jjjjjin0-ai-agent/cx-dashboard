@@ -181,10 +181,14 @@ async function navigateToI100(page) {
   await sleep(3000);
   console.log('I100 진입 후 URL:', page.url());
 
-  // 진입 후 iframe이 있으면 반환, 없으면 page 반환
+  // I100 콘텐츠 프레임 찾기 (template=I100 포함 프레임 우선, 없으면 page)
   const frames = page.frames();
   console.log('I100 프레임:', frames.map(f => f.url()).join(' | '));
-  return frames.length > 1 ? frames[1] : page;
+  const i100Frame = frames.find(f => f.url().includes('template=I100') || f.url().includes('I100'));
+  if (i100Frame) { console.log('I100 프레임 선택:', i100Frame.url()); return i100Frame; }
+  // page 자체가 I100 URL이면 page 반환
+  console.log('page 사용 (page.url:', page.url(), ')');
+  return page;
 }
 
 async function getProductStock(page, browser, adminBase, productName) {
@@ -202,7 +206,12 @@ async function getProductStock(page, browser, adminBase, productName) {
   // 검색어 매핑 후 JS injection으로 입력
   const searchTerm = SEARCH_NAMES[productName] || productName;
   const typed = await contentFrame.evaluate((term) => {
-    const sels = ['input[name="search_nm"]','input[id="search_nm"]','input[name="prod_nm"]','input[name="keyword"]'];
+    const sels = [
+      'input[name="search_nm"]', 'input[id="search_nm"]',
+      'input[name="prod_nm"]',   'input[id="prod_nm"]',
+      'input[name="keyword"]',   'input[name="item_nm"]',
+      'input[name="goodsNm"]',   'input[name="product_name"]',
+    ];
     for (const sel of sels) {
       const el = document.querySelector(sel);
       if (el) {
@@ -211,6 +220,14 @@ async function getProductStock(page, browser, adminBase, productName) {
         el.dispatchEvent(new Event('change', { bubbles: true }));
         return sel;
       }
+    }
+    // 상품명 label 옆의 input
+    const labels = Array.from(document.querySelectorAll('label, td, th, span'));
+    const nmLabel = labels.find(el => (el.innerText || '').trim() === '상품명');
+    if (nmLabel) {
+      const next = nmLabel.nextElementSibling || nmLabel.parentElement?.nextElementSibling;
+      const inp = next && next.querySelector ? next.querySelector('input[type="text"]') : null;
+      if (inp) { inp.focus(); inp.value = term; inp.dispatchEvent(new Event('input', {bubbles:true})); return 'label-next'; }
     }
     const inputs = Array.from(document.querySelectorAll('input[type="text"]:not([readonly]):not([disabled])'))
                         .filter(el => el.offsetParent !== null);
