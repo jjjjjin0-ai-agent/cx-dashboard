@@ -1272,6 +1272,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopu
 <script>
 /* ---------- 재고 테이블 ---------- */
 function updateStockTable(brand) {
+  var wr = document.getElementById('stock-week-range');
+  if (wr) wr.textContent = brand ? ('조회 기간: ' + getWeekRange()) : '';
   var tbody = document.getElementById('stock-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
