@@ -655,10 +655,10 @@ function parse(v){
 
 /* ---------- 초기화 ---------- */
 updateBrandLinks(null);
-updateStockTable(null); // 홈뷰 전체 상품 표시
 
-/* 기본 브랜드: 테라퓨젠 */
+/* 기본 브랜드: 테라퓨젠 (DOMContentLoaded 후 실행) */
 window.addEventListener('DOMContentLoaded', () => {
+  updateStockTable(null); // 홈뷰 전체 상품 표시
   const defaultNav = document.querySelector('.brand-nav[data-brand="terafugen"]');
   if(defaultNav) defaultNav.click();
 });
