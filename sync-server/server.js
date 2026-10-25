@@ -5,26 +5,19 @@ const { crawlBrand } = require('./crawl');
 const app = express();
 const PORT = process.env.PORT || 3355;
 
-// Private Network Access 허용 (HTTPS GitHub Pages → HTTP localhost 차단 우회)
+// Private Network Access 허용 (HTTPS GitHub Pages → HTTP localhost)
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Private-Network', 'true');
-  next();
-});
-
-app.use(cors({ origin: '*' }));
-app.use(express.json());
-
-// OPTIONS preflight 처리
-app.options('*', (req, res) => {
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.sendStatus(204);
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
 });
 
+app.use(express.json());
+
 // POST /sync
-// body: { brand, cred: {domain,userId,passwd}, products: [...] }
 app.post('/sync', async (req, res) => {
   const { brand, cred, products } = req.body;
   if (!brand || !cred || !products) {
