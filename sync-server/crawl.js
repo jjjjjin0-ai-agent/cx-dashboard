@@ -251,45 +251,46 @@ async function getProductStock(page, browser, adminBase, productName, startDate,
   await page.keyboard.press('F2');
   await sleep(3000);
 
-  // 결과에서 상품코드 + 정상재고 추출
+  // 결과에서 상품코드 + 정상재고 추출 (디버그 정보 반환값에 포함)
   const stockData = await contentFrame.evaluate(() => {
-    const ths = Array.from(document.querySelectorAll('table thead th, table th'));
-    let stockIdx = -1, codeIdx = -1;
-    ths.forEach((th, i) => {
-      const t = th.innerText.trim();
-      if (t === '정상재고') stockIdx = i;
-      if (t === '상품코드') codeIdx = i;
-    });
-    console.log('stockIdx:', stockIdx, 'codeIdx:', codeIdx);
+    const stockTh = Array.from(document.querySelectorAll('th')).find(th => th.innerText.trim() === '정상재고');
+    if (!stockTh) return { _err: 'stockTh없음' };
 
-    const rows = document.querySelectorAll('table tbody tr');
-    for (const row of rows) {
-      const tds = row.querySelectorAll('td');
-      if (!tds.length) continue;
-      // 정상재고 컬럼 인덱스로 추출
-      if (stockIdx >= 0 && tds[stockIdx]) {
-        const n = parseInt(tds[stockIdx].innerText.replace(/,/g, '').trim());
-        const productId = codeIdx >= 0 ? tds[codeIdx].innerText.trim() : null;
-        if (!isNaN(n) && n >= 0) return { stockNow: n, productId };
+    const headerRow = stockTh.closest('tr');
+    const cells = Array.from(headerRow.children);
+    const stockIdx = cells.indexOf(stockTh);
+    const codeCells = cells.filter(c => c.innerText.trim() === '상품코드');
+    const codeIdx = codeCells.length > 0 ? cells.indexOf(codeCells[codeCells.length - 1]) : -1;
+    const headerTable = stockTh.closest('table');
+    if (stockIdx < 0 || !headerTable) return { _err: 'bad idx', stockIdx, codeIdx };
+
+    // EZAdmin은 헤더 테이블과 데이터 테이블이 별도 <table>로 분리됨
+    // headerTable에는 th 행 1개만 있고, 실제 데이터 행은 형제 테이블에 있음
+    // → 문서 전체 tr에서 headerTable 소속이 아닌 행을 탐색
+    const allRows = Array.from(document.querySelectorAll('tr'));
+
+    for (const row of allRows) {
+      if (headerTable.contains(row)) continue; // 헤더 테이블 행 제외
+      const tds = Array.from(row.children).filter(c => c.tagName === 'TD');
+      if (tds.length <= stockIdx) continue;
+      const v = tds[stockIdx].innerText.replace(/,/g, '').trim();
+      const n = parseInt(v);
+      if (!isNaN(n) && n >= 0) {
+        const productId = codeIdx >= 0 && tds[codeIdx] ? tds[codeIdx].innerText.trim() : null;
+        return { stockNow: n, productId, _stockIdx: stockIdx, _codeIdx: codeIdx };
       }
     }
-    return null;
+    const debugRows = allRows.filter(r => !headerTable.contains(r)).slice(0, 4).map(r =>
+      Array.from(r.children).map(c => c.innerText.replace(/\s+/g,' ').trim().slice(0,15))
+    );
+    return { _err: '행없음', stockIdx, codeIdx, rowCount: allRows.length, debugRows };
   });
 
-  if (!stockData) {
-    // 디버그: 테이블 헤더 + 첫 2행 출력
-    const tblDebug = await contentFrame.evaluate(() => {
-      const ths = Array.from(document.querySelectorAll('table th')).map(th => th.innerText.trim());
-      const rows = Array.from(document.querySelectorAll('table tbody tr')).slice(0, 2).map(r =>
-        Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim())
-      );
-      return { ths, rows };
-    });
-    console.log('검색결과 헤더:', JSON.stringify(tblDebug.ths));
-    console.log('검색결과 행:', JSON.stringify(tblDebug.rows));
+  if (!stockData || stockData._err !== undefined) {
+    console.log('stockData 실패:', JSON.stringify(stockData));
     throw new Error('정상재고 데이터를 찾을 수 없음');
   }
-  console.log('정상재고:', stockData.stockNow, '상품코드:', stockData.productId);
+  console.log('정상재고:', stockData.stockNow, '상품코드:', stockData.productId, 'idx:', stockData._stockIdx, stockData._codeIdx);
 
   // 재고이력 팝업 직접 접속 (클릭 없이 URL로)
   const out7d = await getOut7dByUrl(browser, adminBase, stockData.productId, stockData.stockNow, startDate, endDate);
@@ -364,13 +365,36 @@ async function getOut7dByUrl(browser, adminBase, productId, stockNow, startDate,
     await popup.goto(popupUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await sleep(2000);
 
-    // 기간 입력 + SELECT 새로고침으로 트리거
+    // SELECT/버튼 구조 파악 (디버그)
+    const popupElems = await popup.evaluate(() => {
+      const sels = Array.from(document.querySelectorAll('select')).map(s => ({
+        id: s.id, name: s.name,
+        opts: Array.from(s.options).map(o => ({ t: o.text.trim(), v: o.value }))
+      }));
+      const btns = Array.from(document.querySelectorAll('button,input[type="button"],input[type="submit"],a[href^="javascript"]')).map(b => ({
+        tag: b.tagName, txt: (b.innerText||b.value||'').trim().slice(0,20),
+        oc: (b.getAttribute('onclick')||'').slice(0,60)
+      }));
+      const inputs = Array.from(document.querySelectorAll('input[type="text"]')).map(i => ({
+        id: i.id, name: i.name, vis: !!i.offsetParent
+      }));
+      return { sels, btns, inputs };
+    });
+    console.log('팝업 SELECTs:', JSON.stringify(popupElems.sels));
+    console.log('팝업 btns:', JSON.stringify(popupElems.btns));
+    console.log('팝업 inputs:', JSON.stringify(popupElems.inputs));
+
+    // 기간 입력 + SELECT/버튼으로 트리거
     const triggered = await popup.evaluate((sd, ed) => {
       function setVal(el, v) {
         el.value = v;
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
       }
+
+      // SELECT를 "선택"(0)으로 초기화 (preset이 날짜를 덮어쓰지 않도록)
+      const sel = document.getElementById('date_period_sel') || document.querySelector('select[name="date_period_sel"]');
+      if (sel) { sel.value = '0'; sel.dispatchEvent(new Event('change', { bubbles: true })); }
 
       // ID 기반으로 날짜 입력
       const sdEl = document.getElementById('start_date') || document.querySelector('input[name="start_date"]');
@@ -383,25 +407,39 @@ async function getOut7dByUrl(browser, adminBase, productId, stockNow, startDate,
         if (vis.length >= 2) { setVal(vis[vis.length - 2], sd); setVal(vis[vis.length - 1], ed); }
       }
 
-      // SELECT에서 새로고침 옵션 선택 → onchange 트리거
-      for (const sel of document.querySelectorAll('select')) {
-        const opt = Array.from(sel.options).find(o => o.text.trim() === '새로고침');
-        if (opt) {
-          sel.value = opt.value;
-          sel.dispatchEvent(new Event('change', { bubbles: true }));
-          return 'select:새로고침(' + opt.value + ')';
-        }
+      // '새로고침' 텍스트를 가진 visible SPAN/A/BUTTON 클릭
+      const allEls = Array.from(document.querySelectorAll('*'));
+      const refreshBtn = allEls.find(el => {
+        const t = (el.innerText || el.value || '').trim();
+        return t === '새로고침' && el.offsetParent !== null && el.tagName !== 'OPTION' && el.tagName !== 'SELECT';
+      });
+      if (refreshBtn) {
+        refreshBtn.click();
+        return 'click:' + refreshBtn.tagName + (refreshBtn.className ? '.' + refreshBtn.className.split(' ')[0] : '');
       }
-
-      // 버튼 탐색 (fallback)
-      const btns = Array.from(document.querySelectorAll('input[type="button"],input[type="submit"],button'));
-      const q = btns.find(b => /(조회|검색|새로고침)/i.test(b.value || b.textContent || ''));
-      if (q) { q.click(); return 'btn:' + (q.value || q.textContent || '').trim().slice(0, 10); }
-
       return 'no-trigger';
     }, startDate, endDate);
     console.log('팝업 트리거:', triggered);
-    await sleep(2500);
+
+    // AJAX 응답 대기 — 재고 컬럼이 숫자로 바뀔 때까지 (최대 8초)
+    try {
+      await popup.waitForFunction(() => {
+        const trs = document.querySelectorAll('tbody tr');
+        for (const row of trs) {
+          const tds = row.querySelectorAll('td');
+          if (!tds.length) continue;
+          const first = tds[0].innerText.trim();
+          if (first === '전체' || /^\d{4}/.test(first)) {
+            const last = tds[tds.length - 1];
+            const v = last ? last.innerText.trim() : '';
+            return v !== '' && v !== '-';
+          }
+        }
+        return false;
+      }, { timeout: 8000 });
+    } catch (e) {
+      await sleep(1000); // timeout fallback
+    }
 
     // 팝업 테이블 디버그
     const tableDebug = await popup.evaluate(() => {
@@ -452,7 +490,9 @@ async function getOut7dByUrl(browser, adminBase, productId, stockNow, startDate,
         if (first === '전체' || first === '합계' || first === 'Total') {
           const v = tds[shipIdx] ? tds[shipIdx].innerText.replace(/,/g, '').trim() : '';
           const n = parseInt(v);
-          return isNaN(n) ? null : n;
+          if (!isNaN(n)) return n;
+          // 배송 칸이 비어있으면 0 (해당 기간 출고 없음)
+          return 0;
         }
       }
 
