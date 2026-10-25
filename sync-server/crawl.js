@@ -74,42 +74,36 @@ async function crawlBrand(brand, cred, products) {
 async function doLogin(page, cred) {
   console.log('로그인 시도...');
 
-  // 도메인
-  const domainSels = ['input[name="domain"]', 'input[id="domain"]', 'input[placeholder*="도메인"]'];
-  for (const sel of domainSels) {
-    const el = await page.$(sel);
-    if (el) {
-      await el.click({ clickCount: 3 });
-      await el.type(cred.domain, { delay: 50 });
-      console.log('도메인 입력 (', sel, ')');
-      break;
+  // JS 직접 주입으로 입력 (click 불필요, overlay/iframe 우회)
+  const filled = await page.evaluate((domain, userId, passwd) => {
+    function setVal(el, v) {
+      if (!el) return false;
+      el.focus();
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
     }
-  }
+    const domainEl = document.querySelector('input[name="domain"]') || document.querySelector('input[id="domain"]');
+    const idEl = document.querySelector('input[name="m_id"]') || document.querySelector('input[id="m_id"]')
+               || document.querySelector('input[name="userId"]') || document.querySelector('input[name="id"]');
+    const pwEl = document.querySelector('input[type="password"]');
+    return {
+      domain: setVal(domainEl, domain),
+      id: setVal(idEl, userId),
+      pw: setVal(pwEl, passwd)
+    };
+  }, cred.domain, cred.userId, cred.passwd);
+  console.log('입력 결과:', JSON.stringify(filled));
 
-  // 아이디
-  const idSels = ['input[name="m_id"]', 'input[id="m_id"]', 'input[name="userId"]', 'input[name="id"]'];
-  for (const sel of idSels) {
-    const el = await page.$(sel);
-    if (el) {
-      await el.click({ clickCount: 3 });
-      await el.type(cred.userId, { delay: 50 });
-      console.log('아이디 입력 (', sel, ')');
-      break;
-    }
-  }
-
-  // 비밀번호
-  const pwEl = await page.$('input[type="password"]');
-  if (pwEl) {
-    await pwEl.click({ clickCount: 3 });
-    await pwEl.type(cred.passwd, { delay: 50 });
-    console.log('비밀번호 입력 완료');
-  }
-
-  // 로그인 버튼 또는 Enter
+  // 로그인 버튼 클릭 또는 Enter
   await Promise.all([
     page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {}),
-    page.keyboard.press('Enter')
+    page.evaluate(() => {
+      const btn = document.querySelector('button[type="submit"], input[type="submit"]');
+      if (btn) btn.click();
+      else document.querySelector('form') && document.querySelector('form').submit();
+    })
   ]);
   await sleep(2000);
   console.log('로그인 후 URL:', page.url());
