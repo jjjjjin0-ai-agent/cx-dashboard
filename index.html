@@ -386,6 +386,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
           <button class="stock-sync-btn" onclick="syncStock()">조회</button>
           <span id="stock-status" style="font-size:11px;color:var(--muted)"></span>
         </div>
+        <div id="stock-week-range" style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:-.01em"></div>
         <div class="stock-card">
           <table class="stock-table" id="stock-table">
             <thead>
@@ -1286,6 +1287,22 @@ function updateStockTable(brand) {
     tbody.appendChild(tr);
   });
 }
+function getWeekRange() {
+  var today = new Date();
+  var day = today.getDay(); // 0=일,1=월,...,4=목,5=금,6=토
+  var daysFromThu = (day + 3) % 7; // 지난 목요일까지 일수
+  var thu = new Date(today); thu.setDate(today.getDate() - daysFromThu);
+  var wed = new Date(thu);   wed.setDate(thu.getDate() + 6);
+  var dn = ['일','월','화','수','목','금','토'];
+  var yr = String(thu.getFullYear()).slice(2);
+  var fmt = function(d){ return (d.getMonth()+1)+'월 '+d.getDate()+'일('+dn[d.getDay()]+')'; };
+  return yr+'년 '+fmt(thu)+'~'+fmt(wed);
+}
+(function(){
+  var el = document.getElementById('stock-week-range');
+  if (el) el.textContent = '조회 기간: ' + getWeekRange();
+})();
+
 function setStockStatus(msg, color) {
   var el = document.getElementById('stock-status');
   if (el) { el.textContent = msg; el.style.color = color || 'var(--muted)'; }

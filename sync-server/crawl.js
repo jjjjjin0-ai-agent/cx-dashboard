@@ -207,10 +207,10 @@ async function getProductStock(page, browser, adminBase, productName) {
   const searchTerm = SEARCH_NAMES[productName] || productName;
   const typed = await contentFrame.evaluate((term) => {
     const sels = [
+      'input[name="query_str"]', 'input[id="query_str"]',  // 이지어드민 현재고조회 상품명 검색
       'input[name="search_nm"]', 'input[id="search_nm"]',
       'input[name="prod_nm"]',   'input[id="prod_nm"]',
       'input[name="keyword"]',   'input[name="item_nm"]',
-      'input[name="goodsNm"]',   'input[name="product_name"]',
     ];
     for (const sel of sels) {
       const el = document.querySelector(sel);
@@ -349,25 +349,28 @@ async function getOut7dByUrl(browser, adminBase, productId, stockNow) {
     await popup.goto(popupUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await sleep(1500);
 
-    // 기간 입력 (text 타입 input 2개)
-    const inputs = await popup.$$('input[type="text"]:not([readonly])');
-    console.log('팝업 input 수:', inputs.length);
-    if (inputs.length >= 1) {
-      await inputs[0].click({ clickCount: 3 });
-      await inputs[0].type(startDate, { delay: 50 });
-    }
-    if (inputs.length >= 2) {
-      await inputs[1].click({ clickCount: 3 });
-      await inputs[1].type(endDate, { delay: 50 });
-    }
+    // 기간 입력 (JS injection)
+    const dateSet = await popup.evaluate((sd, ed) => {
+      const inputs = Array.from(document.querySelectorAll('input[type="text"]:not([readonly])'));
+      function setVal(el, v) {
+        el.value = v;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (inputs.length >= 1) setVal(inputs[0], sd);
+      if (inputs.length >= 2) setVal(inputs[1], ed);
+      return inputs.length;
+    }, startDate, endDate);
+    console.log('팝업 날짜 입력:', dateSet, '개 필드');
 
-    // 새로고침 버튼 클릭
-    const refreshBtn = await popup.$('input[value="새로고침"], button:has-text("새로고침")');
-    if (refreshBtn) {
-      await refreshBtn.click();
-    } else {
-      await popup.keyboard.press('Enter');
-    }
+    // 새로고침 버튼 클릭 (JS로 찾아 클릭 - :has-text 미지원)
+    const refreshed = await popup.evaluate(() => {
+      const els = Array.from(document.querySelectorAll('input[type="button"], input[type="submit"], button'));
+      const btn = els.find(el => (el.value || el.textContent || '').trim() === '새로고침');
+      if (btn) { btn.click(); return true; }
+      return false;
+    });
+    if (!refreshed) await popup.keyboard.press('Enter');
     await sleep(2000);
 
     // 배송 전체 합계 추출 (전체 행, 배송=index 3)
