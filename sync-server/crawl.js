@@ -160,18 +160,46 @@ async function doLogin(page, cred) {
   console.log('로그인 후 URL:', page.url());
 }
 
+async function navigateToI100(page) {
+  // 상단 메뉴 재고관리 클릭
+  await page.evaluate(() => {
+    const all = Array.from(document.querySelectorAll('a, li, td, span'));
+    const menu = all.find(el => (el.innerText || el.textContent || '').trim() === '재고관리');
+    if (menu) menu.click();
+  });
+  await sleep(800);
+  // 현재고조회 클릭
+  const clicked = await page.evaluate(() => {
+    const links = Array.from(document.querySelectorAll('a'));
+    const item = links.find(el => (el.innerText || el.textContent || '').trim() === '현재고조회');
+    if (item) { item.click(); return 'text'; }
+    const byHref = document.querySelector('a[href*="I100"]');
+    if (byHref) { byHref.click(); return 'href'; }
+    return null;
+  });
+  console.log('현재고조회 클릭:', clicked);
+  await sleep(3000);
+  console.log('I100 진입 후 URL:', page.url());
+
+  // 진입 후 iframe이 있으면 반환, 없으면 page 반환
+  const frames = page.frames();
+  console.log('I100 프레임:', frames.map(f => f.url()).join(' | '));
+  return frames.length > 1 ? frames[1] : page;
+}
+
 async function getProductStock(page, browser, adminBase, productName) {
-  // I100 이동
-  await page.goto(`${adminBase}/index.htm#I100`, { waitUntil: 'domcontentloaded', timeout: 20000 });
-  await sleep(4000);
-  // I100에서는 X 버튼만 닫기 (팝업 전체 닫기 클릭하면 해시가 # 으로 리셋됨)
-  await closeXPopupsOnly(page);
+  // 메뉴 클릭으로 I100(현재고조회) 진입
+  const contentFrame = await navigateToI100(page);
 
-  // 컨텐츠 iframe 찾기 (재시도 포함)
-  const contentFrame = await findContentFrame(page, adminBase);
-  console.log('사용 프레임 URL:', contentFrame.url());
+  // 모든 input 목록 로그 (디버깅)
+  const inputList = await contentFrame.evaluate(() =>
+    Array.from(document.querySelectorAll('input')).map(el => ({
+      name: el.name, id: el.id, type: el.type, visible: !!el.offsetParent
+    }))
+  );
+  console.log('input 목록:', JSON.stringify(inputList));
 
-  // 검색어 매핑 후 JS injection으로 입력 (click/type 대신)
+  // 검색어 매핑 후 JS injection으로 입력
   const searchTerm = SEARCH_NAMES[productName] || productName;
   const typed = await contentFrame.evaluate((term) => {
     const sels = ['input[name="search_nm"]','input[id="search_nm"]','input[name="prod_nm"]','input[name="keyword"]'];
@@ -184,18 +212,19 @@ async function getProductStock(page, browser, adminBase, productName) {
         return sel;
       }
     }
-    const inputs = document.querySelectorAll('input[type="text"]:not([readonly]):not([disabled])');
+    const inputs = Array.from(document.querySelectorAll('input[type="text"]:not([readonly]):not([disabled])'))
+                        .filter(el => el.offsetParent !== null);
     if (inputs.length) {
       const el = inputs[inputs.length - 1];
       el.focus(); el.value = term;
       el.dispatchEvent(new Event('input', { bubbles: true }));
-      return 'fallback(' + inputs.length + ')';
+      return 'fallback-visible(' + inputs.length + ')';
     }
     return null;
   }, searchTerm);
 
   if (!typed) {
-    const bodyHtml = await contentFrame.evaluate(() => document.body.innerHTML.slice(0, 500));
+    const bodyHtml = await contentFrame.evaluate(() => document.body.innerHTML.slice(0, 800));
     console.log('프레임 내용:', bodyHtml);
     throw new Error('검색 필드를 찾을 수 없음');
   }
