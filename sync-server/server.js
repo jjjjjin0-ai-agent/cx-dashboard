@@ -5,8 +5,23 @@ const { crawlBrand } = require('./crawl');
 const app = express();
 const PORT = 3355;
 
-app.use(cors());
+// Private Network Access 허용 (HTTPS GitHub Pages → HTTP localhost 차단 우회)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  next();
+});
+
+app.use(cors({ origin: '*' }));
 app.use(express.json());
+
+// OPTIONS preflight 처리
+app.options('*', (req, res) => {
+  res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(204);
+});
 
 // POST /sync
 // body: { brand, cred: {domain,userId,passwd}, products: [...] }
@@ -18,7 +33,6 @@ app.post('/sync', async (req, res) => {
   console.log(`[${new Date().toLocaleTimeString()}] 조회 시작: ${brand} (${products.length}개 제품)`);
   try {
     const rows = await crawlBrand(brand, cred, products);
-    // 계산
     const result = rows.map(r => {
       const stockNow = r.stockNow;
       const out7d    = r.out7d;
