@@ -532,6 +532,33 @@ const BRAND_EZYADMIN = {
   cellofit:{domain:"hanaondm",userId:"lillied",passwd:"lillied1!!"},
   pamicogen:{domain:"hanaondm",userId:"immunecell",passwd:"immunecell1!!"}
 };
+const BRAND_COUPANG = {
+  terafugen:{userId:"___",passwd:"___"},
+  frozenlab:{userId:"___",passwd:"___"},
+  dentipla:{userId:"___",passwd:"___"},
+  mediglow:{userId:"___",passwd:"___"},
+  cellofit:{userId:"___",passwd:"___"},
+  pamicogen:{userId:"___",passwd:"___"}
+};
+const BRAND_ESM = {
+  terafugen:{userId:"___",passwd:"___"},
+  frozenlab:{userId:"___",passwd:"___"},
+  dentipla:{userId:"___",passwd:"___"},
+  mediglow:{userId:"___",passwd:"___"},
+  cellofit:{userId:"___",passwd:"___"},
+  pamicogen:{userId:"___",passwd:"___"}
+};
+const BRAND_ALWAYZ = {
+  terafugen:{userId:"___",passwd:"___"}
+};
+const BRAND_INNOPAY = {
+  terafugen:{userId:"___",passwd:"___"},
+  frozenlab:{userId:"___",passwd:"___"},
+  dentipla:{userId:"___",passwd:"___"},
+  mediglow:{userId:"___",passwd:"___"},
+  cellofit:{userId:"___",passwd:"___"},
+  pamicogen:{userId:"___",passwd:"___"}
+};
 function loginCafe24(brand){
   const info=BRAND_CAFE24[brand];
   if(!info||!info.mallId||info.mallId==="___") return;
@@ -1138,6 +1165,39 @@ runQuery();
       } else if(card.href && card.href !== '#'){
         window.open(card.href, '_blank');
       }
+    });
+  });
+  window.__showPlatPopup = showPopup;
+})();
+</script>
+
+<script>
+/* ---------- 플랫폼 카드 계정 팝업 ---------- */
+(function(){
+  var platMap = {
+    "sc-plat-coupang": "쿠팡",
+    "sc-plat-esm": "ESM",
+    "sc-plat-alwayz": "올웨이즈",
+    "sc-plat-innopay": "이노페이"
+  };
+  function getDataObj(id){
+    if(id==="sc-plat-coupang") return BRAND_COUPANG;
+    if(id==="sc-plat-esm") return BRAND_ESM;
+    if(id==="sc-plat-alwayz") return BRAND_ALWAYZ;
+    if(id==="sc-plat-innopay") return BRAND_INNOPAY;
+    return null;
+  }
+  Object.keys(platMap).forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("click", function(e){
+      if(!activeBrand) return;
+      var dataObj = getDataObj(id);
+      if(!dataObj) return;
+      var info = dataObj[activeBrand];
+      if(!info || info.passwd==="___") return;
+      e.stopPropagation();
+      window.__showPlatPopup(activeBrand, el, info, platMap[id]);
     });
   });
 })();
