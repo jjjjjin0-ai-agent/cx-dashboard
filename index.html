@@ -218,7 +218,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .stock-section-hd{display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:nowrap}
 .stock-section-hd .plat-label{margin:0}
 .stock-sync-btn{font-size:12px;font-weight:500;color:var(--accent);background:var(--accent-soft);border:none;border-radius:6px;padding:3px 12px;cursor:pointer;letter-spacing:-.01em}
-.stock-card{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.stock-card{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow-x:auto}
 .stock-table{width:100%;border-collapse:collapse;font-size:13px}
 .stock-table th{background:var(--surface-2);font-weight:600;color:var(--muted);padding:10px 14px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
 .stock-table th.num,.stock-table td.num{text-align:center}
@@ -1457,7 +1457,7 @@ function syncStock() {
 // 발주 필요 툴팁 (body fixed — overflow:hidden 클립 방지)
 (function(){
   var tip = document.createElement('div');
-  tip.style.cssText = 'display:none;position:fixed;background:rgba(30,30,30,.88);color:#fff;font-size:12px;font-weight:500;padding:4px 10px;border-radius:5px;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+  tip.style.cssText = 'display:none;position:fixed;background:rgba(30,30,30,.88);color:#ff6b6b;font-size:12px;font-weight:600;padding:4px 10px;border-radius:5px;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.25)';
   tip.textContent = '※ 발주 필요';
   document.body.appendChild(tip);
   document.addEventListener('mouseover', function(e) {
