@@ -191,7 +191,7 @@ async function navigateToI100(page) {
   return page;
 }
 
-async function getProductStock(page, browser, adminBase, productName) {
+async function getProductStock(page, browser, adminBase, productName, startDate, endDate) {
   // 메뉴 클릭으로 I100(현재고조회) 진입
   const contentFrame = await navigateToI100(page);
 
@@ -276,11 +276,23 @@ async function getProductStock(page, browser, adminBase, productName) {
     return null;
   });
 
-  if (!stockData) throw new Error('정상재고 데이터를 찾을 수 없음');
+  if (!stockData) {
+    // 디버그: 테이블 헤더 + 첫 2행 출력
+    const tblDebug = await contentFrame.evaluate(() => {
+      const ths = Array.from(document.querySelectorAll('table th')).map(th => th.innerText.trim());
+      const rows = Array.from(document.querySelectorAll('table tbody tr')).slice(0, 2).map(r =>
+        Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim())
+      );
+      return { ths, rows };
+    });
+    console.log('검색결과 헤더:', JSON.stringify(tblDebug.ths));
+    console.log('검색결과 행:', JSON.stringify(tblDebug.rows));
+    throw new Error('정상재고 데이터를 찾을 수 없음');
+  }
   console.log('정상재고:', stockData.stockNow, '상품코드:', stockData.productId);
 
   // 재고이력 팝업 직접 접속 (클릭 없이 URL로)
-  const out7d = await getOut7dByUrl(browser, adminBase, stockData.productId, stockData.stockNow);
+  const out7d = await getOut7dByUrl(browser, adminBase, stockData.productId, stockData.stockNow, startDate, endDate);
 
   return { name: productName, stockNow: stockData.stockNow, out7d };
 }
@@ -332,14 +344,16 @@ async function findSearchInput(frame) {
   return null;
 }
 
-async function getOut7dByUrl(browser, adminBase, productId, stockNow) {
+async function getOut7dByUrl(browser, adminBase, productId, stockNow, startDate, endDate) {
   if (!productId) { console.log('상품코드 없음, 팝업 스킵'); return null; }
 
-  const today = new Date();
-  const endDate = fmtDate(today);
-  const startD = new Date(today);
-  startD.setDate(startD.getDate() - 7);
-  const startDate = fmtDate(startD);
+  if (!startDate || !endDate) {
+    const today = new Date();
+    endDate = fmtDate(today);
+    const startD = new Date(today);
+    startD.setDate(startD.getDate() - 7);
+    startDate = fmtDate(startD);
+  }
 
   const popupUrl = `${adminBase}/popup35.htm?template=I101&readonly=T&product_id=${productId}&inout_type=0&stock=${stockNow}`;
   console.log('팝업 URL:', popupUrl);
@@ -373,25 +387,53 @@ async function getOut7dByUrl(browser, adminBase, productId, stockNow) {
     if (!refreshed) await popup.keyboard.press('Enter');
     await sleep(2000);
 
-    // 배송 전체 합계 추출 (전체 행, 배송=index 3)
+    // 팝업 테이블 디버그
+    const tableDebug = await popup.evaluate(() => {
+      const ths = Array.from(document.querySelectorAll('th')).map(th => th.innerText.trim());
+      const rows = Array.from(document.querySelectorAll('tr')).map(r =>
+        Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim())
+      ).filter(r => r.length > 0).slice(0, 5);
+      return { headers: ths, rows };
+    });
+    console.log('팝업 헤더:', JSON.stringify(tableDebug.headers));
+    console.log('팝업 행(5):', JSON.stringify(tableDebug.rows));
+
+    // 배송 전체 합계 추출
     const out7d = await popup.evaluate(() => {
-      const rows = document.querySelectorAll('tr');
+      const ths = Array.from(document.querySelectorAll('th'));
       // 헤더에서 배송 컬럼 인덱스 찾기
-      let shipIdx = 3; // 기본값: 날짜=0, 입고=1, 출고=2, 배송=3
-      const ths = document.querySelectorAll('th');
+      let shipIdx = -1;
       ths.forEach((th, i) => {
-        if (th.innerText.trim() === '배송') shipIdx = i;
+        const t = th.innerText.trim();
+        if (t === '배송' || t === '출고') shipIdx = i;
       });
+      if (shipIdx < 0) shipIdx = 3; // fallback
+
+      const rows = document.querySelectorAll('tr');
       for (const row of rows) {
         const tds = row.querySelectorAll('td');
-        if (tds.length > shipIdx && tds[0] && tds[0].innerText.trim() === '전체') {
-          const v = tds[shipIdx].innerText.replace(/,/g, '').trim();
+        if (!tds.length) continue;
+        const firstCell = tds[0].innerText.trim();
+        // '전체' 행 또는 마지막 합계 행
+        if (firstCell === '전체' || firstCell === '합계' || firstCell === 'Total') {
+          const v = tds[shipIdx] ? tds[shipIdx].innerText.replace(/,/g, '').trim() : '';
           const n = parseInt(v);
-          console.log('전체 배송:', v, '→', n);
           return isNaN(n) ? null : n;
         }
       }
-      return null;
+      // 전체 행 없으면 모든 배송 합산
+      let total = 0; let found = false;
+      for (const row of rows) {
+        const tds = row.querySelectorAll('td');
+        if (tds.length <= shipIdx) continue;
+        const firstCell = tds[0].innerText.trim();
+        if (/^\d{4}-\d{2}-\d{2}/.test(firstCell)) { // 날짜 행
+          const v = tds[shipIdx].innerText.replace(/,/g, '').trim();
+          const n = parseInt(v);
+          if (!isNaN(n)) { total += n; found = true; }
+        }
+      }
+      return found ? total : null;
     });
 
     console.log('7일 출고(배송):', out7d);
