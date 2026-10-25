@@ -25,18 +25,47 @@ function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// 메인 화면 팝업 전체 닫기 (로그인 직후 1회만 사용 - 해시 리셋 OK)
 async function closePopups(page) {
-  const closed = await page.evaluate(() => {
-    const allEls = Array.from(document.querySelectorAll('button, a, span, div, p'));
-    // 팝업 전체 닫기
-    const btn = allEls.find(el => el.textContent.trim() === '팝업 전체 닫기');
-    if (btn) { btn.click(); return '팝업 전체 닫기'; }
-    // 일반 X 닫기
-    const closeEls = document.querySelectorAll('.popup-close, .btn-close, [class*="layerClose"], [onclick*="closeLayer"]');
-    if (closeEls.length) { closeEls.forEach(b => { try { b.click(); } catch(e) {} }); return 'X닫기x' + closeEls.length; }
-    return null;
-  });
-  if (closed) { console.log('팝업 닫음:', closed); await sleep(800); }
+  for (let i = 0; i < 4; i++) {
+    const closed = await page.evaluate(() => {
+      const allEls = Array.from(document.querySelectorAll('button, a, span, div, p'));
+      const allClose = allEls.find(el => el.textContent.trim() === '팝업 전체 닫기');
+      if (allClose) { allClose.click(); return '팝업 전체 닫기'; }
+      const byClass = document.querySelector('.popup-close,.btn-close,.layer-close,[class*="layerClose"],[class*="pop_close"]');
+      if (byClass && byClass.offsetParent !== null) { byClass.click(); return 'class:' + byClass.className.slice(0, 30); }
+      const xBtn = allEls.find(el => {
+        const t = el.textContent.trim();
+        return (t === '×' || t === '✕' || t === 'X') && el.offsetParent !== null;
+      });
+      if (xBtn) { xBtn.click(); return 'X:' + xBtn.tagName; }
+      return null;
+    });
+    if (closed) { console.log('팝업 닫음:', closed); await sleep(800); }
+    else break;
+  }
+}
+
+// I100 진입 후 팝업 닫기 - X 버튼만 (팝업 전체 닫기 클릭 금지 - 해시 리셋됨)
+async function closeXPopupsOnly(page) {
+  for (let i = 0; i < 4; i++) {
+    const closed = await page.evaluate(() => {
+      const byClass = document.querySelector('.popup-close,.btn-close,.layer-close,[class*="layerClose"],[class*="pop_close"],[class*="popClose"]');
+      if (byClass && byClass.offsetParent !== null) { byClass.click(); return 'class:' + byClass.className.slice(0, 30); }
+      const byOnclick = Array.from(document.querySelectorAll('[onclick]')).find(el =>
+        el.offsetParent !== null && /close|hide/i.test(el.getAttribute('onclick') || '')
+      );
+      if (byOnclick) { byOnclick.click(); return 'onclick'; }
+      const xBtn = Array.from(document.querySelectorAll('button,a,span,div')).find(el => {
+        const t = el.textContent.trim();
+        return (t === '×' || t === '✕' || t === 'X') && el.offsetParent !== null;
+      });
+      if (xBtn) { xBtn.click(); return 'X:' + xBtn.className.slice(0, 20); }
+      return null;
+    });
+    if (closed) { console.log('X팝업 닫음:', closed); await sleep(800); }
+    else break;
+  }
 }
 
 async function crawlBrand(brand, cred, products) {
@@ -63,6 +92,9 @@ async function crawlBrand(brand, cred, products) {
       await doLogin(page, cred);
       await sleep(3000);
     }
+    // 로그인 후 메인 화면에서 팝업 닫기 (팝업 전체 닫기 포함 - 아직 I100 진입 전이므로 OK)
+    await closePopups(page);
+    await sleep(500);
 
     const adminUrl = page.url();
     console.log('로그인 후 URL:', adminUrl);
@@ -129,11 +161,11 @@ async function doLogin(page, cred) {
 }
 
 async function getProductStock(page, browser, adminBase, productName) {
-  // 팝업 닫기 후 I100 이동
-  await closePopups(page);
+  // I100 이동
   await page.goto(`${adminBase}/index.htm#I100`, { waitUntil: 'domcontentloaded', timeout: 20000 });
   await sleep(4000);
-  await closePopups(page);
+  // I100에서는 X 버튼만 닫기 (팝업 전체 닫기 클릭하면 해시가 # 으로 리셋됨)
+  await closeXPopupsOnly(page);
 
   // 컨텐츠 iframe 찾기 (재시도 포함)
   const contentFrame = await findContentFrame(page, adminBase);
