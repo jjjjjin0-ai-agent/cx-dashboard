@@ -1299,7 +1299,7 @@ function syncStock() {
   setStockStatus('조회 중...', 'var(--muted)');
   var cred = (typeof BRAND_EZYADMIN !== 'undefined') ? BRAND_EZYADMIN[brand] : null;
   var products = (typeof STOCK_PRODUCTS !== 'undefined') ? STOCK_PRODUCTS[brand] : [];
-  fetch('http://localhost:3355/sync', {
+  fetch('https://labour-jill-fare-concerned.trycloudflare.com/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ brand: brand, cred: cred, products: products })
