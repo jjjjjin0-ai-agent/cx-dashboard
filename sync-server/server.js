@@ -3,7 +3,7 @@ const cors = require('cors');
 const { crawlBrand } = require('./crawl');
 
 const app = express();
-const PORT = 3355;
+const PORT = process.env.PORT || 3355;
 
 // Private Network Access 허용 (HTTPS GitHub Pages → HTTP localhost 차단 우회)
 app.use((req, res, next) => {
