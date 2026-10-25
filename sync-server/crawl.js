@@ -194,6 +194,8 @@ async function navigateToI100(page) {
 async function getProductStock(page, browser, adminBase, productName, startDate, endDate) {
   // 메뉴 클릭으로 I100(현재고조회) 진입
   const contentFrame = await navigateToI100(page);
+  await closeXPopupsOnly(page); // I100 진입 후 가이드/레이어 팝업 닫기
+  await sleep(300);
 
   // 모든 input 목록 로그 (디버깅)
   const inputList = await contentFrame.evaluate(() =>
