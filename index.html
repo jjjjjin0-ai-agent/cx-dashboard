@@ -535,6 +535,14 @@ let view = new Date(TODAY.getFullYear(), TODAY.getMonth()-1, 1);             // 
 let picking = "s";
 let activeBrand = null;
 const BRAND_IDS = ["terafugen","frozenlab","dentipla","mediglow","cellofit","pamicogen"];
+const STOCK_PRODUCTS = {
+  terafugen: ["조인트본","루테아틴","헬리코킷","콜레스킷","알래스카"],
+  frozenlab: ["실톡스 크림","실톡스 앰플","콜라겐 부스터","하이토넥스"],
+  mediglow:  ["아나모나","스피모나"],
+  pamicogen: ["코티프로","알코프로","비아프로"],
+  cellofit:  ["플로우틴"],
+  dentipla:  ["구강케어 정","잇몸케어 치약"]
+};
 const BRAND_SHOP_URLS = {
   terafugen:"https://terafugen.com/",
   frozenlab:"https://frozenlab.co.kr/",
@@ -1020,6 +1028,7 @@ $$(".brand-nav").forEach((a,i)=>{
       updateBrandLinks(null);
       const _cv2=document.getElementById('cal-view'), _bp2=document.getElementById('sc-pamicogen');
       if(_cv2) _cv2.style.display='none'; if(_bp2) _bp2.style.display='none';
+      updateStockTable(null);
     } else {
       activeBrand=a.dataset.brand;
       $$(".brand-nav").forEach(b=>b.classList.remove("active"));
@@ -1030,6 +1039,7 @@ $$(".brand-nav").forEach((a,i)=>{
       // 캘린더 탭에서 브랜드 클릭 시 대시보드로 복귀
       const _cv=document.getElementById('cal-view'), _bp=document.getElementById('sc-pamicogen');
       if(_cv) _cv.style.display='none'; if(_bp) _bp.style.display='';
+      updateStockTable(activeBrand);
     }
 
     runQuery();
