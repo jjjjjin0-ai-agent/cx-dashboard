@@ -1288,7 +1288,29 @@ function updateStockTable(brand) {
 function syncStock() {
   var brand = (typeof activeBrand !== 'undefined') ? activeBrand : null;
   if (!brand) { alert('브랜드를 먼저 선택해주세요.'); return; }
-  alert('서버가 실행되지 않았습니다');
+  var btn = document.querySelector('.stock-sync-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '조회 중...'; }
+  var cred = (typeof BRAND_EZYADMIN !== 'undefined') ? BRAND_EZYADMIN[brand] : null;
+  var products = (typeof STOCK_PRODUCTS !== 'undefined') ? STOCK_PRODUCTS[brand] : [];
+  fetch('http://localhost:3355/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brand: brand, cred: cred, products: products })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        renderStock(data.rows);
+      } else {
+        alert('조회 실패: ' + (data.error || '알 수 없는 오류'));
+      }
+    })
+    .catch(function() {
+      alert('서버에 연결할 수 없습니다.\nsync-server 폴더에서 node server.js를 실행해주세요.');
+    })
+    .finally(function() {
+      if (btn) { btn.disabled = false; btn.textContent = '조회'; }
+    });
 }
 function fmt(v, dec) {
   if (v === undefined || v === null || v === '') return '—';
