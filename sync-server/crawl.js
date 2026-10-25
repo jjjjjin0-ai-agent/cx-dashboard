@@ -68,7 +68,7 @@ async function closeXPopupsOnly(page) {
   }
 }
 
-async function crawlBrand(brand, cred, products) {
+async function crawlBrand(brand, cred, products, startDate, endDate) {
   if (!cred || !products) throw new Error('계정 또는 제품 정보 없음');
   const chromePath = getChromePath();
   if (!chromePath) throw new Error('Chrome을 찾을 수 없습니다');
@@ -108,7 +108,7 @@ async function crawlBrand(brand, cred, products) {
     for (const productName of products) {
       try {
         console.log(`\n[${productName}] 조회 시작`);
-        const data = await getProductStock(page, browser, adminBase, productName);
+        const data = await getProductStock(page, browser, adminBase, productName, startDate, endDate);
         results.push(data);
         await sleep(500);
       } catch (e) {

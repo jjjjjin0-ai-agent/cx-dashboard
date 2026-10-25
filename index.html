@@ -383,10 +383,12 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
       <div class="stock-section">
         <div class="stock-section-hd">
           <div class="plat-label">재고 현황</div>
+          <input type="date" id="stock-start-date" style="font-size:12px;border:1px solid var(--border);border-radius:5px;padding:2px 6px;color:var(--fg);background:var(--card);cursor:pointer">
+          <span style="font-size:12px;color:var(--muted)">~</span>
+          <input type="date" id="stock-end-date" style="font-size:12px;border:1px solid var(--border);border-radius:5px;padding:2px 6px;color:var(--fg);background:var(--card);cursor:pointer">
           <button class="stock-sync-btn" onclick="syncStock()">조회</button>
           <span id="stock-status" style="font-size:11px;color:var(--muted)"></span>
         </div>
-        <div id="stock-week-range" style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:-.01em"></div>
         <div class="stock-card">
           <table class="stock-table" id="stock-table">
             <thead>
@@ -1272,8 +1274,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopu
 <script>
 /* ---------- 재고 테이블 ---------- */
 function updateStockTable(brand) {
-  var wr = document.getElementById('stock-week-range');
-  if (wr) wr.textContent = brand ? ('조회 기간: ' + getWeekRange()) : '';
+  if (brand) setWeekDateInputs();
   var tbody = document.getElementById('stock-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
@@ -1300,10 +1301,18 @@ function getWeekRange() {
   var fmt = function(d){ return (d.getMonth()+1)+'월 '+d.getDate()+'일('+dn[d.getDay()]+')'; };
   return yr+'년 '+fmt(thu)+'~'+fmt(wed);
 }
-(function(){
-  var el = document.getElementById('stock-week-range');
-  if (el) el.textContent = '조회 기간: ' + getWeekRange();
-})();
+function setWeekDateInputs() {
+  var today = new Date();
+  var day = today.getDay();
+  var daysFromThu = (day + 3) % 7;
+  var thu = new Date(today); thu.setDate(today.getDate() - daysFromThu);
+  var wed = new Date(thu);   wed.setDate(thu.getDate() + 6);
+  var fmt = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+  var sd = document.getElementById('stock-start-date');
+  var ed = document.getElementById('stock-end-date');
+  if (sd && !sd.value) sd.value = fmt(thu);
+  if (ed && !ed.value) ed.value = fmt(wed);
+}
 
 function setStockStatus(msg, color) {
   var el = document.getElementById('stock-status');
@@ -1320,7 +1329,11 @@ function syncStock() {
   fetch('http://localhost:3355/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ brand: brand, cred: cred, products: products })
+    body: JSON.stringify({
+        brand: brand, cred: cred, products: products,
+        startDate: (document.getElementById('stock-start-date')||{}).value || null,
+        endDate:   (document.getElementById('stock-end-date')||{}).value || null
+      })
   })
     .then(function(r) { return r.json(); })
     .then(function(data) {

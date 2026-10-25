@@ -19,13 +19,13 @@ app.use(express.json());
 
 // POST /sync
 app.post('/sync', async (req, res) => {
-  const { brand, cred, products } = req.body;
+  const { brand, cred, products, startDate, endDate } = req.body;
   if (!brand || !cred || !products) {
     return res.status(400).json({ error: '브랜드/계정/제품 정보 필요' });
   }
-  console.log(`[${new Date().toLocaleTimeString()}] 조회 시작: ${brand} (${products.length}개 제품)`);
+  console.log(`[${new Date().toLocaleTimeString()}] 조회 시작: ${brand} (${products.length}개 제품) 기간: ${startDate||'auto'}~${endDate||'auto'}`);
   try {
-    const rows = await crawlBrand(brand, cred, products);
+    const rows = await crawlBrand(brand, cred, products, startDate, endDate);
     const result = rows.map(r => {
       const stockNow = r.stockNow;
       const out7d    = r.out7d;
