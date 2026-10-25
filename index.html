@@ -404,8 +404,6 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
               <th class="num">1일 평균</th>
               <th class="num">8주 출고</th>
               <th class="num">8주 후 재고</th>
-              <th class="num">유통기한</th>
-              <th class="num">남은 유통기한</th>
             </tr>
           </thead>
           <tbody id="stock-tbody"></tbody>
@@ -1312,8 +1310,6 @@ function updateStockTable(brand) {
     var brandCell = isFirstOfBrand ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
     tr.innerHTML = '<td>'+brandCell+'</td>'
       +'<td>'+item.name+'</td>'
-      +'<td class="num">—</td>'
-      +'<td class="num">—</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
