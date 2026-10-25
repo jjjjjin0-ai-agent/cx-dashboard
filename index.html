@@ -539,11 +539,11 @@ let picking = "s";
 let activeBrand = null;
 const BRAND_IDS = ["terafugen","frozenlab","dentipla","mediglow","cellofit","pamicogen"];
 const STOCK_PRODUCTS = {
-  terafugen: ["조인트본","루테아틴","헬리코컷","콜레스컷","알래스카","실톡스 크림","실톡스 앰플","콜라겐","하이토넥스","구강케어","치약","아나모나","스피모나","코티프로","알코프로","비아프로","플로우턴"],
+  terafugen: ["조인트본","루테아틴","헬리코컷","콜레스컷","알래스카"],
   frozenlab: ["실톡스 크림","실톡스 앰플","콜라겐 부스터","하이토넥스"],
   mediglow:  ["아나모나","스피모나"],
   pamicogen: ["코티프로","알코프로","비아프로"],
-  cellofit:  ["플로우틴"],
+  cellofit:  ["플로우턴"],
   dentipla:  ["구강케어 정","잇몸케어 치약"]
 };
 const BRAND_SHOP_URLS = {
@@ -1274,20 +1274,46 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopu
 <script>
 /* ---------- 재고 테이블 ---------- */
 function updateStockTable(brand) {
-  if (brand) setWeekDateInputs();
+  setWeekDateInputs();
   var tbody = document.getElementById('stock-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
-  var products = (typeof STOCK_PRODUCTS !== 'undefined' && STOCK_PRODUCTS[brand]) || [];
-  products.forEach(function(name) {
+  var list = brand
+    ? (STOCK_PRODUCTS[brand] || []).map(function(n){ return {brand:brand, name:n}; })
+    : BRAND_IDS.reduce(function(acc,b){
+        (STOCK_PRODUCTS[b]||[]).forEach(function(n){ acc.push({brand:b,name:n}); });
+        return acc;
+      }, []);
+  list.forEach(function(item) {
     var tr = document.createElement('tr');
-    tr.innerHTML = '<td>'+name+'</td>'
+    tr.dataset.brand = item.brand;
+    tr.dataset.product = item.name;
+    tr.innerHTML = '<td>'+item.name+'</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>';
     tbody.appendChild(tr);
+  });
+}
+function renderStock(rows) {
+  if (!rows) return;
+  var tbody = document.getElementById('stock-tbody');
+  if (!tbody) return;
+  rows.forEach(function(r) {
+    var trs = tbody.querySelectorAll('tr');
+    for (var i = 0; i < trs.length; i++) {
+      if (trs[i].dataset.product === r.name) {
+        var tds = trs[i].querySelectorAll('td');
+        if (tds[1]) tds[1].textContent = fmt(r.stockNow);
+        if (tds[2]) tds[2].textContent = fmt(r.out7d);
+        if (tds[3]) tds[3].textContent = fmt(r.avg1d, 1);
+        if (tds[4]) tds[4].textContent = fmt(r.out8w);
+        if (tds[5]) tds[5].textContent = fmt(r.stock8w);
+        break;
+      }
+    }
   });
 }
 function getWeekRange() {
@@ -1320,39 +1346,60 @@ function setStockStatus(msg, color) {
 }
 function syncStock() {
   var brand = (typeof activeBrand !== 'undefined') ? activeBrand : null;
-  if (!brand) return;
   var btn = document.querySelector('.stock-sync-btn');
+  var startDate = (document.getElementById('stock-start-date')||{}).value || null;
+  var endDate   = (document.getElementById('stock-end-date')||{}).value || null;
   if (btn) { btn.disabled = true; btn.textContent = '조회 중...'; }
-  setStockStatus('조회 중...', 'var(--muted)');
-  var cred = (typeof BRAND_EZYADMIN !== 'undefined') ? BRAND_EZYADMIN[brand] : null;
-  var products = (typeof STOCK_PRODUCTS !== 'undefined') ? STOCK_PRODUCTS[brand] : [];
-  fetch('http://localhost:3355/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        brand: brand, cred: cred, products: products,
-        startDate: (document.getElementById('stock-start-date')||{}).value || null,
-        endDate:   (document.getElementById('stock-end-date')||{}).value || null
-      })
-  })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
+
+  if (brand) {
+    // 단일 브랜드 조회
+    setStockStatus('조회 중...', 'var(--muted)');
+    fetch('http://localhost:3355/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand: brand, cred: BRAND_EZYADMIN[brand],
+        products: STOCK_PRODUCTS[brand]||[], startDate: startDate, endDate: endDate })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
       if (data.ok) {
         renderStock(data.rows);
         var now = new Date();
-        var hh = String(now.getHours()).padStart(2,'0');
-        var mm = String(now.getMinutes()).padStart(2,'0');
-        setStockStatus(hh+':'+mm+' 업데이트', '#4caf50');
-      } else {
-        setStockStatus('조회 실패: ' + (data.error || '오류'), '#e55');
+        setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 업데이트', '#4caf50');
+      } else { setStockStatus('조회 실패: '+(data.error||'오류'), '#e55'); }
+    })
+    .catch(function(){ setStockStatus('서버 미연결 — sync-server에서 node server.js 실행 필요', '#e55'); })
+    .finally(function(){ if (btn){ btn.disabled=false; btn.textContent='조회'; } });
+
+  } else {
+    // 전체 브랜드 순차 조회
+    var brands = BRAND_IDS.filter(function(b){ return STOCK_PRODUCTS[b]&&STOCK_PRODUCTS[b].length&&BRAND_EZYADMIN[b]; });
+    var idx = 0; var anyOk = false; var serverErr = false;
+    function nextBrand() {
+      if (idx >= brands.length) {
+        if (btn){ btn.disabled=false; btn.textContent='조회'; }
+        if (serverErr) setStockStatus('서버 미연결 — sync-server에서 node server.js 실행 필요', '#e55');
+        else if (anyOk) {
+          var now = new Date();
+          setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 전체 업데이트', '#4caf50');
+        }
+        return;
       }
-    })
-    .catch(function() {
-      setStockStatus('서버 미연결 — sync-server에서 node server.js 실행 필요', '#e55');
-    })
-    .finally(function() {
-      if (btn) { btn.disabled = false; btn.textContent = '조회'; }
-    });
+      var b = brands[idx++];
+      setStockStatus('조회 중... ('+idx+'/'+brands.length+') '+b, 'var(--muted)');
+      fetch('http://localhost:3355/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand: b, cred: BRAND_EZYADMIN[b],
+          products: STOCK_PRODUCTS[b], startDate: startDate, endDate: endDate })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){ if (data.ok){ renderStock(data.rows); anyOk=true; } })
+      .catch(function(){ serverErr=true; })
+      .finally(nextBrand);
+    }
+    nextBrand();
+  }
 }
 function fmt(v, dec) {
   if (v === undefined || v === null || v === '') return '—';
