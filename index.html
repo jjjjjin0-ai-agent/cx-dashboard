@@ -386,8 +386,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
           <button class="stock-sync-btn" onclick="syncStock()">조회</button>
         </div>
         <div class="stock-card">
-          <div class="stock-empty" id="stock-empty-msg">브랜드를 선택하고 동기화를 눌러주세요</div>
-          <table class="stock-table" id="stock-table" style="display:none">
+          <table class="stock-table" id="stock-table">
             <thead>
               <tr>
                 <th>제품명</th>
@@ -1267,4 +1266,35 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopu
     <span style="font-size:12px;color:var(--muted);width:80px;flex:none">토스 페이먼츠</span>
     <a href="https://app.tosspayments.com/signin?redirectUrl=https%3A%2F%2Fapp.tosspayments.com%2F" target="_blank" onclick="hideTossPopup()" class="c24-copy" style="text-decoration:none">이동</a>
   </div>
+
+<script>
+/* ---------- 재고 테이블 ---------- */
+function updateStockTable(brand) {
+  var tbody = document.getElementById('stock-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  var products = (typeof STOCK_PRODUCTS !== 'undefined' && STOCK_PRODUCTS[brand]) || [];
+  products.forEach(function(name) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+name+'</td>'
+      +'<td class="num">—</td>'
+      +'<td class="num">—</td>'
+      +'<td class="num">—</td>'
+      +'<td class="num">—</td>'
+      +'<td class="num">—</td>';
+    tbody.appendChild(tr);
+  });
+}
+function syncStock() {
+  var brand = (typeof activeBrand !== 'undefined') ? activeBrand : null;
+  if (!brand) { alert('브랜드를 먼저 선택해주세요.'); return; }
+  alert('서버가 실행되지 않았습니다');
+}
+function fmt(v, dec) {
+  if (v === undefined || v === null || v === '') return '—';
+  var n = parseFloat(v);
+  if (isNaN(n)) return v;
+  return n.toLocaleString('ko-KR', {maximumFractionDigits: dec || 0});
+}
+</script>
 </div></html>
