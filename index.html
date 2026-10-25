@@ -1296,11 +1296,14 @@ function updateStockTable(brand) {
         (STOCK_PRODUCTS[b]||[]).forEach(function(n){ acc.push({brand:b,name:n}); });
         return acc;
       }, []);
+  var lastBrand = null;
   list.forEach(function(item) {
     var tr = document.createElement('tr');
     tr.dataset.brand = item.brand;
     tr.dataset.product = item.name;
-    tr.innerHTML = '<td>'+(BRAND_LABELS[item.brand]||item.brand)+'</td>'
+    var brandCell = (item.brand !== lastBrand) ? (BRAND_LABELS[item.brand]||item.brand) : '';
+    lastBrand = item.brand;
+    tr.innerHTML = '<td>'+brandCell+'</td>'
       +'<td>'+item.name+'</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
@@ -1345,9 +1348,9 @@ function renderStock(rows) {
           var val = (rule.field === 'stock8w') ? r.stock8w : r.stockNow;
           var ci  = (rule.field === 'stock8w') ? 6 : 2;
           if (val != null && val <= rule.threshold) {
-            if (tds[ci]) tds[ci].classList.add('warn');
+            if (tds[ci]) { tds[ci].classList.add('warn'); tds[ci].title = '※ 발주 필요'; }
           } else {
-            if (tds[ci]) tds[ci].classList.remove('warn');
+            if (tds[ci]) { tds[ci].classList.remove('warn'); tds[ci].removeAttribute('title'); }
           }
         }
         break;
