@@ -1280,6 +1280,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopu
 <script>
 /* ---------- 재고 테이블 ---------- */
 var stockCache = {}; // brand → rows 캐시 (조회 결과 유지)
+try { stockCache = JSON.parse(localStorage.getItem('cx-stock-cache') || '{}'); } catch(e) {}
 
 function updateStockTable(brand) {
   setWeekDateInputs();
@@ -1378,6 +1379,7 @@ function syncStock() {
     .then(function(data){
       if (data.ok) {
         stockCache[brand] = data.rows;
+        try { localStorage.setItem('cx-stock-cache', JSON.stringify(stockCache)); } catch(e) {}
         renderStock(data.rows);
         var now = new Date();
         setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 업데이트', '#4caf50');
@@ -1409,7 +1411,7 @@ function syncStock() {
           products: STOCK_PRODUCTS[b], startDate: startDate, endDate: endDate })
       })
       .then(function(r){ return r.json(); })
-      .then(function(data){ if (data.ok){ stockCache[b] = data.rows; renderStock(data.rows); anyOk=true; } })
+      .then(function(data){ if (data.ok){ stockCache[b] = data.rows; try { localStorage.setItem('cx-stock-cache', JSON.stringify(stockCache)); } catch(e) {} renderStock(data.rows); anyOk=true; } })
       .catch(function(){ serverErr=true; })
       .finally(nextBrand);
     }
