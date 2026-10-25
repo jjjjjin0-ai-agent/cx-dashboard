@@ -25,6 +25,20 @@ function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+async function closePopups(page) {
+  const closed = await page.evaluate(() => {
+    const allEls = Array.from(document.querySelectorAll('button, a, span, div, p'));
+    // 팝업 전체 닫기
+    const btn = allEls.find(el => el.textContent.trim() === '팝업 전체 닫기');
+    if (btn) { btn.click(); return '팝업 전체 닫기'; }
+    // 일반 X 닫기
+    const closeEls = document.querySelectorAll('.popup-close, .btn-close, [class*="layerClose"], [onclick*="closeLayer"]');
+    if (closeEls.length) { closeEls.forEach(b => { try { b.click(); } catch(e) {} }); return 'X닫기x' + closeEls.length; }
+    return null;
+  });
+  if (closed) { console.log('팝업 닫음:', closed); await sleep(800); }
+}
+
 async function crawlBrand(brand, cred, products) {
   if (!cred || !products) throw new Error('계정 또는 제품 정보 없음');
   const chromePath = getChromePath();
@@ -115,26 +129,46 @@ async function doLogin(page, cred) {
 }
 
 async function getProductStock(page, browser, adminBase, productName) {
-  // 현 재고조회(I100) 이동
+  // 팝업 닫기 후 I100 이동
+  await closePopups(page);
   await page.goto(`${adminBase}/index.htm#I100`, { waitUntil: 'domcontentloaded', timeout: 20000 });
-  await sleep(3000);
+  await sleep(4000);
+  await closePopups(page);
 
-  // 컨텐츠 iframe 찾기
+  // 컨텐츠 iframe 찾기 (재시도 포함)
   const contentFrame = await findContentFrame(page, adminBase);
   console.log('사용 프레임 URL:', contentFrame.url());
 
-  // 검색 입력필드 찾기
-  const searchInput = await findSearchInput(contentFrame);
-  if (!searchInput) {
+  // 검색어 매핑 후 JS injection으로 입력 (click/type 대신)
+  const searchTerm = SEARCH_NAMES[productName] || productName;
+  const typed = await contentFrame.evaluate((term) => {
+    const sels = ['input[name="search_nm"]','input[id="search_nm"]','input[name="prod_nm"]','input[name="keyword"]'];
+    for (const sel of sels) {
+      const el = document.querySelector(sel);
+      if (el) {
+        el.focus(); el.value = term;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        return sel;
+      }
+    }
+    const inputs = document.querySelectorAll('input[type="text"]:not([readonly]):not([disabled])');
+    if (inputs.length) {
+      const el = inputs[inputs.length - 1];
+      el.focus(); el.value = term;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      return 'fallback(' + inputs.length + ')';
+    }
+    return null;
+  }, searchTerm);
+
+  if (!typed) {
     const bodyHtml = await contentFrame.evaluate(() => document.body.innerHTML.slice(0, 500));
-    console.log('프레임 내용 일부:', bodyHtml);
+    console.log('프레임 내용:', bodyHtml);
     throw new Error('검색 필드를 찾을 수 없음');
   }
+  console.log('검색 필드:', typed, '검색어:', searchTerm);
 
-  // 상품명 입력 후 검색 (매핑된 검색어 사용)
-  const searchTerm = SEARCH_NAMES[productName] || productName;
-  await searchInput.click({ clickCount: 3 });
-  await searchInput.type(searchTerm, { delay: 50 });
   await sleep(300);
   await page.keyboard.press('F2');
   await sleep(3000);
@@ -175,19 +209,28 @@ async function getProductStock(page, browser, adminBase, productName) {
 
 async function findContentFrame(page, adminBase) {
   const domain = new URL(adminBase).hostname;
-  const frames = page.frames();
-  for (const frame of frames) {
-    const url = frame.url();
-    if (url.includes(domain) && !url.includes('index.htm') && url !== 'about:blank') {
-      return frame;
+  // 최대 8초 재시도
+  for (let i = 0; i < 16; i++) {
+    const frames = page.frames();
+    if (i === 0 || i === 7) {
+      console.log(`프레임 목록(${i}):`, frames.map(f => f.url()).join(' | '));
     }
+    for (const frame of frames) {
+      const url = frame.url();
+      if (url.includes(domain) && !url.includes('index.htm') && url !== 'about:blank') {
+        return frame;
+      }
+    }
+    await sleep(500);
   }
-  // 못 찾으면 index.htm 이 아닌 첫 번째 non-blank 프레임
+  // fallback: 가장 긴 URL 프레임
+  const frames = page.frames();
+  console.log('최종 프레임 목록:', frames.map(f => f.url()).join(' | '));
+  let best = page;
   for (const frame of frames) {
-    const url = frame.url();
-    if (url !== 'about:blank' && !url.includes('index.htm')) return frame;
+    if (frame.url() !== 'about:blank') { best = frame; break; }
   }
-  return page; // fallback
+  return best;
 }
 
 async function findSearchInput(frame) {
