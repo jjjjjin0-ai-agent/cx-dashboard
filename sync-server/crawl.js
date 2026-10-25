@@ -1,8 +1,19 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const fs = require('fs');
 
+const CHROME_PATHS = [
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+];
 const BASE_URL = 'https://www.ezadmin.co.kr';
 
-// 오늘부터 N일 전 날짜 (YYYYMMDD)
+function getChromePath() {
+  for (const p of CHROME_PATHS) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 function daysAgo(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -16,31 +27,25 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-// cred: { domain, userId, passwd }
-// products: ['조인트본', '루테아틴', ...]
 async function crawlBrand(brand, cred, products) {
   if (!cred || !products) throw new Error('계정 또는 제품 정보 없음');
 
+  const chromePath = getChromePath();
+  if (!chromePath) throw new Error('Chrome을 찾을 수 없습니다');
+
   const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--window-size=1280,900'
-    ]
+    executablePath: chromePath,
+    headless: false,
+    args: ['--window-size=1280,900', '--no-sandbox']
   });
 
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 900 });
 
-    // 1. 이지어드민 접속
     await page.goto(BASE_URL + '/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await sleep(2000);
 
-    // 로그인 필요 여부 확인
     const isLoginPage = await page.$('input[type="password"]');
     if (isLoginPage) {
       await doLogin(page, cred);
