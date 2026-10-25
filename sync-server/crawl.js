@@ -351,84 +351,119 @@ async function getOut7dByUrl(browser, adminBase, productId, stockNow, startDate,
     const today = new Date();
     endDate = fmtDate(today);
     const startD = new Date(today);
-    startD.setDate(startD.getDate() - 7);
+    startD.setDate(startD.getDate() - 6);
     startDate = fmtDate(startD);
   }
 
-  const popupUrl = `${adminBase}/popup35.htm?template=I101&readonly=T&product_id=${productId}&inout_type=0&stock=${stockNow}`;
+  const encodedId = encodeURIComponent(productId);
+  const popupUrl = `${adminBase}/popup35.htm?template=I101&readonly=T&product_id=${encodedId}&inout_type=0&stock=${stockNow}&start_date=${startDate}&end_date=${endDate}`;
   console.log('팝업 URL:', popupUrl);
 
   const popup = await browser.newPage();
   try {
     await popup.goto(popupUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await sleep(1500);
+    await sleep(2000);
 
-    // 기간 입력 (JS injection)
-    const dateSet = await popup.evaluate((sd, ed) => {
-      const inputs = Array.from(document.querySelectorAll('input[type="text"]:not([readonly])'));
+    // 기간 입력 + SELECT 새로고침으로 트리거
+    const triggered = await popup.evaluate((sd, ed) => {
       function setVal(el, v) {
         el.value = v;
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
       }
-      if (inputs.length >= 1) setVal(inputs[0], sd);
-      if (inputs.length >= 2) setVal(inputs[1], ed);
-      return inputs.length;
-    }, startDate, endDate);
-    console.log('팝업 날짜 입력:', dateSet, '개 필드');
 
-    // 새로고침 버튼 클릭 (JS로 찾아 클릭 - :has-text 미지원)
-    const refreshed = await popup.evaluate(() => {
-      const els = Array.from(document.querySelectorAll('input[type="button"], input[type="submit"], button'));
-      const btn = els.find(el => (el.value || el.textContent || '').trim() === '새로고침');
-      if (btn) { btn.click(); return true; }
-      return false;
-    });
-    if (!refreshed) await popup.keyboard.press('Enter');
-    await sleep(2000);
+      // ID 기반으로 날짜 입력
+      const sdEl = document.getElementById('start_date') || document.querySelector('input[name="start_date"]');
+      const edEl = document.getElementById('end_date')   || document.querySelector('input[name="end_date"]');
+      if (sdEl && edEl) {
+        setVal(sdEl, sd); setVal(edEl, ed);
+      } else {
+        const vis = Array.from(document.querySelectorAll('input[type="text"]:not([readonly])'))
+                         .filter(e => e.offsetParent !== null);
+        if (vis.length >= 2) { setVal(vis[vis.length - 2], sd); setVal(vis[vis.length - 1], ed); }
+      }
+
+      // SELECT에서 새로고침 옵션 선택 → onchange 트리거
+      for (const sel of document.querySelectorAll('select')) {
+        const opt = Array.from(sel.options).find(o => o.text.trim() === '새로고침');
+        if (opt) {
+          sel.value = opt.value;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          return 'select:새로고침(' + opt.value + ')';
+        }
+      }
+
+      // 버튼 탐색 (fallback)
+      const btns = Array.from(document.querySelectorAll('input[type="button"],input[type="submit"],button'));
+      const q = btns.find(b => /(조회|검색|새로고침)/i.test(b.value || b.textContent || ''));
+      if (q) { q.click(); return 'btn:' + (q.value || q.textContent || '').trim().slice(0, 10); }
+
+      return 'no-trigger';
+    }, startDate, endDate);
+    console.log('팝업 트리거:', triggered);
+    await sleep(2500);
 
     // 팝업 테이블 디버그
     const tableDebug = await popup.evaluate(() => {
       const ths = Array.from(document.querySelectorAll('th')).map(th => th.innerText.trim());
       const rows = Array.from(document.querySelectorAll('tr')).map(r =>
         Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim())
-      ).filter(r => r.length > 0).slice(0, 5);
+      ).filter(r => r.length > 0).slice(0, 8);
       return { headers: ths, rows };
     });
     console.log('팝업 헤더:', JSON.stringify(tableDebug.headers));
-    console.log('팝업 행(5):', JSON.stringify(tableDebug.rows));
+    console.log('팝업 행(8):', JSON.stringify(tableDebug.rows));
 
-    // 배송 전체 합계 추출
+    // 트랜잭션 테이블에서 배송 합산 (날짜+배송 컬럼이 있는 테이블)
     const out7d = await popup.evaluate(() => {
-      const ths = Array.from(document.querySelectorAll('th'));
-      // 헤더에서 배송 컬럼 인덱스 찾기
-      let shipIdx = -1;
-      ths.forEach((th, i) => {
-        const t = th.innerText.trim();
-        if (t === '배송' || t === '출고') shipIdx = i;
-      });
-      if (shipIdx < 0) shipIdx = 3; // fallback
+      // '날짜'와 '배송' 컬럼이 있는 테이블 찾기
+      let transTable = null;
+      for (const tbl of document.querySelectorAll('table')) {
+        const ths = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
+        if (ths.includes('날짜') && (ths.includes('배송') || ths.includes('출고'))) {
+          transTable = tbl; break;
+        }
+      }
 
-      const rows = document.querySelectorAll('tr');
-      for (const row of rows) {
+      let shipIdx = -1;
+      if (transTable) {
+        const ths = Array.from(transTable.querySelectorAll('th')).map(th => th.innerText.trim());
+        shipIdx = ths.findIndex(t => t === '배송');
+        if (shipIdx < 0) shipIdx = ths.findIndex(t => t === '출고');
+      } else {
+        // 전체 TH에서 찾기 (fallback)
+        const allThs = Array.from(document.querySelectorAll('th'));
+        allThs.forEach((th, i) => {
+          const t = th.innerText.trim();
+          if (t === '배송') shipIdx = i;
+        });
+      }
+      if (shipIdx < 0) shipIdx = 3;
+
+      const trs = transTable
+        ? Array.from(transTable.querySelectorAll('tbody tr'))
+        : Array.from(document.querySelectorAll('tr'));
+
+      // 전체 합계 행
+      for (const row of trs) {
         const tds = row.querySelectorAll('td');
         if (!tds.length) continue;
-        const firstCell = tds[0].innerText.trim();
-        // '전체' 행 또는 마지막 합계 행
-        if (firstCell === '전체' || firstCell === '합계' || firstCell === 'Total') {
+        const first = tds[0].innerText.trim();
+        if (first === '전체' || first === '합계' || first === 'Total') {
           const v = tds[shipIdx] ? tds[shipIdx].innerText.replace(/,/g, '').trim() : '';
           const n = parseInt(v);
           return isNaN(n) ? null : n;
         }
       }
-      // 전체 행 없으면 모든 배송 합산
+
+      // 날짜 행 합산
       let total = 0; let found = false;
-      for (const row of rows) {
+      for (const row of trs) {
         const tds = row.querySelectorAll('td');
-        if (tds.length <= shipIdx) continue;
-        const firstCell = tds[0].innerText.trim();
-        if (/^\d{4}-\d{2}-\d{2}/.test(firstCell)) { // 날짜 행
-          const v = tds[shipIdx].innerText.replace(/,/g, '').trim();
+        if (!tds.length) continue;
+        const first = tds[0].innerText.trim();
+        if (/^\d{4}[-./]\d{2}[-./]\d{2}/.test(first)) {
+          const v = tds[shipIdx] ? tds[shipIdx].innerText.replace(/,/g, '').trim() : '';
           const n = parseInt(v);
           if (!isNaN(n)) { total += n; found = true; }
         }
