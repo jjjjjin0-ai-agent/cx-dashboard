@@ -1,6 +1,11 @@
 const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 
+// 상품명 → 이지어드민 검색어 매핑 (다를 경우만)
+const SEARCH_NAMES = {
+  '알래스카': '오메가',
+};
+
 const CHROME_PATHS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
@@ -84,9 +89,9 @@ async function doLogin(page, cred) {
       el.dispatchEvent(new Event('change', { bubbles: true }));
       return true;
     }
-    const domainEl = document.querySelector('input[name="domain"]') || document.querySelector('input[id="domain"]');
-    const idEl = document.querySelector('input[name="m_id"]') || document.querySelector('input[id="m_id"]')
-               || document.querySelector('input[name="userId"]') || document.querySelector('input[name="id"]');
+    const domainEl = document.querySelector('input[name="domain"]') || document.querySelector('input[id="login-domain"]');
+    const idEl = document.querySelector('input[name="userid"]') || document.querySelector('input[id="login-id"]')
+               || document.querySelector('input[name="m_id"]') || document.querySelector('input[name="userId"]');
     const pwEl = document.querySelector('input[type="password"]');
     return {
       domain: setVal(domainEl, domain),
@@ -96,11 +101,11 @@ async function doLogin(page, cred) {
   }, cred.domain, cred.userId, cred.passwd);
   console.log('입력 결과:', JSON.stringify(filled));
 
-  // 로그인 버튼 클릭 또는 Enter
+  // 로그인 버튼 클릭
   await Promise.all([
     page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {}),
     page.evaluate(() => {
-      const btn = document.querySelector('button[type="submit"], input[type="submit"]');
+      const btn = document.querySelector('input.login-btn') || document.querySelector('button[type="submit"]') || document.querySelector('input[type="submit"]');
       if (btn) btn.click();
       else document.querySelector('form') && document.querySelector('form').submit();
     })
@@ -126,9 +131,10 @@ async function getProductStock(page, browser, adminBase, productName) {
     throw new Error('검색 필드를 찾을 수 없음');
   }
 
-  // 상품명 입력 후 검색
+  // 상품명 입력 후 검색 (매핑된 검색어 사용)
+  const searchTerm = SEARCH_NAMES[productName] || productName;
   await searchInput.click({ clickCount: 3 });
-  await searchInput.type(productName, { delay: 50 });
+  await searchInput.type(searchTerm, { delay: 50 });
   await sleep(300);
   await page.keyboard.press('F2');
   await sleep(3000);
