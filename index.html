@@ -1320,11 +1320,11 @@ function renderStock(rows) {
     for (var i = 0; i < trs.length; i++) {
       if (trs[i].dataset.product === r.name) {
         var tds = trs[i].querySelectorAll('td');
-        if (tds[1]) tds[1].textContent = fmt(r.stockNow);
-        if (tds[2]) tds[2].textContent = fmt(r.out7d);
-        if (tds[3]) tds[3].textContent = fmt(r.avg1d, 1);
-        if (tds[4]) tds[4].textContent = fmt(r.out8w);
-        if (tds[5]) tds[5].textContent = fmt(r.stock8w);
+        if (tds[1]) tds[1].textContent = fmtNum(r.stockNow);
+        if (tds[2]) tds[2].textContent = fmtNum(r.out7d);
+        if (tds[3]) tds[3].textContent = fmtNum(r.avg1d, 1);
+        if (tds[4]) tds[4].textContent = fmtNum(r.out8w);
+        if (tds[5]) tds[5].textContent = fmtNum(r.stock8w);
         break;
       }
     }
@@ -1416,7 +1416,7 @@ function syncStock() {
     nextBrand();
   }
 }
-function fmt(v, dec) {
+function fmtNum(v, dec) {
   if (v === undefined || v === null || v === '') return '—';
   var n = parseFloat(v);
   if (isNaN(n)) return v;
