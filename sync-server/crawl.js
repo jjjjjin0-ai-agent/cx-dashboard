@@ -2,7 +2,9 @@ const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 
 // 상품명 → 이지어드민 검색어 매핑 (다를 경우만)
-const SEARCH_NAMES = {};
+const SEARCH_NAMES = {
+  '알래스카': '오메가',
+};
 
 const CHROME_PATHS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
