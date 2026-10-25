@@ -1279,6 +1279,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopu
 
 <script>
 /* ---------- 재고 테이블 ---------- */
+var stockCache = {}; // brand → rows 캐시 (조회 결과 유지)
+
 function updateStockTable(brand) {
   setWeekDateInputs();
   var tbody = document.getElementById('stock-tbody');
@@ -1302,6 +1304,12 @@ function updateStockTable(brand) {
       +'<td class="num">—</td>';
     tbody.appendChild(tr);
   });
+  // 캐시에 저장된 데이터 즉시 복원
+  if (brand) {
+    if (stockCache[brand]) renderStock(stockCache[brand]);
+  } else {
+    BRAND_IDS.forEach(function(b){ if (stockCache[b]) renderStock(stockCache[b]); });
+  }
 }
 function renderStock(rows) {
   if (!rows) return;
@@ -1369,6 +1377,7 @@ function syncStock() {
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.ok) {
+        stockCache[brand] = data.rows;
         renderStock(data.rows);
         var now = new Date();
         setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 업데이트', '#4caf50');
@@ -1400,7 +1409,7 @@ function syncStock() {
           products: STOCK_PRODUCTS[b], startDate: startDate, endDate: endDate })
       })
       .then(function(r){ return r.json(); })
-      .then(function(data){ if (data.ok){ renderStock(data.rows); anyOk=true; } })
+      .then(function(data){ if (data.ok){ stockCache[b] = data.rows; renderStock(data.rows); anyOk=true; } })
       .catch(function(){ serverErr=true; })
       .finally(nextBrand);
     }
