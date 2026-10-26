@@ -1408,6 +1408,7 @@ function toggleStockView() {
 }
 
 function updateExpiryTable(brand) {
+  setStockStatus('', '');
   var tbody = document.getElementById('stock-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
@@ -1488,6 +1489,7 @@ function syncExpiry() {
 var BRAND_LABELS = {terafugen:'테라퓨젠', frozenlab:'프로즌랩', dentipla:'덴티플라', mediglow:'메디글로우', cellofit:'셀로핏', pamicogen:'파미코젠'};
 
 function updateStockTable(brand) {
+  setStockStatus('', '');
   setWeekDateInputs();
   var tbody = document.getElementById('stock-tbody');
   if (!tbody) return;

@@ -633,6 +633,32 @@ async function getProductExpiry(page, browser, adminBase, productName) {
   return await getExpiriesByUrl(browser, adminBase, productName, stockData.productId);
 }
 
+// 현재 페이지에서 유통기한+재고 행 추출 (th 또는 td 헤더 모두 대응)
+async function readExpiryDetailsFromPage(popup) {
+  return await popup.evaluate(() => {
+    const results = [];
+    for (const tbl of document.querySelectorAll('table')) {
+      const thEls = tbl.querySelectorAll('th');
+      const headerEls = thEls.length
+        ? Array.from(thEls)
+        : Array.from(tbl.querySelectorAll('tr:first-child td'));
+      const ths = headerEls.map(el => el.innerText.trim());
+      const expiryIdx = ths.findIndex(t => t === '유통기한');
+      const qtyIdx    = ths.findIndex(t => t === '재고');
+      if (expiryIdx < 0 || qtyIdx < 0) continue;
+      const skip = thEls.length ? 0 : 1;
+      Array.from(tbl.querySelectorAll('tbody tr')).slice(skip).forEach(tr => {
+        const tds = tr.querySelectorAll('td');
+        const expiry = tds[expiryIdx] ? tds[expiryIdx].innerText.trim() : '';
+        const qty    = tds[qtyIdx]    ? parseInt(tds[qtyIdx].innerText.replace(/,/g,'').trim()) : NaN;
+        if (expiry && /\d{4}/.test(expiry) && !isNaN(qty) && qty > 0) results.push({ expiry, qty });
+      });
+      if (results.length) break;
+    }
+    return results;
+  });
+}
+
 async function getExpiriesByUrl(browser, adminBase, productName, productId) {
   const popupUrl = `${adminBase}/popup35.htm?template=SC01&product_id=${encodeURIComponent(productId)}`;
   console.log('[유통기한] SC01 URL:', popupUrl);
@@ -640,15 +666,31 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
   const popup = await browser.newPage();
   try {
     await popup.goto(popupUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await sleep(2000);
+    await sleep(2500);
 
-    // 왼쪽 로케이션 테이블 행 수 파악
+    // 페이지 테이블 구조 디버그
+    const pageDebug = await popup.evaluate(() =>
+      Array.from(document.querySelectorAll('table')).map((tbl, i) => ({
+        i,
+        ths: Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim()),
+        firstTds: Array.from(tbl.querySelectorAll('tr:first-child td')).map(td => td.innerText.trim()),
+        rows: tbl.querySelectorAll('tbody tr').length
+      }))
+    );
+    console.log('[유통기한] 테이블 구조:', JSON.stringify(pageDebug));
+
+    // 왼쪽 로케이션 테이블 찾기 (th 또는 td 헤더 모두 대응)
     const locInfo = await popup.evaluate(() => {
       for (const tbl of document.querySelectorAll('table')) {
-        const ths = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
-        if (ths.some(t => t === '로케이션') && ths.some(t => t === '창고')) {
-          const rows = tbl.querySelectorAll('tbody tr');
-          return { count: rows.length, labels: Array.from(rows).map(r =>
+        const thEls = tbl.querySelectorAll('th');
+        const headerEls = thEls.length
+          ? Array.from(thEls)
+          : Array.from(tbl.querySelectorAll('tr:first-child td'));
+        const hdrs = headerEls.map(el => el.innerText.trim());
+        if (hdrs.some(t => t.includes('로케이션')) && hdrs.some(t => t.includes('창고'))) {
+          const dataRows = Array.from(tbl.querySelectorAll('tbody tr'))
+            .filter(tr => tr.querySelectorAll('td').length > 0);
+          return { count: dataRows.length, labels: dataRows.map(r =>
             Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim()).join('|')) };
         }
       }
@@ -658,43 +700,35 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
 
     const expiryMap = {};
 
-    for (let i = 0; i < locInfo.count; i++) {
+    // 초기 로드 데이터 (첫 번째 로케이션 선택 상태)
+    const initial = await readExpiryDetailsFromPage(popup);
+    console.log('[유통기한] 초기 데이터:', JSON.stringify(initial));
+    for (const r of initial) expiryMap[r.expiry] = (expiryMap[r.expiry] || 0) + r.qty;
+
+    // 나머지 로케이션 클릭 (i=0은 초기 데이터로 이미 읽음)
+    for (let i = 1; i < locInfo.count; i++) {
       try {
-        // 행 클릭
-        await popup.evaluate((idx) => {
+        const clicked = await popup.evaluate((idx) => {
           for (const tbl of document.querySelectorAll('table')) {
-            const ths = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
-            if (ths.some(t => t === '로케이션') && ths.some(t => t === '창고')) {
-              const rows = tbl.querySelectorAll('tbody tr');
-              if (rows[idx]) rows[idx].click();
-              return;
+            const thEls = tbl.querySelectorAll('th');
+            const headerEls = thEls.length
+              ? Array.from(thEls)
+              : Array.from(tbl.querySelectorAll('tr:first-child td'));
+            const hdrs = headerEls.map(el => el.innerText.trim());
+            if (hdrs.some(t => t.includes('로케이션')) && hdrs.some(t => t.includes('창고'))) {
+              const dataRows = Array.from(tbl.querySelectorAll('tbody tr'))
+                .filter(tr => tr.querySelectorAll('td').length > 0);
+              if (dataRows[idx]) { dataRows[idx].click(); return true; }
             }
           }
+          return false;
         }, i);
-        await sleep(1200);
+        if (!clicked) { console.log(`[유통기한] 로케이션${i} 클릭 실패`); continue; }
+        await sleep(1500);
 
-        // 우측 재고 상세 현황 테이블 (유통기한 + 재고 컬럼)
-        const details = await popup.evaluate(() => {
-          for (const tbl of document.querySelectorAll('table')) {
-            const ths = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
-            const expiryIdx = ths.indexOf('유통기한');
-            const qtyIdx = ths.indexOf('재고');
-            if (expiryIdx >= 0 && qtyIdx >= 0) {
-              return Array.from(tbl.querySelectorAll('tbody tr')).map(tr => {
-                const tds = tr.querySelectorAll('td');
-                const expiry = tds[expiryIdx] ? tds[expiryIdx].innerText.trim() : '';
-                const qty = tds[qtyIdx] ? parseInt(tds[qtyIdx].innerText.replace(/,/g, '').trim()) : NaN;
-                return { expiry, qty };
-              }).filter(r => r.expiry && !isNaN(r.qty) && r.qty > 0);
-            }
-          }
-          return [];
-        });
-        console.log(`[유통기한] 로케이션${i}(${locInfo.labels[i]}) 상세:`, JSON.stringify(details));
-
-        for (const r of details) {
-          expiryMap[r.expiry] = (expiryMap[r.expiry] || 0) + r.qty;
-        }
+        const details = await readExpiryDetailsFromPage(popup);
+        console.log(`[유통기한] 로케이션${i}(${locInfo.labels[i]||''}) 상세:`, JSON.stringify(details));
+        for (const r of details) expiryMap[r.expiry] = (expiryMap[r.expiry] || 0) + r.qty;
       } catch (e) {
         console.log(`[유통기한] 로케이션${i} 오류:`, e.message);
       }
