@@ -393,7 +393,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <input type="date" id="stock-start-date" style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
         <span style="font-size:12px;color:var(--muted)">~</span>
         <input type="date" id="stock-end-date" style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
-        <button class="stock-sync-btn" onclick="syncStock()">조회</button>
+        <button class="stock-sync-btn" onclick="syncCurrent()">조회</button>
+        <button id="view-toggle-btn" class="stock-sync-btn" onclick="toggleStockView()" style="background:var(--surface-2);color:var(--muted)">유통기한</button>
       </div>
       <div style="min-height:16px;margin-bottom:6px"><span id="stock-status" style="font-size:11px;color:var(--muted)"></span></div>
       <div class="stock-card">
@@ -407,8 +408,6 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
               <th class="num">1일 평균</th>
               <th class="num">8주 출고</th>
               <th class="num">8주 후 재고</th>
-              <th class="num">유통기한</th>
-              <th class="num">남은 유통기한</th>
             </tr>
           </thead>
           <tbody id="stock-tbody"></tbody>
@@ -1372,6 +1371,110 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopu
 /* ---------- 재고 테이블 ---------- */
 var stockCache = {}; // brand → rows 캐시 (조회 결과 유지)
 try { stockCache = JSON.parse(localStorage.getItem('cx-stock-cache') || '{}'); } catch(e) {}
+var viewMode = 'stock'; // 'stock' | 'expiry'
+var expiryCache = {};
+try { expiryCache = JSON.parse(localStorage.getItem('cx-expiry-cache') || '{}'); } catch(e) {}
+
+function syncCurrent() {
+  if (viewMode === 'expiry') syncExpiry();
+  else syncStock();
+}
+
+function toggleStockView() {
+  viewMode = viewMode === 'stock' ? 'expiry' : 'stock';
+  var toggleBtn = document.getElementById('view-toggle-btn');
+  var plat = document.querySelector('.plat-label');
+  var thead = document.querySelector('#stock-table thead tr');
+  if (viewMode === 'expiry') {
+    if (toggleBtn) { toggleBtn.textContent = '재고 현황'; toggleBtn.style.background = 'var(--accent-soft)'; toggleBtn.style.color = 'var(--accent)'; }
+    if (plat) plat.textContent = '유통기한';
+    if (thead) thead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">유통기한</th><th class="num">남은 유통기한</th><th class="num">재고수량</th>';
+    updateExpiryTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
+  } else {
+    if (toggleBtn) { toggleBtn.textContent = '유통기한'; toggleBtn.style.background = 'var(--surface-2)'; toggleBtn.style.color = 'var(--muted)'; }
+    if (plat) plat.textContent = '재고 현황';
+    if (thead) thead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">현재고</th><th class="num">7일 출고</th><th class="num">1일 평균</th><th class="num">8주 출고</th><th class="num">8주 후 재고</th>';
+    updateStockTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
+  }
+}
+
+function updateExpiryTable(brand) {
+  var tbody = document.getElementById('stock-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  var table = document.getElementById('stock-table');
+  if (table) { brand ? table.classList.add('hide-brand-col') : table.classList.remove('hide-brand-col'); }
+  var list = brand
+    ? (STOCK_PRODUCTS[brand] || []).map(function(n){ return {brand:brand, name:n}; })
+    : BRAND_IDS.reduce(function(acc,b){
+        (STOCK_PRODUCTS[b]||[]).forEach(function(n){ acc.push({brand:b,name:n}); });
+        return acc;
+      }, []);
+  var lastBrand = null;
+  list.forEach(function(item) {
+    var rows = (expiryCache[item.brand] || []).filter(function(r){ return r.name === item.name; });
+    var isFirstOfBrand = (item.brand !== lastBrand);
+    lastBrand = item.brand;
+    if (!rows.length) {
+      var tr = document.createElement('tr');
+      tr.dataset.brand = item.brand; tr.dataset.product = item.name;
+      var brandCell = isFirstOfBrand ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
+      tr.innerHTML = '<td>'+brandCell+'</td><td>'+item.name+'</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>';
+      tbody.appendChild(tr);
+    } else {
+      rows.forEach(function(r, i) {
+        var tr = document.createElement('tr');
+        tr.dataset.brand = item.brand; tr.dataset.product = item.name;
+        var brandCell = (i === 0 && isFirstOfBrand) ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
+        var nameCell = i === 0 ? item.name : '';
+        var daysLeft = '—'; var warnCls = 'num';
+        if (r.expiry) {
+          var diff = Math.round((new Date(r.expiry) - new Date()) / 86400000);
+          daysLeft = diff + '일';
+          if (diff < 90) warnCls = 'num warn';
+        }
+        tr.innerHTML = '<td>'+brandCell+'</td><td>'+nameCell+'</td>'
+          +'<td class="num">'+(r.expiry||'—')+'</td>'
+          +'<td class="'+warnCls+'">'+daysLeft+'</td>'
+          +'<td class="num">'+(r.qty!=null?fmtNum(r.qty):'—')+'</td>';
+        tbody.appendChild(tr);
+      });
+    }
+  });
+}
+
+function syncExpiry() {
+  var brand = (typeof activeBrand !== 'undefined') ? activeBrand : null;
+  var btn = document.querySelector('.stock-sync-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '조회 중...'; }
+  setStockStatus('유통기한 조회 중...', 'var(--muted)');
+  var brands = brand ? [brand] : BRAND_IDS.filter(function(b){ return STOCK_PRODUCTS[b]&&STOCK_PRODUCTS[b].length&&BRAND_EZYADMIN[b]; });
+  var idx = 0; var anyOk = false; var serverErr = false;
+  function nextBrand() {
+    if (idx >= brands.length) {
+      if (btn){ btn.disabled=false; btn.textContent='조회'; }
+      if (serverErr) setStockStatus('서버 미연결 — sync-server에서 node server.js 실행 필요', '#e55');
+      else if (anyOk) {
+        var now = new Date();
+        setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 유통기한 업데이트', '#4caf50');
+        try { localStorage.setItem('cx-expiry-cache', JSON.stringify(expiryCache)); } catch(e) {}
+      }
+      return;
+    }
+    var b = brands[idx++];
+    setStockStatus('유통기한 조회 중... ('+idx+'/'+brands.length+') '+b, 'var(--muted)');
+    fetch('http://localhost:3355/expiry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brand: b, cred: BRAND_EZYADMIN[b], products: STOCK_PRODUCTS[b] })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){ if (data.ok){ expiryCache[b] = data.rows; anyOk=true; updateExpiryTable(brand); } })
+    .catch(function(){ serverErr=true; })
+    .finally(nextBrand);
+  }
+  nextBrand();
+}
 
 var BRAND_LABELS = {terafugen:'테라퓨젠', frozenlab:'프로즌랩', dentipla:'덴티플라', mediglow:'메디글로우', cellofit:'셀로핏', pamicogen:'파미코젠'};
 
@@ -1399,8 +1502,6 @@ function updateStockTable(brand) {
     var brandCell = isFirstOfBrand ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
     tr.innerHTML = '<td>'+brandCell+'</td>'
       +'<td>'+item.name+'</td>'
-      +'<td class="num">—</td>'
-      +'<td class="num">—</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
       +'<td class="num">—</td>'
