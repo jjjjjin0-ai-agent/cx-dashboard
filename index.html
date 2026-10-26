@@ -146,7 +146,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-day.sat .cal-dn{color:#4a90d9}
 .cal-dn{font-size:12px;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .cal-chips{display:flex;flex-direction:column;gap:2px;margin-top:2px}
-.cal-chip{height:14px;border-radius:4px;font-size:9px;color:#fff;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:14px;cursor:pointer}
+.cal-chip{height:16px;border-radius:4px;font-size:11px;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:16px;cursor:pointer}
 .cal-edit-btn{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.95);border:1.2px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s,border-color .12s;z-index:2;padding:0;color:#6b7280}
 .cal-day:hover .cal-edit-btn{opacity:1}
 .cal-edit-btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
@@ -846,6 +846,7 @@ function _ghWrite(path, data, sha, msg, cb) {
           const chip=document.createElement('div');
           chip.className='cal-chip';
           chip.style.background=ev.color;
+          chip.style.color=ev.color==='#f8e71c'?'#000':'#fff';
           chip.textContent=ev.name||(ev.text?ev.text.slice(0,12):'')||(ev.image?'📷':'');
           chip.title=(ev.name||'')+'\n'+(ev.text||'');
           chip.dataset.id=ev.id;
