@@ -634,33 +634,33 @@ async function getProductExpiry(page, browser, adminBase, productName) {
 }
 
 // 현재 컨텍스트(page 또는 frame)에서 유통기한+입고일+재고 행 추출
-// '재고' 컬럼 없으면 '수량' 컬럼 사용 (SC01 전체 재고 테이블은 '수량' 사용)
+// 전략: 테이블의 모든 <th> 로 컬럼 인덱스 파악, <th> 없는 행만 데이터로 읽음
+// '재고' 없으면 '수량' 사용 (SC01 전체 재고 테이블은 '수량' 컬럼)
 async function readExpiryDetailsFromPage(ctx) {
   return await ctx.evaluate(() => {
     for (const tbl of document.querySelectorAll('table')) {
-      const allRows = Array.from(tbl.querySelectorAll('tr'));
-      for (let ri = 0; ri < allRows.length; ri++) {
-        const cells = Array.from(allRows[ri].querySelectorAll('th, td'));
-        const texts = cells.map(c => c.innerText.trim());
-        const expiryIdx  = texts.indexOf('유통기한');
-        if (expiryIdx < 0) continue;
-        // '재고' 우선, 없으면 '수량' (SC01 메인 테이블은 '수량' 컬럼 사용)
-        const qtyIdx = texts.indexOf('재고') >= 0 ? texts.indexOf('재고') : texts.indexOf('수량');
-        if (qtyIdx < 0) continue;
-        const inboundIdx = texts.indexOf('입고일');
-        const data = [];
-        for (let rj = ri + 1; rj < allRows.length; rj++) {
-          const tds = allRows[rj].querySelectorAll('td');
-          const expiry  = tds[expiryIdx] ? tds[expiryIdx].innerText.trim() : '';
-          const qty     = tds[qtyIdx]    ? parseInt(tds[qtyIdx].innerText.replace(/,/g,'').trim()) : NaN;
-          const inbound = (inboundIdx >= 0 && tds[inboundIdx]) ? tds[inboundIdx].innerText.trim() : '';
-          const inboundMonth = inbound.length >= 7 ? inbound.slice(0, 7) : '';
-          if (expiry && /\d{4}/.test(expiry) && !isNaN(qty) && qty > 0) {
-            data.push({ expiry, inboundMonth, qty });
-          }
+      // 테이블 내 모든 <th> 텍스트로 컬럼 인덱스 결정
+      const thTexts = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
+      const expiryIdx = thTexts.indexOf('유통기한');
+      if (expiryIdx < 0) continue;
+      const qtyIdx = thTexts.indexOf('재고') >= 0 ? thTexts.indexOf('재고') : thTexts.indexOf('수량');
+      if (qtyIdx < 0) continue;
+      const inboundIdx = thTexts.indexOf('입고일');
+
+      // <th> 없는 행 = 데이터 행
+      const dataRows = Array.from(tbl.querySelectorAll('tr')).filter(tr => !tr.querySelector('th'));
+      const data = [];
+      for (const row of dataRows) {
+        const tds = row.querySelectorAll('td');
+        const expiry  = tds[expiryIdx] ? tds[expiryIdx].innerText.trim() : '';
+        const qty     = tds[qtyIdx]    ? parseInt(tds[qtyIdx].innerText.replace(/,/g,'').trim()) : NaN;
+        const inbound = (inboundIdx >= 0 && tds[inboundIdx]) ? tds[inboundIdx].innerText.trim() : '';
+        const inboundMonth = inbound.length >= 7 ? inbound.slice(0, 7) : '';
+        if (expiry && /\d{4}/.test(expiry) && !isNaN(qty) && qty > 0) {
+          data.push({ expiry, inboundMonth, qty });
         }
-        if (data.length) return data;
       }
+      if (data.length) return data;
     }
     return [];
   });
