@@ -1104,9 +1104,11 @@ function _ghWrite(path, data, sha, msg, cb) {
     renderCal();
   }
   function showDashboard(){
-    if(brandSection) brandSection.style.display='';
+    // 브랜드가 선택된 경우만 관련 서비스 섹션 표시
+    if(brandSection) brandSection.style.display = (activeBrand ? '' : 'none');
     if(calView) calView.style.display='none';
     if(stockWrap) stockWrap.style.display='';
+    if(pageTitleEl && !activeBrand) pageTitleEl.textContent='CX 대시보드';
   }
 
   navCal.addEventListener('click',e=>{
@@ -1398,7 +1400,6 @@ function toggleStockView() {
   var thead = document.querySelector('#stock-table thead tr');
   if (viewMode === 'expiry') {
     if (label) label.textContent = '유통기한';
-    if (thead) thead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">유통기한</th><th class="num">남은 유통기한</th><th class="num">재고수량</th>';
     updateExpiryTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
   } else {
     if (label) label.textContent = '재고 현황';
@@ -1414,6 +1415,30 @@ function updateExpiryTable(brand) {
   tbody.innerHTML = '';
   var table = document.getElementById('stock-table');
   if (table) { brand ? table.classList.add('hide-brand-col') : table.classList.remove('hide-brand-col'); }
+
+  // 표시 대상 브랜드의 캐시 전체 합치기 → 고유 입고월 수집
+  var allCacheRows = (brand ? [brand] : BRAND_IDS)
+    .reduce(function(acc, b) { return acc.concat(expiryCache[b] || []); }, []);
+  var months = [];
+  allCacheRows.forEach(function(r) {
+    if (r.inboundMonth && months.indexOf(r.inboundMonth) < 0) months.push(r.inboundMonth);
+  });
+  months.sort();
+
+  // 헤더 동적 구성
+  var thead = document.querySelector('#stock-table thead tr');
+  if (thead) {
+    var hdrs = '<th>브랜드</th><th>제품명</th><th class="num">유통기한</th><th class="num">남은 유통기한</th>';
+    if (months.length) {
+      months.forEach(function(m) {
+        hdrs += '<th class="num">' + parseInt(m.split('-')[1]) + '월 재고</th>';
+      });
+    } else {
+      hdrs += '<th class="num">재고수량</th>';
+    }
+    thead.innerHTML = hdrs;
+  }
+
   var list = brand
     ? (STOCK_PRODUCTS[brand] || []).map(function(n){ return {brand:brand, name:n}; })
     : BRAND_IDS.reduce(function(acc,b){
@@ -1425,31 +1450,33 @@ function updateExpiryTable(brand) {
     var rows = (expiryCache[item.brand] || []).filter(function(r){ return r.name === item.name; });
     var isFirstOfBrand = (item.brand !== lastBrand);
     lastBrand = item.brand;
-    if (!rows.length) {
-      var tr = document.createElement('tr');
-      tr.dataset.brand = item.brand; tr.dataset.product = item.name;
-      var brandCell = isFirstOfBrand ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
-      tr.innerHTML = '<td>'+brandCell+'</td><td>'+item.name+'</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>';
-      tbody.appendChild(tr);
-    } else {
-      rows.forEach(function(r, i) {
-        var tr = document.createElement('tr');
-        tr.dataset.brand = item.brand; tr.dataset.product = item.name;
-        var brandCell = (i === 0 && isFirstOfBrand) ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
-        var nameCell = i === 0 ? item.name : '';
-        var daysLeft = '—'; var warnCls = 'num';
-        if (r.expiry) {
-          var diff = Math.round((new Date(r.expiry) - new Date()) / 86400000);
-          daysLeft = diff + '일';
-          if (diff < 90) warnCls = 'num warn';
-        }
-        tr.innerHTML = '<td>'+brandCell+'</td><td>'+nameCell+'</td>'
-          +'<td class="num">'+(r.expiry||'—')+'</td>'
-          +'<td class="'+warnCls+'">'+daysLeft+'</td>'
-          +'<td class="num">'+(r.qty!=null?fmtNum(r.qty):'—')+'</td>';
-        tbody.appendChild(tr);
-      });
+    var tr = document.createElement('tr');
+    tr.dataset.brand = item.brand; tr.dataset.product = item.name;
+    var brandCell = isFirstOfBrand ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
+    // 최초 유통기한 (가장 빠른 날짜)
+    var validExpiries = rows.filter(function(r){ return r.expiry; }).map(function(r){ return r.expiry; }).sort();
+    var firstExpiry = validExpiries.length ? validExpiries[0] : null;
+    var daysLeft = '—'; var warnCls = 'num';
+    if (firstExpiry) {
+      var diff = Math.round((new Date(firstExpiry + 'T00:00:00') - new Date()) / 86400000);
+      daysLeft = diff + '일';
+      if (diff < 90) warnCls = 'num warn';
     }
+    var html = '<td>' + brandCell + '</td><td>' + item.name + '</td>'
+      + '<td class="num">' + (firstExpiry || '—') + '</td>'
+      + '<td class="' + warnCls + '">' + daysLeft + '</td>';
+    if (months.length) {
+      months.forEach(function(m) {
+        var qty = rows.filter(function(r){ return r.inboundMonth === m; })
+          .reduce(function(s, r){ return s + (r.qty || 0); }, 0);
+        html += '<td class="num">' + (qty > 0 ? fmtNum(qty) : '—') + '</td>';
+      });
+    } else {
+      var totalQty = rows.reduce(function(s, r){ return s + (r.qty || 0); }, 0);
+      html += '<td class="num">' + (totalQty > 0 ? fmtNum(totalQty) : '—') + '</td>';
+    }
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
   });
 }
 
