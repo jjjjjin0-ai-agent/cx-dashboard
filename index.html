@@ -148,7 +148,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-chips{display:flex;flex-direction:column;gap:2px;margin-top:2px}
 .cal-chip{height:16px;border-radius:4px;font-size:11px;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:16px;cursor:grab}
 .cal-chip:active{cursor:grabbing}
-.cal-day.drag-over{outline:2px dashed #4a90d9;background:rgba(74,144,217,.08)}
+.cal-chip-wrap.drag-before{border-top:2px solid #4a90d9}
+.cal-chip-wrap.drag-after{border-bottom:2px solid #4a90d9}
 .cal-edit-btn{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.95);border:1.2px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s,border-color .12s;z-index:2;padding:0;color:#6b7280}
 .cal-day:hover .cal-edit-btn{opacity:1}
 .cal-edit-btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
@@ -860,6 +861,31 @@ function _ghWrite(path, data, sha, msg, cb) {
           chip.addEventListener('dragend',()=>{ _dragEvId=null; _dragFromKey=null; });
           chip.addEventListener('click',e=>{e.stopPropagation();openEdit(ev.id);});
           const chipWrap=document.createElement('div'); chipWrap.className='cal-chip-wrap';
+          chipWrap.dataset.evid=ev.id;
+          chipWrap.addEventListener('dragover',e=>{
+            if(_dragFromKey!==key||_dragEvId===ev.id) return;
+            e.preventDefault();
+            const mid=chipWrap.getBoundingClientRect().top+chipWrap.offsetHeight/2;
+            chipWrap.classList.toggle('drag-before', e.clientY<mid);
+            chipWrap.classList.toggle('drag-after',  e.clientY>=mid);
+          });
+          chipWrap.addEventListener('dragleave',()=>{ chipWrap.classList.remove('drag-before','drag-after'); });
+          chipWrap.addEventListener('drop',e=>{
+            e.preventDefault();
+            chipWrap.classList.remove('drag-before','drag-after');
+            if(!_dragEvId||_dragFromKey!==key||_dragEvId===ev.id) return;
+            const mid=chipWrap.getBoundingClientRect().top+chipWrap.offsetHeight/2;
+            const insertBefore=e.clientY<mid;
+            const evs=loadEvents();
+            const fromIdx=evs.findIndex(x=>x.id===_dragEvId);
+            const toIdx=evs.findIndex(x=>x.id===ev.id);
+            if(fromIdx===-1||toIdx===-1) return;
+            const [moved]=evs.splice(fromIdx,1);
+            const newTo=evs.findIndex(x=>x.id===ev.id);
+            evs.splice(insertBefore?newTo:newTo+1,0,moved);
+            saveEvents(evs); renderCal();
+            _dragEvId=null; _dragFromKey=null;
+          });
           chipWrap.appendChild(chip);
           if(ev.url){
             const la=document.createElement('a'); la.href=ev.url; la.target='_blank'; la.rel='noopener';
@@ -879,20 +905,6 @@ function _ghWrite(path, data, sha, msg, cb) {
         editBtn.addEventListener('click',e=>{e.stopPropagation();openEdit(dayEvs[0].id);});
         cell.appendChild(editBtn);
       }
-      cell.addEventListener('dragover',e=>{ if(_dragEvId){ e.preventDefault(); cell.classList.add('drag-over'); } });
-      cell.addEventListener('dragleave',()=>cell.classList.remove('drag-over'));
-      cell.addEventListener('drop',e=>{
-        e.preventDefault(); cell.classList.remove('drag-over');
-        if(!_dragEvId||!_dragFromKey) return;
-        const diff=dayDiff(_dragFromKey,key);
-        if(diff===0) return;
-        const evs=loadEvents();
-        const idx=evs.findIndex(ev=>ev.id===_dragEvId);
-        if(idx===-1) return;
-        evs[idx]={...evs[idx], start:addDays(evs[idx].start,diff), end:addDays(evs[idx].end,diff)};
-        saveEvents(evs); renderCal();
-        _dragEvId=null; _dragFromKey=null;
-      });
       grid.appendChild(cell);
     }
   }
