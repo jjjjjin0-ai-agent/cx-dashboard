@@ -634,7 +634,7 @@ async function getProductExpiry(page, browser, adminBase, productName) {
 }
 
 // 현재 컨텍스트(page 또는 frame)에서 유통기한+입고일+재고 행 추출
-// 모든 테이블의 모든 행에서 헤더 행 탐색 (th/td 구분 없음)
+// '재고' 컬럼 없으면 '수량' 컬럼 사용 (SC01 전체 재고 테이블은 '수량' 사용)
 async function readExpiryDetailsFromPage(ctx) {
   return await ctx.evaluate(() => {
     for (const tbl of document.querySelectorAll('table')) {
@@ -642,16 +642,18 @@ async function readExpiryDetailsFromPage(ctx) {
       for (let ri = 0; ri < allRows.length; ri++) {
         const cells = Array.from(allRows[ri].querySelectorAll('th, td'));
         const texts = cells.map(c => c.innerText.trim());
-        const expiryIdx   = texts.indexOf('유통기한');
-        const qtyIdx      = texts.indexOf('재고');
-        if (expiryIdx < 0 || qtyIdx < 0) continue;
-        const inboundIdx  = texts.indexOf('입고일');
+        const expiryIdx  = texts.indexOf('유통기한');
+        if (expiryIdx < 0) continue;
+        // '재고' 우선, 없으면 '수량' (SC01 메인 테이블은 '수량' 컬럼 사용)
+        const qtyIdx = texts.indexOf('재고') >= 0 ? texts.indexOf('재고') : texts.indexOf('수량');
+        if (qtyIdx < 0) continue;
+        const inboundIdx = texts.indexOf('입고일');
         const data = [];
         for (let rj = ri + 1; rj < allRows.length; rj++) {
           const tds = allRows[rj].querySelectorAll('td');
-          const expiry   = tds[expiryIdx] ? tds[expiryIdx].innerText.trim() : '';
-          const qty      = tds[qtyIdx]    ? parseInt(tds[qtyIdx].innerText.replace(/,/g,'').trim()) : NaN;
-          const inbound  = (inboundIdx >= 0 && tds[inboundIdx]) ? tds[inboundIdx].innerText.trim() : '';
+          const expiry  = tds[expiryIdx] ? tds[expiryIdx].innerText.trim() : '';
+          const qty     = tds[qtyIdx]    ? parseInt(tds[qtyIdx].innerText.replace(/,/g,'').trim()) : NaN;
+          const inbound = (inboundIdx >= 0 && tds[inboundIdx]) ? tds[inboundIdx].innerText.trim() : '';
           const inboundMonth = inbound.length >= 7 ? inbound.slice(0, 7) : '';
           if (expiry && /\d{4}/.test(expiry) && !isNaN(qty) && qty > 0) {
             data.push({ expiry, inboundMonth, qty });
@@ -697,18 +699,23 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
     );
     console.log('[유통기한] 테이블 구조:', JSON.stringify(pageDebug));
 
-    // 왼쪽 로케이션 테이블 찾기 (th/td 모두 대응, '로케이션' 포함 헤더)
+    // 왼쪽 로케이션 테이블 찾기
+    // '로케이션'(정확히 일치) + ('창고'|'수량'|'재고') 헤더 행 → 이후 행들을 데이터로 봄
+    // tbody 유무 무관하게 allRows.slice() 사용
     const locInfo = await ctx.evaluate(() => {
+      const COMPANIONS = ['창고', '수량', '재고'];
       for (const tbl of document.querySelectorAll('table')) {
         const allRows = Array.from(tbl.querySelectorAll('tr'));
-        for (const row of allRows) {
-          const cells = Array.from(row.querySelectorAll('th, td'));
+        for (let ri = 0; ri < allRows.length; ri++) {
+          const cells = Array.from(allRows[ri].querySelectorAll('th, td'));
           const hdrs = cells.map(c => c.innerText.trim());
-          if (hdrs.some(t => t.includes('로케이션'))) {
-            const dataRows = Array.from(tbl.querySelectorAll('tbody tr'))
-              .filter(tr => tr.querySelectorAll('td').length > 0);
-            return { count: dataRows.length, labels: dataRows.map(r =>
-              Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim()).join('|')) };
+          if (hdrs.some(t => t === '로케이션' || t === '로케이션명') &&
+              hdrs.some(t => COMPANIONS.includes(t))) {
+            const dataRows = allRows.slice(ri + 1).filter(tr => tr.querySelectorAll('td').length > 0);
+            if (dataRows.length > 0) {
+              return { count: dataRows.length, labels: dataRows.map(r =>
+                Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim()).join('|')) };
+            }
           }
         }
       }
@@ -719,42 +726,47 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
     // (expiry|inboundMonth) → qty 누적 맵
     const rowMap = {};
 
-    // 초기 로드 데이터 (첫 번째 로케이션 선택 상태)
+    // 전체 재고 테이블 먼저 시도 (SC01에 전체 현황 테이블이 있는 경우)
     const initial = await readExpiryDetailsFromPage(ctx);
-    console.log('[유통기한] 초기 데이터:', JSON.stringify(initial));
-    for (const r of initial) {
-      const key = r.expiry + '|' + (r.inboundMonth || '');
-      rowMap[key] = (rowMap[key] || 0) + r.qty;
-    }
+    console.log('[유통기한] 초기/전체 데이터:', JSON.stringify(initial));
 
-    // 나머지 로케이션 클릭 (i=0은 초기 데이터로 이미 읽음)
-    for (let i = 1; i < locInfo.count; i++) {
-      try {
-        const clicked = await ctx.evaluate((idx) => {
-          for (const tbl of document.querySelectorAll('table')) {
-            const allRows = Array.from(tbl.querySelectorAll('tr'));
-            for (const row of allRows) {
-              const hdrs = Array.from(row.querySelectorAll('th, td')).map(c => c.innerText.trim());
-              if (hdrs.some(t => t.includes('로케이션'))) {
-                const dataRows = Array.from(tbl.querySelectorAll('tbody tr'))
-                  .filter(tr => tr.querySelectorAll('td').length > 0);
-                if (dataRows[idx]) { dataRows[idx].click(); return true; }
+    if (initial.length > 0) {
+      // 전체 테이블에서 데이터 획득 — 로케이션 클릭 불필요
+      for (const r of initial) {
+        const key = r.expiry + '|' + (r.inboundMonth || '');
+        rowMap[key] = (rowMap[key] || 0) + r.qty;
+      }
+    } else {
+      // 전체 테이블 없음 — 로케이션 순차 클릭 (i=0 포함)
+      for (let i = 0; i < locInfo.count; i++) {
+        try {
+          const clicked = await ctx.evaluate((idx) => {
+            const COMPANIONS = ['창고', '수량', '재고'];
+            for (const tbl of document.querySelectorAll('table')) {
+              const allRows = Array.from(tbl.querySelectorAll('tr'));
+              for (let ri = 0; ri < allRows.length; ri++) {
+                const hdrs = Array.from(allRows[ri].querySelectorAll('th, td')).map(c => c.innerText.trim());
+                if (hdrs.some(t => t === '로케이션' || t === '로케이션명') &&
+                    hdrs.some(t => COMPANIONS.includes(t))) {
+                  const dataRows = allRows.slice(ri + 1).filter(tr => tr.querySelectorAll('td').length > 0);
+                  if (dataRows[idx]) { dataRows[idx].click(); return true; }
+                }
               }
             }
-          }
-          return false;
-        }, i);
-        if (!clicked) { console.log(`[유통기한] 로케이션${i} 클릭 실패`); continue; }
-        await sleep(1500);
+            return false;
+          }, i);
+          if (!clicked) { console.log(`[유통기한] 로케이션${i} 클릭 실패`); continue; }
+          await sleep(1500);
 
-        const details = await readExpiryDetailsFromPage(ctx);
-        console.log(`[유통기한] 로케이션${i}(${locInfo.labels[i]||''}) 상세:`, JSON.stringify(details));
-        for (const r of details) {
-          const key = r.expiry + '|' + (r.inboundMonth || '');
-          rowMap[key] = (rowMap[key] || 0) + r.qty;
+          const details = await readExpiryDetailsFromPage(ctx);
+          console.log(`[유통기한] 로케이션${i}(${locInfo.labels[i]||''}) 상세:`, JSON.stringify(details));
+          for (const r of details) {
+            const key = r.expiry + '|' + (r.inboundMonth || '');
+            rowMap[key] = (rowMap[key] || 0) + r.qty;
+          }
+        } catch (e) {
+          console.log(`[유통기한] 로케이션${i} 오류:`, e.message);
         }
-      } catch (e) {
-        console.log(`[유통기한] 로케이션${i} 오류:`, e.message);
       }
     }
 
