@@ -570,7 +570,7 @@ const BRAND_ZEROTOK_URLS = {
 };
 const BRAND_CAFE24 = {
   terafugen:{mallId:"terafugenbio",userId:"staff",passwd:"terafugen1!!"},
-  frozenlab:{mallId:"frozenlab",userId:"staff",passwd:"frozenblab1!!"},
+  frozenlab:{mallId:"frozenlab",userId:"staff",passwd:"frozenlab1!!"},
   dentipla:{mallId:"dentipla",userId:"staff",passwd:"dentipla1!"},
   mediglow:{mallId:"medigrow",userId:"staff",passwd:"medigrow1!!"},
   cellofit:{mallId:"cellofit",userId:"staff",passwd:"cellofit1!!"},
@@ -1102,7 +1102,8 @@ $$(".brand-nav").forEach((a,i)=>{
       updateBrandLinks(activeBrand);
       // 캘린더 탭에서 브랜드 클릭 시 대시보드로 복귀
       const _cv=document.getElementById('cal-view'), _bp=document.getElementById('sc-pamicogen');
-      if(_cv) _cv.style.display='none'; if(_bp) _bp.style.display='';
+      const _sw=document.getElementById('stock-section-wrap');
+      if(_cv) _cv.style.display='none'; if(_bp) _bp.style.display=''; if(_sw) _sw.style.display='';
       updateStockTable(activeBrand);
     }
 
