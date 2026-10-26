@@ -235,6 +235,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .stock-table td{padding:10px 14px;border-bottom:1px solid var(--line);color:var(--fg);white-space:nowrap;text-align:center}
 .stock-table tr:last-child td{border-bottom:none}
 .stock-table td.warn{color:#e55;font-weight:600;cursor:help}
+.stock-table tr.lot-sub td{border-top:1px dashed var(--border-light,#e8e8e8)}
 .stock-table.hide-brand-col th:first-child,.stock-table.hide-brand-col td:first-child{display:none}
 .stock-empty{padding:36px 0;text-align:center;color:var(--muted);font-size:13px}
 
@@ -1450,33 +1451,42 @@ function updateExpiryTable(brand) {
     var rows = (expiryCache[item.brand] || []).filter(function(r){ return r.name === item.name; });
     var isFirstOfBrand = (item.brand !== lastBrand);
     lastBrand = item.brand;
-    var tr = document.createElement('tr');
-    tr.dataset.brand = item.brand; tr.dataset.product = item.name;
-    var brandCell = isFirstOfBrand ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
-    // 최초 유통기한 (가장 빠른 날짜)
-    var validExpiries = rows.filter(function(r){ return r.expiry; }).map(function(r){ return r.expiry; }).sort();
-    var firstExpiry = validExpiries.length ? validExpiries[0] : null;
-    var daysLeft = '—'; var warnCls = 'num';
-    if (firstExpiry) {
-      var diff = Math.round((new Date(firstExpiry + 'T00:00:00') - new Date()) / 86400000);
-      daysLeft = diff + '일';
-      if (diff < 90) warnCls = 'num warn';
-    }
-    var html = '<td>' + brandCell + '</td><td>' + item.name + '</td>'
-      + '<td class="num">' + (firstExpiry || '—') + '</td>'
-      + '<td class="' + warnCls + '">' + daysLeft + '</td>';
-    if (months.length) {
-      months.forEach(function(m) {
-        var qty = rows.filter(function(r){ return r.inboundMonth === m; })
-          .reduce(function(s, r){ return s + (r.qty || 0); }, 0);
-        html += '<td class="num">' + (qty > 0 ? fmtNum(qty) : '—') + '</td>';
-      });
-    } else {
-      var totalQty = rows.reduce(function(s, r){ return s + (r.qty || 0); }, 0);
-      html += '<td class="num">' + (totalQty > 0 ? fmtNum(totalQty) : '—') + '</td>';
-    }
-    tr.innerHTML = html;
-    tbody.appendChild(tr);
+
+    // lot별 다중 행 — 유통기한 오름차순 정렬
+    var sortedLots = rows.filter(function(r){ return r.expiry; })
+      .sort(function(a,b){ return a.expiry.localeCompare(b.expiry); });
+    var noExpiry = rows.filter(function(r){ return !r.expiry; });
+    var allLots = sortedLots.concat(noExpiry);
+
+    // 데이터 없으면 빈 행 1개
+    if (allLots.length === 0) allLots = [{ expiry: null, inboundMonth: '', qty: null }];
+
+    allLots.forEach(function(lot, lotIdx) {
+      var tr = document.createElement('tr');
+      tr.dataset.brand = item.brand; tr.dataset.product = item.name;
+      if (lotIdx > 0) tr.classList.add('lot-sub');
+      var brandCell = (isFirstOfBrand && lotIdx === 0) ? '<strong>'+(BRAND_LABELS[item.brand]||item.brand)+'</strong>' : '';
+      var nameCell  = lotIdx === 0 ? item.name : '';
+      var daysLeft = '—'; var warnCls = 'num';
+      if (lot.expiry) {
+        var diff = Math.round((new Date(lot.expiry + 'T00:00:00') - new Date()) / 86400000);
+        daysLeft = diff + '일';
+        if (diff < 90) warnCls = 'num warn';
+      }
+      var html = '<td>' + brandCell + '</td><td>' + nameCell + '</td>'
+        + '<td class="num">' + (lot.expiry || '—') + '</td>'
+        + '<td class="' + warnCls + '">' + daysLeft + '</td>';
+      if (months.length) {
+        months.forEach(function(m) {
+          var qty = (lot.inboundMonth === m && lot.qty != null) ? lot.qty : 0;
+          html += '<td class="num">' + (qty > 0 ? fmtNum(qty) : '—') + '</td>';
+        });
+      } else {
+        html += '<td class="num">' + (lot.qty > 0 ? fmtNum(lot.qty) : '—') + '</td>';
+      }
+      tr.innerHTML = html;
+      tbody.appendChild(tr);
+    });
   });
 }
 

@@ -645,10 +645,10 @@ function getCellText(td) {
 }
 
 // 현재 컨텍스트에서 유통기한+입고일+재고 행 추출
-// 전략: th로 컬럼 인덱스 파악, <th> 없는 행을 데이터로 읽음
-// split-table 패턴: 헤더 테이블 다음 테이블도 확인 (EZAdmin 분리 패턴)
-async function readExpiryDetailsFromPage(ctx) {
-  return await ctx.evaluate(() => {
+// skipMgmtNo=true: 관리번호 테이블 스킵 (초기 전체 read용)
+// skipMgmtNo=false: 관리번호 테이블 허용 (로케이션 클릭 후 상세 read용)
+async function readExpiryDetailsFromPage(ctx, skipMgmtNo) {
+  return await ctx.evaluate((sm) => {
     function getCellTxt(td) {
       const inner = (td.innerText || '').trim();
       if (inner) return inner;
@@ -662,6 +662,8 @@ async function readExpiryDetailsFromPage(ctx) {
       const thTexts = Array.from(tbl.querySelectorAll('th')).map(th => getCellTxt(th));
       const expiryIdx = thTexts.indexOf('유통기한');
       if (expiryIdx < 0) continue;
+      // 관리번호 컬럼: 우측 패널(단일 로케이션). 초기 전체 read시 스킵
+      if (sm && thTexts.includes('관리번호')) continue;
       const qtyIdx = thTexts.indexOf('재고') >= 0 ? thTexts.indexOf('재고') : thTexts.indexOf('수량');
       if (qtyIdx < 0) continue;
       const inboundIdx = thTexts.indexOf('입고일');
@@ -690,7 +692,7 @@ async function readExpiryDetailsFromPage(ctx) {
       if (data.length) return data;
     }
     return [];
-  });
+  }, skipMgmtNo !== false);
 }
 
 async function getExpiriesByUrl(browser, adminBase, productName, productId) {
@@ -768,8 +770,8 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
     // (expiry|inboundMonth) → qty 누적 맵
     const rowMap = {};
 
-    // 전체 재고 테이블 먼저 시도 (SC01에 전체 현황 테이블이 있는 경우)
-    const initial = await readExpiryDetailsFromPage(ctx);
+    // 전체 재고 테이블 먼저 시도 (관리번호 없는 테이블 — 로케이션 무관 전체 현황)
+    const initial = await readExpiryDetailsFromPage(ctx, true);
     console.log('[유통기한] 초기/전체 데이터:', JSON.stringify(initial));
 
     if (initial.length > 0) {
@@ -779,7 +781,7 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
         rowMap[key] = (rowMap[key] || 0) + r.qty;
       }
     } else {
-      // 전체 테이블 없음 — 로케이션 순차 클릭 (i=0 포함)
+      // 전체 테이블 없음 — 로케이션 순차 클릭으로 각 lot 합산
       for (let i = 0; i < locInfo.count; i++) {
         try {
           const clicked = await ctx.evaluate((idx, method, dataIdx) => {
@@ -793,9 +795,10 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
             return false;
           }, i, locInfo.method, locInfo.dataIdx);
           if (!clicked) { console.log(`[유통기한] 로케이션${i} 클릭 실패`); continue; }
-          await sleep(2000);
+          await sleep(1500);
 
-          const details = await readExpiryDetailsFromPage(ctx);
+          // 관리번호 포함 허용 — 클릭 후 업데이트된 우측 패널(테이블 8/9)에서 읽기
+          const details = await readExpiryDetailsFromPage(ctx, false);
           console.log(`[유통기한] 로케이션${i}(${locInfo.labels[i]||''}) 상세:`, JSON.stringify(details));
           for (const r of details) {
             const key = r.expiry + '|' + (r.inboundMonth || '');
