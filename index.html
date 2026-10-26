@@ -146,7 +146,9 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .cal-day.sat .cal-dn{color:#4a90d9}
 .cal-dn{font-size:12px;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .cal-chips{display:flex;flex-direction:column;gap:2px;margin-top:2px}
-.cal-chip{height:16px;border-radius:4px;font-size:11px;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:16px;cursor:pointer}
+.cal-chip{height:16px;border-radius:4px;font-size:11px;color:#fff;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:16px;cursor:grab}
+.cal-chip:active{cursor:grabbing}
+.cal-day.drag-over{outline:2px dashed #4a90d9;background:rgba(74,144,217,.08)}
 .cal-edit-btn{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:5px;background:rgba(255,255,255,.95);border:1.2px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s,border-color .12s;z-index:2;padding:0;color:#6b7280}
 .cal-day:hover .cal-edit-btn{opacity:1}
 .cal-edit-btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
@@ -806,6 +808,9 @@ function _ghWrite(path, data, sha, msg, cb) {
 
   function toKey(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
   function todayKey(){ const t=new Date(); return toKey(t.getFullYear(),t.getMonth(),t.getDate()); }
+  function addDays(s,n){ const d=new Date(s+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+  function dayDiff(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000); }
+  let _dragEvId=null, _dragFromKey=null;
 
   const today = new Date();
   let curYear = today.getFullYear();
@@ -850,6 +855,9 @@ function _ghWrite(path, data, sha, msg, cb) {
           chip.textContent=ev.name||(ev.text?ev.text.slice(0,12):'')||(ev.image?'📷':'');
           chip.title=(ev.name||'')+'\n'+(ev.text||'');
           chip.dataset.id=ev.id;
+          chip.draggable=true;
+          chip.addEventListener('dragstart',e=>{ _dragEvId=ev.id; _dragFromKey=key; e.dataTransfer.effectAllowed='move'; e.stopPropagation(); });
+          chip.addEventListener('dragend',()=>{ _dragEvId=null; _dragFromKey=null; });
           chip.addEventListener('click',e=>{e.stopPropagation();openEdit(ev.id);});
           const chipWrap=document.createElement('div'); chipWrap.className='cal-chip-wrap';
           chipWrap.appendChild(chip);
@@ -871,6 +879,20 @@ function _ghWrite(path, data, sha, msg, cb) {
         editBtn.addEventListener('click',e=>{e.stopPropagation();openEdit(dayEvs[0].id);});
         cell.appendChild(editBtn);
       }
+      cell.addEventListener('dragover',e=>{ if(_dragEvId){ e.preventDefault(); cell.classList.add('drag-over'); } });
+      cell.addEventListener('dragleave',()=>cell.classList.remove('drag-over'));
+      cell.addEventListener('drop',e=>{
+        e.preventDefault(); cell.classList.remove('drag-over');
+        if(!_dragEvId||!_dragFromKey) return;
+        const diff=dayDiff(_dragFromKey,key);
+        if(diff===0) return;
+        const evs=loadEvents();
+        const idx=evs.findIndex(ev=>ev.id===_dragEvId);
+        if(idx===-1) return;
+        evs[idx]={...evs[idx], start:addDays(evs[idx].start,diff), end:addDays(evs[idx].end,diff)};
+        saveEvents(evs); renderCal();
+        _dragEvId=null; _dragFromKey=null;
+      });
       grid.appendChild(cell);
     }
   }
