@@ -663,9 +663,50 @@ updateBrandLinks(null);
 /* 기본 브랜드: 테라퓨젠 (DOMContentLoaded 후 실행) */
 window.addEventListener('DOMContentLoaded', () => {
   updateStockTable(null); // 홈뷰 전체 상품 표시
+  // GitHub에서 재고 캐시 불러오기 (SHA 추적 + 빈 캐시 시 데이터 복원)
+  _ghRead('data/stock.json', function(data, sha){
+    if (!data || typeof data !== 'object') return;
+    _stockGHSha = sha;
+    if (!Object.keys(stockCache).length) {
+      stockCache = data;
+      try{ localStorage.setItem('cx-stock-cache', JSON.stringify(stockCache)); }catch(e){}
+      updateStockTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
+    }
+  });
   const defaultNav = document.querySelector('.brand-nav[data-brand="terafugen"]');
   if(defaultNav) defaultNav.click();
 });
+
+/* ---------- GitHub 데이터 동기화 ---------- */
+var GH_OWNER = 'jjjjjin0-ai-agent';
+var GH_REPO  = 'cx-dashboard';
+var GH_TOKEN = (function(){ try{ return localStorage.getItem('cx-gh-token')||''; }catch(e){ return ''; } })();
+var _calGHSha   = null;
+var _stockGHSha = null;
+function _ghRead(path, cb) {
+  fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path, {
+    headers: {'Accept':'application/vnd.github+json'}
+  })
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(d){
+    if (d && d.content) { try { cb(JSON.parse(atob(d.content.replace(/\s/g,''))), d.sha); } catch(e){ cb(null,null); } }
+    else { cb(null,null); }
+  })
+  .catch(function(){ cb(null,null); });
+}
+function _ghWrite(path, data, sha, msg, cb) {
+  if (!GH_TOKEN) { if(cb) cb(null); return; }
+  var body = {message: msg||'update '+path, content: btoa(unescape(encodeURIComponent(JSON.stringify(data))))};
+  if (sha) body.sha = sha;
+  fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path, {
+    method: 'PUT',
+    headers: {'Authorization':'token '+GH_TOKEN, 'Content-Type':'application/json', 'Accept':'application/vnd.github+json'},
+    body: JSON.stringify(body)
+  })
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(d){ if(cb) cb(d && d.content ? d.content.sha : null); })
+  .catch(function(){ if(cb) cb(null); });
+}
 
 /* ===== 캘린더 ===== */
 (function(){
@@ -757,7 +798,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadEvents(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }catch(e){ return []; } }
-  function saveEvents(ev){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(ev)); }catch(e){} }
+  function saveEvents(ev){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(ev)); }catch(e){}
+    _ghWrite('data/calendar.json', ev, _calGHSha, '캘린더 업데이트', function(sha){ if(sha) _calGHSha=sha; });
+  }
 
 
   function toKey(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
@@ -1024,6 +1068,13 @@ window.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     if(calView.style.display!=='none'){ showDashboard(); }
     else { showCalendar(); }
+  });
+  // GitHub에서 최신 캘린더 불러오기 (초기 로드)
+  _ghRead('data/calendar.json', function(data, sha){
+    if (!data || !Array.isArray(data)) return;
+    _calGHSha = sha;
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){}
+    renderCal();
   });
 })();
 
@@ -1416,6 +1467,7 @@ function syncStock() {
       if (data.ok) {
         stockCache[brand] = data.rows;
         try { localStorage.setItem('cx-stock-cache', JSON.stringify(stockCache)); } catch(e) {}
+        _ghWrite('data/stock.json', stockCache, _stockGHSha, '재고 업데이트', function(sha){ if(sha) _stockGHSha=sha; });
         renderStock(data.rows);
         var now = new Date();
         setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 업데이트', '#4caf50');
@@ -1447,7 +1499,7 @@ function syncStock() {
           products: STOCK_PRODUCTS[b], startDate: startDate, endDate: endDate })
       })
       .then(function(r){ return r.json(); })
-      .then(function(data){ if (data.ok){ stockCache[b] = data.rows; try { localStorage.setItem('cx-stock-cache', JSON.stringify(stockCache)); } catch(e) {} renderStock(data.rows); anyOk=true; } })
+      .then(function(data){ if (data.ok){ stockCache[b] = data.rows; try { localStorage.setItem('cx-stock-cache', JSON.stringify(stockCache)); } catch(e) {} _ghWrite('data/stock.json', stockCache, _stockGHSha, '재고 업데이트', function(sha){ if(sha) _stockGHSha=sha; }); renderStock(data.rows); anyOk=true; } })
       .catch(function(){ serverErr=true; })
       .finally(nextBrand);
     }
