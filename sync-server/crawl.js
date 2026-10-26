@@ -656,7 +656,7 @@ async function readExpiryDetailsFromPage(ctx) {
         const qty     = tds[qtyIdx]    ? parseInt(tds[qtyIdx].innerText.replace(/,/g,'').trim()) : NaN;
         const inbound = (inboundIdx >= 0 && tds[inboundIdx]) ? tds[inboundIdx].innerText.trim() : '';
         const inboundMonth = inbound.length >= 7 ? inbound.slice(0, 7) : '';
-        if (expiry && /\d{4}/.test(expiry) && !isNaN(qty) && qty > 0) {
+        if (expiry && /\d{4}/.test(expiry) && !isNaN(qty) && qty >= 0) {
           data.push({ expiry, inboundMonth, qty });
         }
       }
@@ -700,9 +700,33 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
     console.log('[유통기한] 테이블 구조:', JSON.stringify(pageDebug));
 
     // 왼쪽 로케이션 테이블 찾기
-    // '로케이션'(정확히 일치) + ('창고'|'수량'|'재고') 헤더 행 → 이후 행들을 데이터로 봄
-    // tbody 유무 무관하게 allRows.slice() 사용
+    // 방법1: tr[onclick] (EZAdmin 클릭 가능 행 표준 패턴)
+    // 방법2: td[onclick] 포함 행
+    // 방법3: 헤더 기반 (JS 코드 포함 행 제외)
     const locInfo = await ctx.evaluate(() => {
+      // 방법1: tr[onclick]
+      const onclickTrs = Array.from(document.querySelectorAll('tr[onclick]'));
+      if (onclickTrs.length > 0) {
+        return {
+          method: 'onclick-tr',
+          count: onclickTrs.length,
+          labels: onclickTrs.map(r => Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim().slice(0, 30)).join('|'))
+        };
+      }
+      // 방법2: td[onclick] 포함 행
+      const tdSet = new Set();
+      Array.from(document.querySelectorAll('td[onclick]')).forEach(td => {
+        const tr = td.closest('tr'); if (tr) tdSet.add(tr);
+      });
+      const tdOnclickTrs = [...tdSet];
+      if (tdOnclickTrs.length > 0) {
+        return {
+          method: 'onclick-td',
+          count: tdOnclickTrs.length,
+          labels: tdOnclickTrs.map(r => Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim().slice(0, 30)).join('|'))
+        };
+      }
+      // 방법3: 헤더 기반 (JS/CSS 코드 포함 행 제외)
       const COMPANIONS = ['창고', '수량', '재고'];
       for (const tbl of document.querySelectorAll('table')) {
         const allRows = Array.from(tbl.querySelectorAll('tr'));
@@ -711,17 +735,24 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
           const hdrs = cells.map(c => c.innerText.trim());
           if (hdrs.some(t => t === '로케이션' || t === '로케이션명') &&
               hdrs.some(t => COMPANIONS.includes(t))) {
-            const dataRows = allRows.slice(ri + 1).filter(tr => tr.querySelectorAll('td').length > 0);
+            const dataRows = allRows.slice(ri + 1).filter(tr => {
+              if (tr.querySelectorAll('td').length === 0) return false;
+              const text = tr.innerText || '';
+              return !text.includes('{') && !text.includes('function') && !text.includes('$(');
+            });
             if (dataRows.length > 0) {
-              return { count: dataRows.length, labels: dataRows.map(r =>
-                Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim()).join('|')) };
+              return {
+                method: 'header',
+                count: dataRows.length,
+                labels: dataRows.map(r => Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim().slice(0, 30)).join('|'))
+              };
             }
           }
         }
       }
-      return { count: 0, labels: [] };
+      return { method: 'none', count: 0, labels: [] };
     });
-    console.log('[유통기한] 로케이션:', JSON.stringify(locInfo));
+    console.log('[유통기한] 로케이션:', locInfo.method, 'count:', locInfo.count, JSON.stringify(locInfo.labels ? locInfo.labels.slice(0,3) : []));
 
     // (expiry|inboundMonth) → qty 누적 맵
     const rowMap = {};
@@ -740,23 +771,43 @@ async function getExpiriesByUrl(browser, adminBase, productName, productId) {
       // 전체 테이블 없음 — 로케이션 순차 클릭 (i=0 포함)
       for (let i = 0; i < locInfo.count; i++) {
         try {
-          const clicked = await ctx.evaluate((idx) => {
-            const COMPANIONS = ['창고', '수량', '재고'];
-            for (const tbl of document.querySelectorAll('table')) {
-              const allRows = Array.from(tbl.querySelectorAll('tr'));
-              for (let ri = 0; ri < allRows.length; ri++) {
-                const hdrs = Array.from(allRows[ri].querySelectorAll('th, td')).map(c => c.innerText.trim());
-                if (hdrs.some(t => t === '로케이션' || t === '로케이션명') &&
-                    hdrs.some(t => COMPANIONS.includes(t))) {
-                  const dataRows = allRows.slice(ri + 1).filter(tr => tr.querySelectorAll('td').length > 0);
-                  if (dataRows[idx]) { dataRows[idx].click(); return true; }
+          const clicked = await ctx.evaluate((idx, method) => {
+            if (method === 'onclick-tr') {
+              const rows = Array.from(document.querySelectorAll('tr[onclick]'));
+              if (rows[idx]) { rows[idx].click(); return true; }
+            } else if (method === 'onclick-td') {
+              const tdSet = new Set();
+              Array.from(document.querySelectorAll('td[onclick]')).forEach(td => {
+                const tr = td.closest('tr'); if (tr) tdSet.add(tr);
+              });
+              const rows = [...tdSet];
+              if (rows[idx]) {
+                const clickableTd = rows[idx].querySelector('td[onclick]');
+                if (clickableTd) clickableTd.click(); else rows[idx].click();
+                return true;
+              }
+            } else {
+              const COMPANIONS = ['창고', '수량', '재고'];
+              for (const tbl of document.querySelectorAll('table')) {
+                const allRows = Array.from(tbl.querySelectorAll('tr'));
+                for (let ri = 0; ri < allRows.length; ri++) {
+                  const hdrs = Array.from(allRows[ri].querySelectorAll('th, td')).map(c => c.innerText.trim());
+                  if (hdrs.some(t => t === '로케이션' || t === '로케이션명') &&
+                      hdrs.some(t => COMPANIONS.includes(t))) {
+                    const dataRows = allRows.slice(ri + 1).filter(tr => {
+                      if (tr.querySelectorAll('td').length === 0) return false;
+                      const text = tr.innerText || '';
+                      return !text.includes('{') && !text.includes('function') && !text.includes('$(');
+                    });
+                    if (dataRows[idx]) { dataRows[idx].click(); return true; }
+                  }
                 }
               }
             }
             return false;
-          }, i);
+          }, i, locInfo.method);
           if (!clicked) { console.log(`[유통기한] 로케이션${i} 클릭 실패`); continue; }
-          await sleep(1500);
+          await sleep(2000);
 
           const details = await readExpiryDetailsFromPage(ctx);
           console.log(`[유통기한] 로케이션${i}(${locInfo.labels[i]||''}) 상세:`, JSON.stringify(details));
