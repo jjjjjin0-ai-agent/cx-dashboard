@@ -520,4 +520,195 @@ async function getOut7dByUrl(browser, adminBase, productId, stockNow, startDate,
   }
 }
 
-module.exports = { crawlBrand };
+// ===== 유통기한 크롤링 =====
+
+async function crawlExpiry(brand, cred, products) {
+  if (!cred || !products) throw new Error('계정 또는 제품 정보 없음');
+  const chromePath = getChromePath();
+  if (!chromePath) throw new Error('Chrome을 찾을 수 없습니다');
+
+  const browser = await puppeteer.launch({
+    executablePath: chromePath,
+    headless: false,
+    args: ['--window-size=1280,900', '--no-sandbox']
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 900 });
+
+    await page.goto('https://www.ezadmin.co.kr/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await sleep(2000);
+    const pwInput = await page.$('input[type="password"]');
+    if (pwInput) { await doLogin(page, cred); await sleep(3000); }
+    await closePopups(page);
+    await sleep(500);
+
+    const adminUrl = page.url();
+    const adminBase = adminUrl.includes('ka01') ? 'https://ka01.ezadmin.co.kr'
+                    : adminUrl.includes('ezadmin.co.kr') ? new URL(adminUrl).origin
+                    : 'https://ka01.ezadmin.co.kr';
+
+    const allRows = [];
+    for (const productName of products) {
+      try {
+        console.log(`\n[유통기한][${productName}] 조회 시작`);
+        const rows = await getProductExpiry(page, browser, adminBase, productName);
+        allRows.push(...rows);
+        await sleep(500);
+      } catch (e) {
+        console.error(`[유통기한][${productName}] 실패:`, e.message);
+        allRows.push({ name: productName, expiry: null, qty: null });
+      }
+    }
+    return allRows;
+  } finally {
+    await browser.close();
+  }
+}
+
+async function getProductExpiry(page, browser, adminBase, productName) {
+  // I100 현재고조회에서 product_id 획득
+  const contentFrame = await navigateToI100(page);
+  await closeXPopupsOnly(page);
+  await sleep(300);
+
+  const searchTerm = SEARCH_NAMES[productName] || productName;
+  const typed = await contentFrame.evaluate((term) => {
+    const sels = ['input[name="query_str"]','input[id="query_str"]','input[name="search_nm"]',
+                  'input[id="search_nm"]','input[name="prod_nm"]','input[name="keyword"]'];
+    for (const sel of sels) {
+      const el = document.querySelector(sel);
+      if (el) {
+        el.focus(); el.value = term;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        return sel;
+      }
+    }
+    const inputs = Array.from(document.querySelectorAll('input[type="text"]:not([readonly]):not([disabled])'))
+                        .filter(el => el.offsetParent !== null);
+    if (inputs.length) {
+      const el = inputs[inputs.length - 1];
+      el.focus(); el.value = term;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      return 'fallback';
+    }
+    return null;
+  }, searchTerm);
+
+  if (!typed) throw new Error('검색 필드를 찾을 수 없음');
+  await sleep(300);
+  await page.keyboard.press('F2');
+  await sleep(3000);
+
+  const stockData = await contentFrame.evaluate(() => {
+    const stockTh = Array.from(document.querySelectorAll('th')).find(th => th.innerText.trim() === '정상재고');
+    if (!stockTh) return { _err: 'stockTh없음' };
+    const headerRow = stockTh.closest('tr');
+    const cells = Array.from(headerRow.children);
+    const stockIdx = cells.indexOf(stockTh);
+    const codeCells = cells.filter(c => c.innerText.trim() === '상품코드');
+    const codeIdx = codeCells.length > 0 ? cells.indexOf(codeCells[codeCells.length - 1]) : -1;
+    const headerTable = stockTh.closest('table');
+    if (stockIdx < 0 || !headerTable) return { _err: 'bad idx' };
+    const allRows = Array.from(document.querySelectorAll('tr'));
+    for (const row of allRows) {
+      if (headerTable.contains(row)) continue;
+      const tds = Array.from(row.children).filter(c => c.tagName === 'TD');
+      if (tds.length <= stockIdx) continue;
+      const v = tds[stockIdx].innerText.replace(/,/g, '').trim();
+      const n = parseInt(v);
+      if (!isNaN(n) && n >= 0) {
+        const productId = codeIdx >= 0 && tds[codeIdx] ? tds[codeIdx].innerText.trim() : null;
+        return { productId };
+      }
+    }
+    return { _err: '행없음' };
+  });
+
+  if (!stockData || stockData._err || !stockData.productId) throw new Error('상품코드를 찾을 수 없음: ' + JSON.stringify(stockData));
+  console.log(`[유통기한][${productName}] 상품코드: ${stockData.productId}`);
+
+  return await getExpiriesByUrl(browser, adminBase, productName, stockData.productId);
+}
+
+async function getExpiriesByUrl(browser, adminBase, productName, productId) {
+  const popupUrl = `${adminBase}/popup35.htm?template=SC01&product_id=${encodeURIComponent(productId)}`;
+  console.log('[유통기한] SC01 URL:', popupUrl);
+
+  const popup = await browser.newPage();
+  try {
+    await popup.goto(popupUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await sleep(2000);
+
+    // 왼쪽 로케이션 테이블 행 수 파악
+    const locInfo = await popup.evaluate(() => {
+      for (const tbl of document.querySelectorAll('table')) {
+        const ths = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
+        if (ths.some(t => t === '로케이션') && ths.some(t => t === '창고')) {
+          const rows = tbl.querySelectorAll('tbody tr');
+          return { count: rows.length, labels: Array.from(rows).map(r =>
+            Array.from(r.querySelectorAll('td')).map(td => td.innerText.trim()).join('|')) };
+        }
+      }
+      return { count: 0, labels: [] };
+    });
+    console.log('[유통기한] 로케이션:', JSON.stringify(locInfo));
+
+    const expiryMap = {};
+
+    for (let i = 0; i < locInfo.count; i++) {
+      try {
+        // 행 클릭
+        await popup.evaluate((idx) => {
+          for (const tbl of document.querySelectorAll('table')) {
+            const ths = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
+            if (ths.some(t => t === '로케이션') && ths.some(t => t === '창고')) {
+              const rows = tbl.querySelectorAll('tbody tr');
+              if (rows[idx]) rows[idx].click();
+              return;
+            }
+          }
+        }, i);
+        await sleep(1200);
+
+        // 우측 재고 상세 현황 테이블 (유통기한 + 재고 컬럼)
+        const details = await popup.evaluate(() => {
+          for (const tbl of document.querySelectorAll('table')) {
+            const ths = Array.from(tbl.querySelectorAll('th')).map(th => th.innerText.trim());
+            const expiryIdx = ths.indexOf('유통기한');
+            const qtyIdx = ths.indexOf('재고');
+            if (expiryIdx >= 0 && qtyIdx >= 0) {
+              return Array.from(tbl.querySelectorAll('tbody tr')).map(tr => {
+                const tds = tr.querySelectorAll('td');
+                const expiry = tds[expiryIdx] ? tds[expiryIdx].innerText.trim() : '';
+                const qty = tds[qtyIdx] ? parseInt(tds[qtyIdx].innerText.replace(/,/g, '').trim()) : NaN;
+                return { expiry, qty };
+              }).filter(r => r.expiry && !isNaN(r.qty) && r.qty > 0);
+            }
+          }
+          return [];
+        });
+        console.log(`[유통기한] 로케이션${i}(${locInfo.labels[i]}) 상세:`, JSON.stringify(details));
+
+        for (const r of details) {
+          expiryMap[r.expiry] = (expiryMap[r.expiry] || 0) + r.qty;
+        }
+      } catch (e) {
+        console.log(`[유통기한] 로케이션${i} 오류:`, e.message);
+      }
+    }
+
+    const result = Object.entries(expiryMap)
+      .map(([expiry, qty]) => ({ name: productName, expiry, qty }))
+      .sort((a, b) => a.expiry.localeCompare(b.expiry));
+
+    console.log('[유통기한] 최종:', JSON.stringify(result));
+    return result.length ? result : [{ name: productName, expiry: null, qty: null }];
+  } finally {
+    await popup.close();
+  }
+}
+
+module.exports = { crawlBrand, crawlExpiry };

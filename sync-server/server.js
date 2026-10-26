@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { crawlBrand } = require('./crawl');
+const { crawlBrand, crawlExpiry } = require('./crawl');
 
 const app = express();
 const PORT = process.env.PORT || 3355;
@@ -38,6 +38,23 @@ app.post('/sync', async (req, res) => {
     res.json({ ok: true, brand, rows: result });
   } catch (e) {
     console.error('조회 실패:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /expiry
+app.post('/expiry', async (req, res) => {
+  const { brand, cred, products } = req.body;
+  if (!brand || !cred || !products) {
+    return res.status(400).json({ error: '브랜드/계정/제품 정보 필요' });
+  }
+  console.log(`[${new Date().toLocaleTimeString()}] 유통기한 조회 시작: ${brand} (${products.length}개 제품)`);
+  try {
+    const rows = await crawlExpiry(brand, cred, products);
+    console.log(`[${new Date().toLocaleTimeString()}] 유통기한 조회 완료: ${brand}`);
+    res.json({ ok: true, brand, rows });
+  } catch (e) {
+    console.error('유통기한 조회 실패:', e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
