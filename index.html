@@ -409,7 +409,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <label class="view-toggle-sw">
           <input type="checkbox" id="view-toggle-cb" onchange="toggleStockView()">
           <span class="view-toggle-track"><span class="view-toggle-thumb"></span></span>
-          <span class="view-toggle-lbl">유통기한</span>
+          <span class="view-toggle-lbl">유통 기한</span>
         </label>
       </div>
       <div style="min-height:16px;margin-bottom:6px"><span id="stock-status" style="font-size:11px;color:var(--muted)"></span></div>
@@ -693,6 +693,17 @@ window.addEventListener('DOMContentLoaded', () => {
   });
   const defaultNav = document.querySelector('.brand-nav[data-brand="terafugen"]');
   if(defaultNav) defaultNav.click();
+
+  // 재고 현황 / 유통 기한 제목 더블클릭 → 시트 열기
+  const SHEET_STOCK  = 'https://docs.google.com/spreadsheets/d/1Q8qk3Ztren2J-IA92vfHWDYqnvUuW_5cRkNuxKa3J5g/edit?gid=1059374994#gid=1059374994';
+  const SHEET_EXPIRY = 'https://docs.google.com/spreadsheets/d/1Q8qk3Ztren2J-IA92vfHWDYqnvUuW_5cRkNuxKa3J5g/edit?gid=1799969532#gid=1799969532';
+  const stockLabelEl = document.getElementById('stock-view-label');
+  if(stockLabelEl){
+    stockLabelEl.style.cursor='pointer';
+    stockLabelEl.addEventListener('dblclick', function(){
+      window.open(viewMode==='expiry' ? SHEET_EXPIRY : SHEET_STOCK, '_blank');
+    });
+  }
 });
 
 /* ---------- GitHub 데이터 동기화 ---------- */
@@ -1400,7 +1411,7 @@ function toggleStockView() {
   var label = document.getElementById('stock-view-label');
   var thead = document.querySelector('#stock-table thead tr');
   if (viewMode === 'expiry') {
-    if (label) label.textContent = '유통기한';
+    if (label) label.textContent = '유통 기한';
     updateExpiryTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
   } else {
     if (label) label.textContent = '재고 현황';
@@ -1429,7 +1440,7 @@ function updateExpiryTable(brand) {
   // 헤더 동적 구성
   var thead = document.querySelector('#stock-table thead tr');
   if (thead) {
-    var hdrs = '<th>브랜드</th><th>제품명</th><th class="num">유통기한</th><th class="num">남은 유통기한</th>';
+    var hdrs = '<th>브랜드</th><th>제품명</th><th class="num">유통 기한</th><th class="num">남은 유통 기한</th>';
     if (months.length) {
       months.forEach(function(m) {
         hdrs += '<th class="num">' + parseInt(m.split('-')[1]) + '월 재고</th>';
@@ -1494,7 +1505,7 @@ function syncExpiry() {
   var brand = (typeof activeBrand !== 'undefined') ? activeBrand : null;
   var btn = document.querySelector('.stock-sync-btn');
   if (btn) { btn.disabled = true; btn.textContent = '조회 중...'; }
-  setStockStatus('유통기한 조회 중...', 'var(--muted)');
+  setStockStatus('유통 기한 조회 중...', 'var(--muted)');
   var brands = brand ? [brand] : BRAND_IDS.filter(function(b){ return STOCK_PRODUCTS[b]&&STOCK_PRODUCTS[b].length&&BRAND_EZYADMIN[b]; });
   var idx = 0; var anyOk = false; var serverErr = false;
   function nextBrand() {
@@ -1503,13 +1514,13 @@ function syncExpiry() {
       if (serverErr) setStockStatus('서버 미연결 — sync-server에서 node server.js 실행 필요', '#e55');
       else if (anyOk) {
         var now = new Date();
-        setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 유통기한 업데이트', '#4caf50');
+        setStockStatus(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' 유통 기한 업데이트', '#4caf50');
         try { localStorage.setItem('cx-expiry-cache', JSON.stringify(expiryCache)); } catch(e) {}
       }
       return;
     }
     var b = brands[idx++];
-    setStockStatus('유통기한 조회 중... ('+idx+'/'+brands.length+') '+b, 'var(--muted)');
+    setStockStatus('유통 기한 조회 중... ('+idx+'/'+brands.length+') '+b, 'var(--muted)');
     fetch('http://localhost:3355/expiry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
