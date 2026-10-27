@@ -455,8 +455,11 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 
     <!-- 교환·반품 섹션 -->
     <div id="return-section-wrap" class="stock-section">
-      <div class="stock-section-hd">
+      <div class="stock-section-hd" id="return-section-hd">
         <div class="plat-label" id="return-view-label" style="cursor:pointer;font-size:16px;font-weight:600">교환 · 반품</div>
+        <input type="date" id="return-start-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <span id="return-date-sep" style="display:none;font-size:12px;color:var(--muted)">~</span>
+        <input type="date" id="return-end-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
       <div class="return-scroll-wrap" id="return-scroll-wrap">
@@ -1451,13 +1454,17 @@ function _toggleStockCollapse(){
   if(btn){ btn.innerHTML = _stockCollapsed ? _CHEV_SVG_DOWN : _CHEV_SVG_UP; btn.title = _stockCollapsed ? '펼치기' : '접기'; }
   requestAnimationFrame(function(){ if(window._syncReturnWidth) window._syncReturnWidth(); });
 }
+var _wasInBrandView = false;
 function _updateScrollWrapMode(isTotal){
   var sw = document.getElementById('stock-scroll-wrap');
   if(!sw) return;
   if(isTotal){
-    _stockCollapsed = true;   // 총 보기 기본: 접힘(285px)
-    sw.style.maxHeight = '285px';
+    // 브랜드→총 보기 전환 시에만 접힘으로 초기화; 재고↔유통기한 전환 시 유지
+    if(_wasInBrandView){ _stockCollapsed = true; }
+    _wasInBrandView = false;
+    sw.style.maxHeight = _stockCollapsed ? '285px' : '';
   } else {
+    _wasInBrandView = true;
     sw.style.maxHeight = '';  // 브랜드 보기: 제한 없음
   }
 }
@@ -1480,6 +1487,36 @@ function _toggleReturnCollapse(){
   if(rw) rw.style.maxHeight = _returnCollapsed ? '285px' : '';
   var btn = document.getElementById('return-collapse-btn');
   if(btn){ btn.innerHTML = _returnCollapsed ? _CHEV_SVG_DOWN : _CHEV_SVG_UP; btn.title = _returnCollapsed ? '펼치기' : '접기'; }
+}
+function _setReturnWeekDates(){
+  var s = document.getElementById('return-start-date');
+  var e = document.getElementById('return-end-date');
+  if(!s || !e) return;
+  var today = new Date();
+  var day = today.getDay();
+  var diffToMon = (day === 0) ? -6 : 1 - day;
+  var mon = new Date(today); mon.setDate(today.getDate() + diffToMon);
+  var sun = new Date(mon);   sun.setDate(mon.getDate() + 6);
+  var fmt = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+  if(!s.value) s.value = fmt(mon);
+  if(!e.value) e.value = fmt(sun);
+}
+function _updateReturnHeader(brand){
+  var s   = document.getElementById('return-start-date');
+  var sep = document.getElementById('return-date-sep');
+  var e   = document.getElementById('return-end-date');
+  var btn = document.getElementById('return-collapse-btn');
+  var rw  = document.getElementById('return-scroll-wrap');
+  var show = function(el){ if(el) el.style.display=''; };
+  var hide = function(el){ if(el) el.style.display='none'; };
+  if(brand){
+    show(s); show(sep); show(e); hide(btn);
+    if(rw){ rw.style.maxHeight=''; _returnCollapsed=false; }
+    _setReturnWeekDates();
+  } else {
+    hide(s); hide(sep); hide(e); show(btn);
+    if(rw) rw.style.maxHeight = _returnCollapsed ? '285px' : '';
+  }
 }
 (function(){
   var rw = document.getElementById('return-scroll-wrap');
@@ -1612,6 +1649,7 @@ function updateExpiryTable(brand) {
       tbody.appendChild(tr);
     });
   });
+  if(typeof _updateReturnHeader === 'function') _updateReturnHeader(brand);
 }
 
 function syncExpiry() {
@@ -1692,6 +1730,7 @@ function updateStockTable(brand) {
     BRAND_IDS.forEach(function(b){ if (stockCache[b]) renderStock(stockCache[b]); });
   }
   requestAnimationFrame(function(){ if(window._syncReturnWidth) window._syncReturnWidth(); });
+  if(typeof _updateReturnHeader === 'function') _updateReturnHeader(brand);
 }
 var WARN_RULES = {
   '헬리코컷':      {field:'stock8w',  threshold:50000},
