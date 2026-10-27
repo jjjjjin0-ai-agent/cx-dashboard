@@ -240,6 +240,16 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .stock-table tr.lot-sub td{border-top:1px dashed var(--border-light,#e8e8e8)}
 .stock-table.hide-brand-col th:first-child,.stock-table.hide-brand-col td:first-child{display:none}
 .stock-empty{padding:36px 0;text-align:center;color:var(--muted);font-size:13px}
+/* 스크롤 래퍼 */
+.stock-scroll-wrap{max-height:calc(100vh - 160px);overflow-y:auto;overflow-x:hidden}
+.stock-scroll-wrap::-webkit-scrollbar{width:5px}
+.stock-scroll-wrap::-webkit-scrollbar-track{background:transparent}
+.stock-scroll-wrap::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .25s}
+.stock-scroll-wrap.is-scrolling::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22)}
+/* 접기/펼치기 버튼 */
+.stock-collapse-th{width:32px;padding:0!important;text-align:center}
+.stock-collapse-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px 6px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;transition:color .15s;line-height:0}
+.stock-collapse-btn:hover{color:var(--fg)}
 
 /* 카페24 자격증명 팝업 */
 .c24-popup{position:fixed;z-index:200;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:16px;min-width:240px;display:flex;flex-direction:column;gap:10px}
@@ -415,6 +425,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         </label>
       </div>
       <div style="min-height:16px;margin-bottom:6px"><span id="stock-status" style="font-size:11px;color:var(--muted)"></span></div>
+      <div class="stock-scroll-wrap" id="stock-scroll-wrap">
       <div class="stock-card">
         <table class="stock-table" id="stock-table">
           <thead>
@@ -426,10 +437,12 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
               <th class="num">1일 평균</th>
               <th class="num">8주 출고</th>
               <th class="num">8주 후 재고</th>
+              <th class="stock-collapse-th"><button class="stock-collapse-btn" id="stock-collapse-btn" onclick="_toggleStockCollapse()" title="접기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,11 7,6 12,11"/><polyline points="2,7 7,2 12,7"/></svg></button></th>
             </tr>
           </thead>
           <tbody id="stock-tbody"></tbody>
         </table>
+      </div>
       </div>
     </div>
 
@@ -1379,6 +1392,32 @@ function showTossPopup(e){e.stopPropagation();var p=document.getElementById('tos
 function hideTossPopup(){document.getElementById('toss-popup').style.display='none';}
 document.addEventListener('click',function(e){if(document.getElementById('toss-popup').style.display!=='none'&&!document.getElementById('toss-popup').contains(e.target))hideTossPopup();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTossPopup();});
+
+/* ===== 테이블 스크롤 + 접기/펼치기 ===== */
+var _stockCollapsed = false;
+var _CHEV_SVG_UP   = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,11 7,6 12,11"/><polyline points="2,7 7,2 12,7"/></svg>';
+var _CHEV_SVG_DOWN = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg>';
+function _CHEV_TH(){
+  return '<th class="stock-collapse-th"><button class="stock-collapse-btn" id="stock-collapse-btn" onclick="_toggleStockCollapse()" title="'
+    +(_stockCollapsed?'펼치기':'접기')+'">'+(_stockCollapsed?_CHEV_SVG_DOWN:_CHEV_SVG_UP)+'</button></th>';
+}
+function _toggleStockCollapse(){
+  _stockCollapsed = !_stockCollapsed;
+  var tbody = document.getElementById('stock-tbody');
+  if(tbody) tbody.style.display = _stockCollapsed ? 'none' : '';
+  var btn = document.getElementById('stock-collapse-btn');
+  if(btn){ btn.innerHTML = _stockCollapsed ? _CHEV_SVG_DOWN : _CHEV_SVG_UP; btn.title = _stockCollapsed ? '펼치기' : '접기'; }
+}
+(function(){
+  var sw = document.getElementById('stock-scroll-wrap');
+  if(!sw) return;
+  var t;
+  sw.addEventListener('scroll', function(){
+    sw.classList.add('is-scrolling');
+    clearTimeout(t);
+    t = setTimeout(function(){ sw.classList.remove('is-scrolling'); }, 900);
+  });
+})();
 </script>
 <div id="toss-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:16px;min-width:200px;flex-direction:column;gap:10px">
   <div class="c24-popup-head">
@@ -1417,7 +1456,7 @@ function toggleStockView() {
     updateExpiryTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
   } else {
     if (label) label.textContent = '재고 현황';
-    if (thead) thead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">현재고</th><th class="num">7일 출고</th><th class="num">1일 평균</th><th class="num">8주 출고</th><th class="num">8주 후 재고</th>';
+    if (thead) thead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">현재고</th><th class="num">7일 출고</th><th class="num">1일 평균</th><th class="num">8주 출고</th><th class="num">8주 후 재고</th>' + _CHEV_TH();
     updateStockTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
   }
 }
@@ -1450,7 +1489,7 @@ function updateExpiryTable(brand) {
     } else {
       hdrs += '<th class="num">재고수량</th>';
     }
-    thead.innerHTML = hdrs;
+    thead.innerHTML = hdrs + _CHEV_TH();
   }
 
   var list = brand
