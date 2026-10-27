@@ -1417,14 +1417,14 @@ function updateExpiryTable(brand) {
   var table = document.getElementById('stock-table');
   if (table) { brand ? table.classList.add('hide-brand-col') : table.classList.remove('hide-brand-col'); }
 
-  // 표시 대상 브랜드의 캐시 전체 합치기 → 고유 입고월 수집
-  var allCacheRows = (brand ? [brand] : BRAND_IDS)
-    .reduce(function(acc, b) { return acc.concat(expiryCache[b] || []); }, []);
+  // 고정 월 열: 현재 월 기준 최근 3개월 (예: 8·9·10월)
+  // 6·7월 등 이전 입고분은 해당 열이 없으므로 자동으로 — 표시
+  var now = new Date();
   var months = [];
-  allCacheRows.forEach(function(r) {
-    if (r.inboundMonth && months.indexOf(r.inboundMonth) < 0) months.push(r.inboundMonth);
-  });
-  months.sort();
+  for (var _mi = -2; _mi <= 0; _mi++) {
+    var _md = new Date(now.getFullYear(), now.getMonth() + _mi, 1);
+    months.push(_md.getFullYear() + '-' + String(_md.getMonth() + 1).padStart(2, '0'));
+  }
 
   // 헤더 동적 구성
   var thead = document.querySelector('#stock-table thead tr');
