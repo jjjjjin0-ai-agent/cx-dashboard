@@ -241,7 +241,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .stock-table.hide-brand-col th:first-child,.stock-table.hide-brand-col td:first-child{display:none}
 .stock-empty{padding:36px 0;text-align:center;color:var(--muted);font-size:13px}
 /* 스크롤 래퍼 */
-.stock-scroll-wrap{overflow-y:auto;overflow-x:hidden}
+.stock-scroll-wrap{overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable}
 .stock-scroll-wrap::-webkit-scrollbar{width:5px}
 .stock-scroll-wrap::-webkit-scrollbar-track{background:transparent}
 .stock-scroll-wrap::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .25s}
@@ -418,7 +418,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     </section>
 
     <!-- 재고 현황 + 교환·반품 나란히 배치 -->
-    <div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:nowrap">
+    <div style="display:flex;gap:80px;align-items:flex-start;flex-wrap:nowrap">
     <div id="stock-section-wrap" class="stock-section">
       <div class="stock-section-hd">
         <div class="plat-label" id="stock-view-label">재고 현황</div>
@@ -456,7 +456,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     <!-- 교환·반품 섹션 -->
     <div id="return-section-wrap" class="stock-section">
       <div class="stock-section-hd">
-        <div class="plat-label" id="return-view-label" style="cursor:pointer">교환 · 반품</div>
+        <div class="plat-label" id="return-view-label" style="cursor:pointer;font-size:16px;font-weight:600">교환 · 반품</div>
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
       <div class="return-scroll-wrap" id="return-scroll-wrap">
