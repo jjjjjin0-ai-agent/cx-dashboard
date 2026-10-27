@@ -247,7 +247,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .stock-scroll-wrap::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .25s}
 .stock-scroll-wrap.is-scrolling::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22)}
 /* 교환·반품 독립 섹션 */
-.return-scroll-wrap{max-height:285px;overflow:auto}
+.return-scroll-wrap{max-height:285px;min-height:285px;overflow:auto}
 .return-scroll-wrap::-webkit-scrollbar{width:5px}
 .return-scroll-wrap::-webkit-scrollbar-track{background:transparent}
 .return-scroll-wrap::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .25s}
@@ -418,7 +418,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     </section>
 
     <!-- 재고 현황 + 교환·반품 나란히 배치 -->
-    <div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap">
+    <div style="display:flex;gap:48px;align-items:flex-start;flex-wrap:nowrap">
     <div id="stock-section-wrap" class="stock-section">
       <div class="stock-section-hd">
         <div class="plat-label" id="stock-view-label">재고 현황</div>
@@ -751,6 +751,16 @@ window.addEventListener('DOMContentLoaded', () => {
       window.open(SHEET_RETURN, '_blank');
     });
   }
+  // 교환·반품 섹션 너비를 재고현황 섹션과 동일하게
+  window._syncReturnWidth = function(){
+    var sw = document.getElementById('stock-section-wrap');
+    var rw = document.getElementById('return-section-wrap');
+    if(!sw || !rw) return;
+    var w = sw.offsetWidth;
+    if(w > 0) rw.style.width = w + 'px';
+  };
+  window.addEventListener('resize', window._syncReturnWidth);
+  setTimeout(window._syncReturnWidth, 300);
 });
 
 /* ---------- GitHub 데이터 동기화 ---------- */
@@ -1439,6 +1449,7 @@ function _toggleStockCollapse(){
   if(sw) sw.style.maxHeight = _stockCollapsed ? '285px' : '';
   var btn = document.getElementById('stock-collapse-btn');
   if(btn){ btn.innerHTML = _stockCollapsed ? _CHEV_SVG_DOWN : _CHEV_SVG_UP; btn.title = _stockCollapsed ? '펼치기' : '접기'; }
+  requestAnimationFrame(function(){ if(window._syncReturnWidth) window._syncReturnWidth(); });
 }
 function _updateScrollWrapMode(isTotal){
   var sw = document.getElementById('stock-scroll-wrap');
@@ -1680,6 +1691,7 @@ function updateStockTable(brand) {
   } else {
     BRAND_IDS.forEach(function(b){ if (stockCache[b]) renderStock(stockCache[b]); });
   }
+  requestAnimationFrame(function(){ if(window._syncReturnWidth) window._syncReturnWidth(); });
 }
 var WARN_RULES = {
   '헬리코컷':      {field:'stock8w',  threshold:50000},
