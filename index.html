@@ -320,7 +320,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     <div class="navgroup">
       <div class="navlabel">메뉴</div>
       <nav class="nav">
-        <a href="#" id="nav-calendar" class="on" aria-current="page">
+        <a href="#" id="nav-calendar" aria-current="false">
           <span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><line x1="1.5" y1="6" x2="14.5" y2="6"/><line x1="5" y1="1" x2="5" y2="4"/><line x1="11" y1="1" x2="11" y2="4"/></svg></span>
           <span><b>캘린더</b><small>일정 관리</small></span>
         </a>
@@ -1100,6 +1100,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     if(calView) calView.style.display='';
     if(stockWrap) stockWrap.style.display='none';
     if(pageTitleEl) pageTitleEl.textContent='캘린더';
+    navCal.classList.add('on'); navCal.setAttribute('aria-current','page');
     renderCal();
   }
   function showDashboard(){
@@ -1108,6 +1109,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     if(calView) calView.style.display='none';
     if(stockWrap) stockWrap.style.display='';
     if(pageTitleEl && !activeBrand) pageTitleEl.textContent='CX 대시보드';
+    navCal.classList.remove('on'); navCal.setAttribute('aria-current','false');
   }
 
   navCal.addEventListener('click',e=>{
