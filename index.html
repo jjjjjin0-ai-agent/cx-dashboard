@@ -1402,8 +1402,8 @@ function _CHEV_TH(){
 }
 function _toggleStockCollapse(){
   _stockCollapsed = !_stockCollapsed;
-  var tbody = document.getElementById('stock-tbody');
-  if(tbody) tbody.style.display = _stockCollapsed ? 'none' : '';
+  var sw = document.getElementById('stock-scroll-wrap');
+  if(sw) sw.style.maxHeight = _stockCollapsed ? '285px' : '';
   var btn = document.getElementById('stock-collapse-btn');
   if(btn){ btn.innerHTML = _stockCollapsed ? _CHEV_SVG_DOWN : _CHEV_SVG_UP; btn.title = _stockCollapsed ? '펼치기' : '접기'; }
 }
@@ -1411,13 +1411,10 @@ function _updateScrollWrapMode(isTotal){
   var sw = document.getElementById('stock-scroll-wrap');
   if(!sw) return;
   if(isTotal){
+    _stockCollapsed = true;   // 총 보기 기본: 접힘(285px)
     sw.style.maxHeight = '285px';
-    _stockCollapsed = false;
-    var tb2 = document.getElementById('stock-tbody');
-    if(tb2) tb2.style.display = '';
   } else {
-    sw.style.maxHeight = '';
-    _stockCollapsed = false;
+    sw.style.maxHeight = '';  // 브랜드 보기: 제한 없음
   }
 }
 (function(){
@@ -1499,9 +1496,9 @@ function updateExpiryTable(brand) {
     } else {
       hdrs += '<th class="num">재고수량</th>';
     }
+    _updateScrollWrapMode(!brand);  // _stockCollapsed 상태 먼저 확정
     thead.innerHTML = hdrs + (!brand ? _CHEV_TH() : '');
   }
-  _updateScrollWrapMode(!brand);
 
   var list = brand
     ? (STOCK_PRODUCTS[brand] || []).map(function(n){ return {brand:brand, name:n}; })
@@ -1598,9 +1595,9 @@ function updateStockTable(brand) {
   var table = document.getElementById('stock-table');
   if (table) { brand ? table.classList.add('hide-brand-col') : table.classList.remove('hide-brand-col'); }
   // thead: 총 보기에서만 체브론 버튼 표시
+  _updateScrollWrapMode(!brand);  // _stockCollapsed 상태 먼저 확정
   var _stThead = document.querySelector('#stock-table thead tr');
   if (_stThead) _stThead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">현재고</th><th class="num">7일 출고</th><th class="num">1일 평균</th><th class="num">8주 출고</th><th class="num">8주 후 재고</th>' + (!brand ? _CHEV_TH() : '');
-  _updateScrollWrapMode(!brand);
   var list = brand
     ? (STOCK_PRODUCTS[brand] || []).map(function(n){ return {brand:brand, name:n}; })
     : BRAND_IDS.reduce(function(acc,b){
