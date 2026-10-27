@@ -203,7 +203,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 /* 플랫폼 섹션 */
 .plat-section{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 .plat-label{font-size:16px;font-weight:600;color:var(--fg);margin:0}
-.plat-row{display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding-bottom:4px;margin-top:0}
+.plat-row{display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding-top:4px;padding-bottom:4px;margin-top:-4px}
 
 .plat-card{flex:0 0 auto;width:130px;border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--surface);color:var(--fg);font-size:13px;font-weight:500;letter-spacing:-.02em;text-align:center;cursor:pointer;text-decoration:none;transition:background .18s var(--ease),box-shadow .18s var(--ease),border-color .18s var(--ease),transform .18s var(--ease);padding:16px 12px;will-change:transform}
 .plat-card:hover{background:var(--surface);box-shadow:var(--shadow-md);border-color:var(--line);transform:translateY(-1px)}
@@ -241,7 +241,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .stock-table.hide-brand-col th:first-child,.stock-table.hide-brand-col td:first-child{display:none}
 .stock-empty{padding:36px 0;text-align:center;color:var(--muted);font-size:13px}
 /* 스크롤 래퍼 */
-.stock-scroll-wrap{max-height:calc(100vh - 160px);overflow-y:auto;overflow-x:hidden}
+.stock-scroll-wrap{overflow-y:auto;overflow-x:hidden}
 .stock-scroll-wrap::-webkit-scrollbar{width:5px}
 .stock-scroll-wrap::-webkit-scrollbar-track{background:transparent}
 .stock-scroll-wrap::-webkit-scrollbar-thumb{background:transparent;border-radius:3px;transition:background .25s}
@@ -437,7 +437,6 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
               <th class="num">1일 평균</th>
               <th class="num">8주 출고</th>
               <th class="num">8주 후 재고</th>
-              <th class="stock-collapse-th"><button class="stock-collapse-btn" id="stock-collapse-btn" onclick="_toggleStockCollapse()" title="접기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,11 7,6 12,11"/><polyline points="2,7 7,2 12,7"/></svg></button></th>
             </tr>
           </thead>
           <tbody id="stock-tbody"></tbody>
@@ -1408,6 +1407,19 @@ function _toggleStockCollapse(){
   var btn = document.getElementById('stock-collapse-btn');
   if(btn){ btn.innerHTML = _stockCollapsed ? _CHEV_SVG_DOWN : _CHEV_SVG_UP; btn.title = _stockCollapsed ? '펼치기' : '접기'; }
 }
+function _updateScrollWrapMode(isTotal){
+  var sw = document.getElementById('stock-scroll-wrap');
+  if(!sw) return;
+  if(isTotal){
+    sw.style.maxHeight = '285px';
+    _stockCollapsed = false;
+    var tb2 = document.getElementById('stock-tbody');
+    if(tb2) tb2.style.display = '';
+  } else {
+    sw.style.maxHeight = '';
+    _stockCollapsed = false;
+  }
+}
 (function(){
   var sw = document.getElementById('stock-scroll-wrap');
   if(!sw) return;
@@ -1450,13 +1462,11 @@ function toggleStockView() {
   var cb = document.getElementById('view-toggle-cb');
   viewMode = (cb && cb.checked) ? 'expiry' : 'stock';
   var label = document.getElementById('stock-view-label');
-  var thead = document.querySelector('#stock-table thead tr');
   if (viewMode === 'expiry') {
     if (label) label.textContent = '유통 기한';
     updateExpiryTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
   } else {
     if (label) label.textContent = '재고 현황';
-    if (thead) thead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">현재고</th><th class="num">7일 출고</th><th class="num">1일 평균</th><th class="num">8주 출고</th><th class="num">8주 후 재고</th>' + _CHEV_TH();
     updateStockTable(typeof activeBrand !== 'undefined' ? activeBrand : null);
   }
 }
@@ -1489,8 +1499,9 @@ function updateExpiryTable(brand) {
     } else {
       hdrs += '<th class="num">재고수량</th>';
     }
-    thead.innerHTML = hdrs + _CHEV_TH();
+    thead.innerHTML = hdrs + (!brand ? _CHEV_TH() : '');
   }
+  _updateScrollWrapMode(!brand);
 
   var list = brand
     ? (STOCK_PRODUCTS[brand] || []).map(function(n){ return {brand:brand, name:n}; })
@@ -1586,6 +1597,10 @@ function updateStockTable(brand) {
   // 단일 브랜드 선택 시 브랜드 칸 숨김
   var table = document.getElementById('stock-table');
   if (table) { brand ? table.classList.add('hide-brand-col') : table.classList.remove('hide-brand-col'); }
+  // thead: 총 보기에서만 체브론 버튼 표시
+  var _stThead = document.querySelector('#stock-table thead tr');
+  if (_stThead) _stThead.innerHTML = '<th>브랜드</th><th>제품명</th><th class="num">현재고</th><th class="num">7일 출고</th><th class="num">1일 평균</th><th class="num">8주 출고</th><th class="num">8주 후 재고</th>' + (!brand ? _CHEV_TH() : '');
+  _updateScrollWrapMode(!brand);
   var list = brand
     ? (STOCK_PRODUCTS[brand] || []).map(function(n){ return {brand:brand, name:n}; })
     : BRAND_IDS.reduce(function(acc,b){
