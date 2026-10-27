@@ -460,15 +460,26 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <input type="date" id="return-start-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
         <span id="return-date-sep" style="display:none;font-size:12px;color:var(--muted)">~</span>
         <input type="date" id="return-end-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <button class="stock-sync-btn" id="return-query-btn" style="display:none" onclick="_fetchReturnData()">조회</button>
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
       <div class="return-scroll-wrap" id="return-scroll-wrap">
-        <div class="stock-card">
-          <table class="stock-table" id="return-table">
-            <thead><tr id="return-thead-tr"></tr></thead>
-            <tbody id="return-tbody"></tbody>
-          </table>
+        <div id="return-chart-area" style="display:none;padding:14px 16px 10px">
+          <div style="display:flex;gap:20px;align-items:flex-start;min-height:220px">
+            <!-- 도넛 차트 (제품별) -->
+            <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
+              <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.02em">제품별</div>
+              <canvas id="return-donut-canvas" width="160" height="160"></canvas>
+              <div id="return-donut-legend" style="margin-top:8px;font-size:10.5px;display:flex;flex-direction:column;gap:3px"></div>
+            </div>
+            <!-- 막대 차트 (사유별) -->
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+              <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.02em">사유별</div>
+              <canvas id="return-bar-canvas" style="width:100%;height:180px"></canvas>
+            </div>
+          </div>
         </div>
+        <div id="return-empty-msg" style="padding:40px 16px;text-align:center;color:var(--muted);font-size:12px">날짜를 선택하고 조회 버튼을 눌러주세요</div>
       </div>
     </div>
     </div><!-- /flex wrapper -->
@@ -1505,16 +1516,17 @@ function _updateReturnHeader(brand){
   var s   = document.getElementById('return-start-date');
   var sep = document.getElementById('return-date-sep');
   var e   = document.getElementById('return-end-date');
+  var qb  = document.getElementById('return-query-btn');
   var btn = document.getElementById('return-collapse-btn');
   var rw  = document.getElementById('return-scroll-wrap');
   var show = function(el){ if(el) el.style.display=''; };
   var hide = function(el){ if(el) el.style.display='none'; };
   if(brand){
-    show(s); show(sep); show(e); hide(btn);
+    show(s); show(sep); show(e); show(qb); hide(btn);
     if(rw){ rw.style.maxHeight=''; _returnCollapsed=false; }
     _setReturnWeekDates();
   } else {
-    hide(s); hide(sep); hide(e); show(btn);
+    hide(s); hide(sep); hide(e); hide(qb); show(btn);
     if(rw) rw.style.maxHeight = _returnCollapsed ? '285px' : '';
   }
 }
@@ -1528,6 +1540,194 @@ function _updateReturnHeader(brand){
     t2 = setTimeout(function(){ rw.classList.remove('is-scrolling'); }, 900);
   });
 })();
+
+/* ───────────── 교환·반품 시트 조회 ───────────── */
+var _RETURN_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/export?format=csv&gid=1198818115';
+
+function _parseCSV(text){
+  var rows=[]; var lines=text.split(/\r?\n/);
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i]; if(!line.trim()) continue;
+    var cols=[]; var cur=''; var inQ=false;
+    for(var j=0;j<line.length;j++){
+      var c=line[j];
+      if(c==='"'){ if(inQ&&line[j+1]==='"'){ cur+='"'; j++; } else inQ=!inQ; }
+      else if(c===','&&!inQ){ cols.push(cur.trim()); cur=''; }
+      else cur+=c;
+    }
+    cols.push(cur.trim());
+    rows.push(cols);
+  }
+  return rows;
+}
+
+function _parseReturnDate(str){
+  if(!str) return null;
+  str=str.replace(/\s/g,'');
+  var m;
+  // YYYY-MM-DD or YYYY/MM/DD
+  m=str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  // YY-MM-DD or YY/MM/DD (e.g. 26-10-01)
+  m=str.match(/^(\d{2})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if(m) return new Date(2000+ +m[1],+m[2]-1,+m[3]);
+  // M/D or MM/DD (no year → use current year)
+  m=str.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if(m) return new Date(new Date().getFullYear(),+m[1]-1,+m[2]);
+  return null;
+}
+
+function _fetchReturnData(){
+  var sEl=document.getElementById('return-start-date');
+  var eEl=document.getElementById('return-end-date');
+  var qb=document.getElementById('return-query-btn');
+  if(!sEl||!eEl) return;
+  var startStr=sEl.value, endStr=eEl.value;
+  var startD=startStr?new Date(startStr):null;
+  var endD=endStr?new Date(endStr):null;
+  if(endD) endD.setHours(23,59,59,999);
+  if(qb){ qb.disabled=true; qb.textContent='조회 중...'; }
+  fetch(_RETURN_SHEET_CSV)
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(function(text){
+      if(qb){ qb.disabled=false; qb.textContent='조회'; }
+      var rows=_parseCSV(text);
+      // skip header row(s): skip until we find a row whose col A looks like a date
+      var dataRows=[];
+      for(var i=1;i<rows.length;i++){
+        var r=rows[i];
+        var colA=r[0]||''; var colD=r[3]||''; var colF=r[5]||''; var colH=r[7]||'';
+        if(!colA&&!colD) continue;
+        // filter out 사은품
+        if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) continue;
+        // parse date
+        var d=_parseReturnDate(colA);
+        if(startD&&d&&d<startD) continue;
+        if(endD&&d&&d>endD) continue;
+        var qty=parseInt((colH||'0').replace(/[^0-9]/g,''),10)||0;
+        var type=(colF.trim()==='교환')?'교환':'반품';
+        var reason=colF.trim()||'변심';
+        dataRows.push({product:colD.trim(), reason:reason, type:type, qty:qty});
+      }
+      _renderReturnCharts(dataRows);
+    })
+    .catch(function(err){
+      if(qb){ qb.disabled=false; qb.textContent='조회'; }
+      var em=document.getElementById('return-empty-msg');
+      if(em){ em.style.display=''; em.textContent='데이터를 불러오지 못했습니다: '+err.message; }
+    });
+}
+
+function _renderReturnCharts(dataRows){
+  var area=document.getElementById('return-chart-area');
+  var emsg=document.getElementById('return-empty-msg');
+  if(!dataRows.length){
+    if(area) area.style.display='none';
+    if(emsg){ emsg.style.display=''; emsg.textContent='해당 기간에 데이터가 없습니다'; }
+    return;
+  }
+  if(area) area.style.display='';
+  if(emsg) emsg.style.display='none';
+
+  // aggregate by product
+  var prodMap={};
+  dataRows.forEach(function(r){
+    if(!prodMap[r.product]) prodMap[r.product]=0;
+    prodMap[r.product]+=r.qty;
+  });
+  // aggregate by reason
+  var reasonMap={};
+  dataRows.forEach(function(r){
+    var key=r.type==='교환'?'교환':r.reason;
+    if(!reasonMap[key]) reasonMap[key]=0;
+    reasonMap[key]+=r.qty;
+  });
+
+  var PALETTE=['#5B7FFF','#FF6B6B','#FFB347','#4ECDC4','#A78BFA','#F472B6','#34D399','#FB923C','#60A5FA','#FBBF24'];
+
+  // ── 도넛 차트
+  var dCanvas=document.getElementById('return-donut-canvas');
+  if(dCanvas){
+    var W=dCanvas.width, H=dCanvas.height;
+    var ctx=dCanvas.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+    var prods=Object.keys(prodMap).sort(function(a,b){return prodMap[b]-prodMap[a];});
+    var total=prods.reduce(function(s,k){return s+prodMap[k];},0);
+    var cx=W/2, cy=H/2, R=Math.min(W,H)/2-8, r=R*0.52;
+    var angle=-Math.PI/2;
+    prods.forEach(function(p,i){
+      var slice=(prodMap[p]/total)*2*Math.PI;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,R,angle,angle+slice);
+      ctx.closePath();
+      ctx.fillStyle=PALETTE[i%PALETTE.length];
+      ctx.fill();
+      angle+=slice;
+    });
+    // center hole
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()||'#fff';
+    ctx.fill();
+    // center total
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim()||'#222';
+    ctx.font='bold 15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(total.toLocaleString(),cx,cy-7);
+    ctx.font='10px sans-serif';
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#888';
+    ctx.fillText('총합',cx,cy+9);
+    // legend
+    var leg=document.getElementById('return-donut-legend');
+    if(leg){
+      leg.innerHTML='';
+      prods.forEach(function(p,i){
+        var pct=Math.round(prodMap[p]/total*100);
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:5px;white-space:nowrap';
+        row.innerHTML='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+PALETTE[i%PALETTE.length]+'"></span>'
+          +'<span style="color:var(--fg)">'+p+'</span>'
+          +'<span style="color:var(--muted);margin-left:auto;padding-left:8px">'+prodMap[p].toLocaleString()+'('+pct+'%)</span>';
+        leg.appendChild(row);
+      });
+    }
+  }
+
+  // ── 막대 차트
+  var bCanvas=document.getElementById('return-bar-canvas');
+  if(bCanvas){
+    var keys=Object.keys(reasonMap).sort(function(a,b){return reasonMap[b]-reasonMap[a];});
+    var maxV=Math.max.apply(null,keys.map(function(k){return reasonMap[k];}));
+    var bW=bCanvas.offsetWidth||300, bH=180;
+    bCanvas.width=bW; bCanvas.height=bH;
+    var bCtx=bCanvas.getContext('2d');
+    bCtx.clearRect(0,0,bW,bH);
+    var padL=8, padR=8, padT=12, padB=40;
+    var chartW=bW-padL-padR, chartH=bH-padT-padB;
+    var barW=Math.min(40, Math.floor(chartW/keys.length)-8);
+    var gap=(chartW-barW*keys.length)/(keys.length+1);
+    var fgColor=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#888';
+    keys.forEach(function(k,i){
+      var x=padL+gap*(i+1)+barW*i;
+      var barH2=maxV>0?Math.round((reasonMap[k]/maxV)*chartH):0;
+      var y=padT+chartH-barH2;
+      bCtx.fillStyle=PALETTE[i%PALETTE.length];
+      bCtx.beginPath();
+      bCtx.roundRect(x,y,barW,barH2,3);
+      bCtx.fill();
+      // value label
+      bCtx.fillStyle=fgColor;
+      bCtx.font='bold 10px sans-serif'; bCtx.textAlign='center';
+      bCtx.fillText(reasonMap[k].toLocaleString(),x+barW/2,y-3);
+      // x label
+      var label=k.length>4?k.slice(0,4)+'…':k;
+      bCtx.font='10px sans-serif'; bCtx.fillStyle=fgColor;
+      bCtx.fillText(label,x+barW/2,bH-padB+14);
+    });
+    // baseline
+    bCtx.beginPath(); bCtx.moveTo(padL,padT+chartH); bCtx.lineTo(bW-padR,padT+chartH);
+    bCtx.strokeStyle=fgColor; bCtx.globalAlpha=0.2; bCtx.lineWidth=1; bCtx.stroke();
+    bCtx.globalAlpha=1;
+  }
+}
 </script>
 <div id="toss-popup" style="display:none;position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:16px;min-width:200px;flex-direction:column;gap:10px">
   <div class="c24-popup-head">
