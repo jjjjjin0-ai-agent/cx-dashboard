@@ -921,7 +921,7 @@ function _ghWrite(path, data, sha, msg, cb) {
   }
 
   /* ---- 색상 팔레트 ---- */
-  function renderColors(disabledColors=[]){
+  function renderColors(){
     const container=document.getElementById('cal-colors');
     container.innerHTML='';
     COLORS.forEach(c=>{
@@ -929,10 +929,8 @@ function _ghWrite(path, data, sha, msg, cb) {
       sw.className='cal-color-swatch';
       sw.style.background=c;
       sw.title=c;
-      if(disabledColors.includes(c)) sw.setAttribute('disabled','');
-      if(c===selectedColor && !disabledColors.includes(c)) sw.classList.add('selected');
-      if(c===selectedColor && disabledColors.includes(c)){ selectedColor=COLORS.find(x=>!disabledColors.includes(x))||COLORS[0]; }
-      sw.addEventListener('click',()=>{ selectedColor=c; renderColors(disabledColors); });
+      if(c===selectedColor) sw.classList.add('selected');
+      sw.addEventListener('click',()=>{ selectedColor=c; renderColors(); });
       container.appendChild(sw);
     });
   }
@@ -975,8 +973,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     document.getElementById('cal-modal-del').style.display='none';
     resetModal();
     selectedColor=COLORS[0];
-    const usedOnStart=loadEvents().filter(ev=>ev.start<=tk&&ev.end>=tk).map(ev=>ev.color);
-    renderColors(usedOnStart);
+    renderColors();
     document.getElementById('cal-modal').hidden=false;
     setTimeout(()=>document.getElementById('cal-modal-name').focus(),50);
   }
@@ -1004,9 +1001,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     if(ev.url){ document.getElementById('cal-modal-url').value=ev.url; document.getElementById('cal-link-row').style.display=''; document.getElementById('cal-link-toggle').classList.add('active'); }
     document.getElementById('cal-modal-del').style.display='';
     selectedColor=ev.color||COLORS[0];
-    const others=loadEvents().filter(e=>e.id!==id);
-    const usedOnStart=others.filter(e=>e.start<=ev.start&&e.end>=ev.start).map(e=>e.color);
-    renderColors(usedOnStart);
+    renderColors();
     document.getElementById('cal-modal').hidden=false;
     setTimeout(()=>document.getElementById('cal-modal-name').focus(),50);
   }
@@ -1048,8 +1043,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     const s=document.getElementById('cal-modal-start').value;
     const e=document.getElementById('cal-modal-end').value;
     if(e&&e<s) document.getElementById('cal-modal-end').value=s;
-    const used=loadEvents().filter(ev=>(editingId?ev.id!==editingId:true)&&ev.start<=s&&ev.end>=s).map(ev=>ev.color);
-    renderColors(used);
+    renderColors();
   });
 
   /* ---- 링크 토글 ---- */
