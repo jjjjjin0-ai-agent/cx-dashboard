@@ -417,7 +417,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
       </div>
     </section>
 
-    <!-- 재고 현황 (항상 표시, 캘린더 시 숨김) -->
+    <!-- 재고 현황 + 교환·반품 나란히 배치 -->
+    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
     <div id="stock-section-wrap" class="stock-section">
       <div class="stock-section-hd">
         <div class="plat-label" id="stock-view-label">재고 현황</div>
@@ -453,18 +454,21 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     </div>
 
     <!-- 교환·반품 섹션 -->
-    <div id="return-section-wrap" class="stock-section" style="margin-top:16px">
+    <div id="return-section-wrap" class="stock-section">
       <div class="stock-section-hd">
-        <div class="plat-label">교환 · 반품</div>
-        <a href="https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/edit?gid=1198818115#gid=1198818115" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;letter-spacing:-.01em">↗ 새 탭으로 열기</a>
+        <div class="plat-label" id="return-view-label" style="cursor:pointer">교환 · 반품</div>
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
       <div class="return-scroll-wrap" id="return-scroll-wrap">
-        <div class="stock-card" style="overflow:hidden">
-          <iframe src="https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/edit?gid=1198818115&embedded=true" style="display:block;width:900px;height:1400px;border:none"></iframe>
+        <div class="stock-card">
+          <table class="stock-table" id="return-table">
+            <thead><tr id="return-thead-tr"></tr></thead>
+            <tbody id="return-tbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
+    </div><!-- /flex wrapper -->
 
     <!-- 캘린더 뷰 -->
     <section id="cal-view" style="display:none">
@@ -737,6 +741,14 @@ window.addEventListener('DOMContentLoaded', () => {
     stockLabelEl.style.cursor='pointer';
     stockLabelEl.addEventListener('dblclick', function(){
       window.open(viewMode==='expiry' ? SHEET_EXPIRY : SHEET_STOCK, '_blank');
+    });
+  }
+  // 교환·반품 제목 더블클릭 → 시트 열기 + 툴팁
+  const SHEET_RETURN = 'https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/edit?gid=1198818115#gid=1198818115';
+  const returnLabelEl = document.getElementById('return-view-label');
+  if(returnLabelEl){
+    returnLabelEl.addEventListener('dblclick', function(){
+      window.open(SHEET_RETURN, '_blank');
     });
   }
 });
