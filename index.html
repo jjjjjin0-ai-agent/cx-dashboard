@@ -1720,16 +1720,16 @@ function _parseRetRow_old(r){
   var rk=(colF.indexOf('쿠팡')>=0)?'변심':(colF.trim()||'변심');
   return {product:colD.trim(),reason:rk,type:type,qty:qty,date:_parseReturnDate(colA)};
 }
-// 11월+ 신형식 파서: D=상품명, E=수량, F=교환/반품, G=플랫폼, H=사유
+// 11월+ 신형식 파서: D=상품명, E=수량, F=교환/반품, G=플랫폼, H=사유, I=비고
 function _parseRetRow_new(r){
-  var colA=r[0]||'',colD=r[3]||'',colE=r[4]||'',colF=r[5]||'',colH=r[7]||'';
+  var colA=r[0]||'',colD=r[3]||'',colE=r[4]||'',colF=r[5]||'',colG=r[6]||'',colH=r[7]||'',colI=r[8]||'';
   if(!colA&&!colD) return null;
   if(colD.indexOf('사은품')>=0) return null;
   var qty=parseInt(colE.replace(/[^0-9]/g,''),10)||0;
   if(!qty) return null;
   var type=(colF.trim()==='교환')?'교환':'반품';
-  var rk=colH.trim()||'변심';
-  return {product:colD.trim(),reason:rk,type:type,qty:qty,date:_parseReturnDate(colA)};
+  var rk=colH.trim()||(colI.trim()||'변심');
+  return {product:colD.trim(),reason:rk,type:type,qty:qty,date:_parseReturnDate(colA),platform:colG.trim()};
 }
 function _fetchReturnData(){
   var sEl=document.getElementById('return-start-date');
