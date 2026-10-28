@@ -1708,28 +1708,33 @@ function _monthsInRange(startD,endD){
   while(cur<=last){ months.push(_yyyymm(cur)); cur.setMonth(cur.getMonth()+1); }
   return months;
 }
-// 10월 구형식 파서: D=상품명, F=비고(사유+교환감지), H=검수수량
-// 쿠팡 문자 포함 시 사유='변심'
+// 주문번호(B열) 기준 중복 제거 (같은 주문번호 = 1건)
+function _dedupeByOrderNo(rows){
+  var seen={};
+  return rows.filter(function(r){
+    if(!r.orderNo) return true;
+    if(seen[r.orderNo]) return false;
+    seen[r.orderNo]=true; return true;
+  });
+}
+// 10월 구형식 파서: A=날짜, B=주문번호, D=상품명, F=비고(사유+교환감지)
+// 수량 대신 주문당 1건, 쿠팡 포함 시 사유='변심'
 function _parseRetRow_old(r){
-  var colA=r[0]||'',colD=r[3]||'',colF=r[5]||'',colH=r[7]||'';
+  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'';
   if(!colA&&!colD) return null;
   if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) return null;
-  var qty=parseInt((colH||'0').replace(/[^0-9]/g,''),10)||0;
-  if(!qty) return null;
   var type=(colF.indexOf('교환')>=0)?'교환':'반품';
   var rk=(colF.indexOf('쿠팡')>=0)?'변심':(colF.trim()||'변심');
-  return {product:colD.trim(),reason:rk,type:type,qty:qty,date:_parseReturnDate(colA)};
+  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA)};
 }
-// 11월+ 신형식 파서: D=상품명, E=수량, F=교환/반품, G=플랫폼, H=사유, I=비고
+// 11월+ 신형식 파서: A=날짜, B=주문번호, D=상품명, F=교환/반품, G=플랫폼, H=사유, I=비고
 function _parseRetRow_new(r){
-  var colA=r[0]||'',colD=r[3]||'',colE=r[4]||'',colF=r[5]||'',colG=r[6]||'',colH=r[7]||'',colI=r[8]||'';
+  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'',colG=r[6]||'',colH=r[7]||'',colI=r[8]||'';
   if(!colA&&!colD) return null;
   if(colD.indexOf('사은품')>=0) return null;
-  var qty=parseInt(colE.replace(/[^0-9]/g,''),10)||0;
-  if(!qty) return null;
   var type=(colF.trim()==='교환')?'교환':'반품';
   var rk=colH.trim()||(colI.trim()||'변심');
-  return {product:colD.trim(),reason:rk,type:type,qty:qty,date:_parseReturnDate(colA),platform:colG.trim()};
+  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:colG.trim()};
 }
 function _fetchReturnData(){
   var sEl=document.getElementById('return-start-date');
@@ -1788,6 +1793,8 @@ function _fetchReturnData(){
           }
         }
       });
+      dataRows=_dedupeByOrderNo(dataRows);
+      prevRows=_dedupeByOrderNo(prevRows);
       if(!isTotalMode){
         if(brand&&dataRows.length) _retChartCache[brand]=dataRows;
         _renderReturnCharts(dataRows);
