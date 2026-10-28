@@ -471,13 +471,13 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
             <div style="display:flex;gap:12px;align-items:flex-start">
               <!-- 도넛 차트 (제품별) -->
               <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
-                <div style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
+                <div id="return-donut-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
                 <canvas id="return-donut-canvas"></canvas>
                 <div id="return-donut-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;width:100%"></div>
               </div>
               <!-- 막대 차트 (사유별) -->
               <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-                <div style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">사유별</div>
+                <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">사유별</div>
                 <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
               </div>
             </div>
@@ -1533,7 +1533,7 @@ var _retBrandBars = [];
 var _retBrandBarHov = -1;
 var _BRAND_DISP = {
   terafugen:'테라퓨젠',frozenlab:'프로즌랩',dentipla:'덴티플라',
-  mediglow:'메디그로우',cellofit:'셀로핏',pamicogen:'파미코젠'
+  mediglow:'메디그로우',cellofit:'셀로핏',pamicogen:'파미코젠',기타:'기타'
 };
 function _detectBrand(prodName){
   for(var b in STOCK_PRODUCTS){
@@ -1580,9 +1580,9 @@ function _updateReturnHeader(brand){
       else { _clearReturnChart(); }
     }
   } else {
-    // 총합 뷰: 날짜+조회+접기 모두 표시
-    show(s); show(sep); show(e); show(qb); show(btn);
-    if(rw){ rw.style.maxHeight=_returnCollapsed?'285px':''; rw.style.paddingBottom='4px'; }
+    // 총합 뷰: 날짜+조회만 표시, 접기 버튼 숨김
+    show(s); show(sep); show(e); show(qb); hide(btn);
+    if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
     if(!s||!s.value) _setReturnWeekDates();
     if(brandChanged){ _clearReturnChart(); }
   }
@@ -1737,6 +1737,11 @@ function _retHiDPI(canvas,lw,lh){
 }
 
 function _renderReturnCharts(dataRows){
+  // 레이블 원복 (브랜드 모드)
+  var dl=document.getElementById('return-donut-label');
+  var bl=document.getElementById('return-bar-label');
+  if(dl) dl.textContent='제품별';
+  if(bl) bl.textContent='사유별';
   var area=document.getElementById('return-chart-area');
   var emsg=document.getElementById('return-empty-msg');
   if(!dataRows.length){
@@ -1938,10 +1943,16 @@ function _renderReturnChartsTotal(dataRows, prevRows){
   if(area) area.style.display='';
   if(emsg) emsg.style.display='none';
 
+  // 레이블 업데이트
+  var dl=document.getElementById('return-donut-label');
+  var bl=document.getElementById('return-bar-label');
+  if(dl) dl.textContent='브랜드별';
+  if(bl) bl.textContent='제품별 (브랜드 클릭)';
+
   // 브랜드별 집계
   _retBrandAll={};
   dataRows.forEach(function(r){
-    var b=_detectBrand(r.product); if(!b) return;
+    var b=_detectBrand(r.product)||'기타';
     if(!_retBrandAll[b]) _retBrandAll[b]={total:0,prod:{}};
     _retBrandAll[b].total+=r.qty;
     if(!_retBrandAll[b].prod[r.product]) _retBrandAll[b].prod[r.product]={total:0,reasons:{}};
@@ -2070,6 +2081,8 @@ function _clearRetBarCanvas(){
 
 function _selectRetBrand(bKey){
   _retSelBrand=bKey; _retBrandHov=-1;
+  var bl=document.getElementById('return-bar-label');
+  if(bl) bl.textContent=(_BRAND_DISP[bKey]||bKey)+' 제품별';
   _drawRetDonutBrands(-1);
   _drawRetBarForBrand(bKey,-1);
   _attachRetBarHoverTotal();
