@@ -433,8 +433,8 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         </label>
       </div>
       <div style="min-height:16px;margin-bottom:6px"><span id="stock-status" style="font-size:11px;color:var(--muted)"></span></div>
-      <div class="stock-scroll-wrap" id="stock-scroll-wrap">
       <div class="stock-card">
+      <div class="stock-scroll-wrap" id="stock-scroll-wrap">
         <table class="stock-table" id="stock-table">
           <thead>
             <tr>
@@ -1704,8 +1704,8 @@ function _fetchReturnData(){
         if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) continue;
         var d=_parseReturnDate(colA);
         var qty=parseInt((colH||'0').replace(/[^0-9]/g,''),10)||0;
-        var type=(/^교환/.test(colF.trim()))?'교환':'반품';
-        var rk=type==='교환'?'교환':(colF.trim()||'변심');
+        var type=(colF.indexOf('교환')>=0)?'교환':'반품';
+        var rk=colF.trim()||'변심';
         var row={product:colD.trim(),reason:rk,type:type,qty:qty};
         if(isTotalMode){
           // 브랜드 필터 없이 전체 집계
