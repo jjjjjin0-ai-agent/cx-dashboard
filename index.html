@@ -1683,6 +1683,7 @@ function _parseCSV(text){
   return rows;
 }
 
+function _kstYear(){ return new Date(Date.now()+9*3600000).getUTCFullYear(); }
 function _parseReturnDate(str){
   if(!str) return null;
   str=str.replace(/\s/g,'');
@@ -1692,7 +1693,7 @@ function _parseReturnDate(str){
   m=str.match(/^(\d{2})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if(m) return new Date(2000+ +m[1],+m[2]-1,+m[3]);
   m=str.match(/^(\d{1,2})\/(\d{1,2})$/);
-  if(m) return new Date(new Date().getFullYear(),+m[1]-1,+m[2]);
+  if(m) return new Date(_kstYear(),+m[1]-1,+m[2]);
   return null;
 }
 
@@ -1745,8 +1746,9 @@ function _fetchReturnData(){
   var eEl=document.getElementById('return-end-date');
   var qb=document.getElementById('return-query-btn');
   if(!sEl||!eEl) return;
-  var startD=sEl.value?new Date(sEl.value):null;
-  var endD=eEl.value?new Date(eEl.value):null;
+  function _localDate(v){var p=v.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+  var startD=sEl.value?_localDate(sEl.value):null;
+  var endD=eEl.value?_localDate(eEl.value):null;
   if(endD) endD.setHours(23,59,59,999);
   var brand=(typeof activeBrand!=='undefined')?activeBrand:null;
   var brandProds=brand?(STOCK_PRODUCTS[brand]||[]):null;
