@@ -1179,10 +1179,12 @@ function _ghWrite(path, data, sha, msg, cb) {
   const pageTitleEl=document.getElementById('pageTitle');
 
   const stockWrap=document.getElementById('stock-section-wrap');
+  const returnWrap=document.getElementById('return-section-wrap');
   function showCalendar(){
     if(brandSection) brandSection.style.display='none';
     if(calView) calView.style.display='';
     if(stockWrap) stockWrap.style.display='none';
+    if(returnWrap) returnWrap.style.display='none';
     if(pageTitleEl) pageTitleEl.textContent='캘린더';
     navCal.classList.add('on'); navCal.setAttribute('aria-current','page');
     renderCal();
@@ -1192,6 +1194,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     if(brandSection) brandSection.style.display = (activeBrand ? '' : 'none');
     if(calView) calView.style.display='none';
     if(stockWrap) stockWrap.style.display='';
+    if(returnWrap) returnWrap.style.display='';
     if(pageTitleEl && !activeBrand) pageTitleEl.textContent='CX 대시보드';
     navCal.classList.remove('on'); navCal.setAttribute('aria-current','false');
   }
@@ -1514,6 +1517,18 @@ function _setReturnWeekDates(){
   if(!s.value) s.value = fmt(mon);
   if(!e.value) e.value = fmt(sun);
 }
+var _prevRetHeaderBrand = undefined;
+function _clearReturnChart(){
+  var area=document.getElementById('return-chart-area');
+  var emsg=document.getElementById('return-empty-msg');
+  if(area) area.style.display='none';
+  if(emsg){ emsg.style.display=''; emsg.textContent='날짜를 선택하고 조회 버튼을 눌러주세요'; }
+  var leg=document.getElementById('return-donut-legend');
+  if(leg) leg.innerHTML='';
+  _retProd={}; _retReason={}; _retTotal=0; _retSegs=[]; _retBars=[];
+  _retHovSeg=-1; _retHovBar=-1;
+  _hideRetTip();
+}
 function _updateReturnHeader(brand){
   var s   = document.getElementById('return-start-date');
   var sep = document.getElementById('return-date-sep');
@@ -1523,13 +1538,17 @@ function _updateReturnHeader(brand){
   var rw  = document.getElementById('return-scroll-wrap');
   var show = function(el){ if(el) el.style.display=''; };
   var hide = function(el){ if(el) el.style.display='none'; };
+  var brandChanged = (brand !== _prevRetHeaderBrand);
+  _prevRetHeaderBrand = brand;
   if(brand){
     show(s); show(sep); show(e); show(qb); hide(btn);
     if(rw){ rw.style.maxHeight=''; _returnCollapsed=false; }
     _setReturnWeekDates();
+    if(brandChanged) _clearReturnChart();
   } else {
     hide(s); hide(sep); hide(e); hide(qb); show(btn);
     if(rw) rw.style.maxHeight = _returnCollapsed ? '285px' : '';
+    _clearReturnChart();
   }
 }
 (function(){
@@ -1760,7 +1779,7 @@ function _drawRetBar(hov){
   var fg=_retCSSVar('--fg','#1a1a2e');
   var mu=_retCSSVar('--muted','#999');
   var surf=_retCSSVar('--surface','#fff');
-  var padL=12,padR=12,padT=32,padB=48;
+  var padL=12,padR=12,padT=32,padB=30;
   var cW=LW-padL-padR,cH=LH-padT-padB;
   var n=keys.length;
   var barW=Math.min(52,Math.floor(cW/(n+1)));
@@ -1781,16 +1800,15 @@ function _drawRetBar(hov){
     ctx.fillStyle=isH?col:col+'cc';
     ctx.fill();
     ctx.restore();
-    // 수치 레이블
+    // 수치 레이블 (바 위)
     ctx.textAlign='center';
-    ctx.fillStyle=isH?fg:mu;
-    ctx.font=(isH?'bold ':'')+'12px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle=isH?fg:fg;
+    ctx.font=(isH?'bold ':'bold ')+'12px -apple-system,system-ui,sans-serif';
     ctx.fillText(_retReason[k].toLocaleString(),x+barW/2,y-7);
-    // x 레이블
-    var lbl=k.length>5?k.slice(0,5)+'…':k;
-    ctx.font=(isH?'bold ':'')+'11px -apple-system,system-ui,sans-serif';
+    // x 레이블 — 숫자만 표시
+    ctx.font='11px -apple-system,system-ui,sans-serif';
     ctx.fillStyle=isH?fg:mu;
-    ctx.fillText(lbl,x+barW/2,LH-padB+16);
+    ctx.fillText(String(i+1),x+barW/2,LH-padB+14);
   });
   // baseline
   ctx.beginPath(); ctx.moveTo(padL,padT+cH); ctx.lineTo(LW-padR,padT+cH);
@@ -1846,7 +1864,7 @@ function _attachRetHover(){
         var b=_retBars[hit];
         _showRetTip(e.clientX,e.clientY,
           '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+b.color+';margin-right:6px;vertical-align:middle"></span>'
-          +'<b>'+b.label+'</b>&ensp;'+b.qty.toLocaleString()+'건');
+          +'<span style="opacity:.6;margin-right:4px">'+String(hit+1)+'.</span><b>'+b.label+'</b>&ensp;'+b.qty.toLocaleString()+'건');
       } else { _hideRetTip(); }
     };
     bc.onmouseleave=function(){
