@@ -463,6 +463,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <button class="stock-sync-btn" id="return-query-btn" style="display:none" onclick="_fetchReturnData()">조회</button>
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
+      <div style="min-height:16px;margin-bottom:6px"><span id="return-status" style="font-size:11px;color:var(--muted)"></span></div>
       <div class="return-scroll-wrap" id="return-scroll-wrap">
         <div id="return-chart-area" style="display:none">
           <div class="stock-card" style="padding:14px 16px 14px;margin:0">
@@ -1518,6 +1519,7 @@ function _setReturnWeekDates(){
   if(!e.value) e.value = fmt(sun);
 }
 var _prevRetHeaderBrand = undefined;
+var _retChartCache = {};
 function _clearReturnChart(){
   var area=document.getElementById('return-chart-area');
   var emsg=document.getElementById('return-empty-msg');
@@ -1542,12 +1544,16 @@ function _updateReturnHeader(brand){
   _prevRetHeaderBrand = brand;
   if(brand){
     show(s); show(sep); show(e); show(qb); hide(btn);
-    if(rw){ rw.style.maxHeight=''; _returnCollapsed=false; }
+    if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
     _setReturnWeekDates();
-    if(brandChanged) _clearReturnChart();
+    if(brandChanged){
+      var cached=_retChartCache[brand];
+      if(cached&&cached.length){ _renderReturnCharts(cached); }
+      else { _clearReturnChart(); }
+    }
   } else {
     hide(s); hide(sep); hide(e); hide(qb); show(btn);
-    if(rw) rw.style.maxHeight = _returnCollapsed ? '285px' : '';
+    if(rw){ rw.style.maxHeight=_returnCollapsed?'285px':''; rw.style.paddingBottom=''; }
     _clearReturnChart();
   }
 }
@@ -1663,6 +1669,7 @@ function _fetchReturnData(){
         var type=(colF.trim()==='교환')?'교환':'반품';
         dataRows.push({product:colD.trim(),reason:colF.trim()||'변심',type:type,qty:qty});
       }
+      if(brand&&dataRows.length) _retChartCache[brand]=dataRows;
       _renderReturnCharts(dataRows);
     })
     .catch(function(err){
@@ -1709,7 +1716,7 @@ function _drawRetDonut(hov){
   if(!canvas) return;
   var LW=176,LH=176;
   var ctx=_retHiDPI(canvas,LW,LH);
-  var prods=Object.keys(_retProd).sort(function(a,b){return _retProd[b]-_retProd[a];});
+  var prods=Object.keys(_retProd).filter(function(p){return _retProd[p]>0;}).sort(function(a,b){return _retProd[b]-_retProd[a];});
   var total=_retTotal; if(!total) return;
   var cx=LW/2,cy=LH/2,R=74,Ri=R*0.50;
   var surf=_retCSSVar('--surface','#fff');
@@ -1722,21 +1729,17 @@ function _drawRetDonut(hov){
     var slice=(_retProd[p]/total)*2*Math.PI;
     var sa=angle,ea=angle+slice,mid=sa+(ea-sa)/2;
     var col=_RETURN_PAL[i%_RETURN_PAL.length];
+    var isH=(i===hov);
     _retSegs.push({product:p,qty:_retProd[p],pct:Math.round(_retProd[p]/total*100),color:col,sa:sa,ea:ea,mid:mid,cx:cx,cy:cy,R:R,Ri:Ri});
-    var ox=0,oy=0;
-    if(i===hov){ox=Math.cos(mid)*8;oy=Math.sin(mid)*8;}
+    ctx.save();
+    if(isH){ ctx.shadowColor=col; ctx.shadowBlur=14; }
     ctx.beginPath();
-    ctx.moveTo(cx+ox,cy+oy);
-    ctx.arc(cx+ox,cy+oy,R+(i===hov?3:0),sa,ea);
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,sa,ea);
     ctx.closePath();
-    ctx.fillStyle=col;
-    ctx.globalAlpha=(i===hov)?1:0.88;
+    ctx.fillStyle=isH?col:col+'cc';
     ctx.fill();
-    if(i===hov){
-      ctx.shadowColor=col; ctx.shadowBlur=12; ctx.fill();
-      ctx.shadowBlur=0;
-    }
-    ctx.globalAlpha=1;
+    ctx.restore();
     angle+=slice;
   });
   // hole
@@ -1773,7 +1776,7 @@ function _drawRetBar(hov){
   var LW=par?Math.max(par.offsetWidth-4,200):280;
   var LH=210;
   var ctx=_retHiDPI(canvas,LW,LH);
-  var keys=Object.keys(_retReason).sort(function(a,b){return _retReason[b]-_retReason[a];});
+  var keys=Object.keys(_retReason).filter(function(k){return _retReason[k]>0;}).sort(function(a,b){return _retReason[b]-_retReason[a];});
   if(!keys.length) return;
   var maxV=Math.max.apply(null,keys.map(function(k){return _retReason[k];}));
   var fg=_retCSSVar('--fg','#1a1a2e');
