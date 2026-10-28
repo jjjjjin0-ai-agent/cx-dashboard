@@ -467,25 +467,27 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
       <div id="return-mom-area" style="display:none;font-size:11px;margin-bottom:6px;line-height:1.7"></div>
       <div class="return-scroll-wrap" id="return-scroll-wrap">
         <div id="return-chart-area" style="display:none">
-          <div class="stock-card" style="padding:14px 16px 14px;margin:0">
-            <div style="display:flex;gap:12px;align-items:flex-start">
-              <!-- 도넛 차트 + 사유별 서브차트 (세로 배치) -->
-              <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
-                <div id="return-donut-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
-                <canvas id="return-donut-canvas"></canvas>
-                <div id="return-donut-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;width:100%"></div>
-                <div id="return-type-summary" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;white-space:nowrap"></div>
-                <!-- 사유별 서브 차트 (제품 클릭 시 표시) -->
-                <div id="return-reason-area" style="display:none;flex-direction:column;width:100%">
-                  <div style="border-top:1px solid var(--line);margin:10px 0 6px"></div>
-                  <div id="return-reason-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase;text-align:left">사유별</div>
-                  <canvas id="return-reason-canvas" style="display:block;width:100%"></canvas>
+          <div class="stock-card" style="padding:14px 16px 14px;margin:0;overflow:visible">
+            <div style="display:flex;flex-direction:column;gap:0">
+              <!-- 상단 행: 도넛 + 막대 차트 -->
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
+                  <div id="return-donut-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
+                  <canvas id="return-donut-canvas"></canvas>
+                  <div id="return-donut-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;width:100%"></div>
+                  <div id="return-type-summary" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;white-space:nowrap"></div>
+                </div>
+                <!-- 막대 차트 (제품별) -->
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+                  <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
+                  <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
                 </div>
               </div>
-              <!-- 막대 차트 (제품별) -->
-              <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-                <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
-                <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
+              <!-- 하단: 사유별 서브차트 (전체 너비, 제품 클릭 시 표시) -->
+              <div id="return-reason-area" style="display:none;flex-direction:column;width:100%">
+                <div style="border-top:1px solid var(--line);margin:10px 0 6px"></div>
+                <div id="return-reason-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase;text-align:left">사유별</div>
+                <canvas id="return-reason-canvas" style="display:block;max-width:100%;overflow:visible"></canvas>
               </div>
             </div>
           </div>
@@ -2057,7 +2059,7 @@ function _drawRetReasonBar(reasonsObj,hov){
   if(!canvas||!reasonsObj) return;
   var keys=Object.keys(reasonsObj).filter(function(k){return reasonsObj[k]>0;}).sort(function(a,b){return reasonsObj[b]-reasonsObj[a];});
   if(!keys.length) return;
-  // 텍스트 너비를 임시 캔버스로 미리 측정 → LW 동적 계산
+  // 텍스트 너비 사전 측정 (잘림 없도록 전체 측정)
   var tmp=document.createElement('canvas').getContext('2d');
   tmp.font='11px -apple-system,system-ui,sans-serif';
   var maxLabelW=0;
@@ -2065,37 +2067,44 @@ function _drawRetReasonBar(reasonsObj,hov){
   tmp.font='bold 11px -apple-system,system-ui,sans-serif';
   var maxV=Math.max.apply(null,keys.map(function(k){return reasonsObj[k];}));
   var qtyW=tmp.measureText(maxV+'건').width;
-  var padL=Math.ceil(maxLabelW)+14;
-  var padR=Math.ceil(qtyW)+18;
-  var barAreaW=90;
-  var LW=Math.max(padL+barAreaW+padR, 176);
-  var cW=LW-padL-padR;
-  var rowH=28, padT=6, padB=6;
+  // 부모 너비를 우선 사용, 텍스트가 더 길면 캔버스 확장
+  var par=canvas.parentElement;
+  var availW=par?(par.offsetWidth||0):0;
+  var padL=8, padR=Math.ceil(qtyW)+14, barAreaW=80;
+  var minW=Math.ceil(maxLabelW)+padL+12+barAreaW+padR;
+  var LW=Math.max(minW, availW>0?availW:minW);
+  var labelAreaW=LW-padL-12-barAreaW-padR; // 라벨이 사용 가능한 너비
+  var barX=padL+labelAreaW+12;
+  var cW=barAreaW;
+  var rowH=26, padT=6, padB=6;
   var LH=padT+keys.length*rowH+padB;
   var ctx=_retHiDPI(canvas,LW,LH);
   var fg=_retCSSVar('--fg','#1a1a2e');
   var mu=_retCSSVar('--muted','#999');
-  var barH=14, barOff=(rowH-barH)/2;
+  var barH=13, barOff=(rowH-barH)/2;
   _retReasonBars=[];
   keys.forEach(function(k,i){
     var yRow=padT+i*rowH;
     var bw=maxV>0?Math.max(Math.round((reasonsObj[k]/maxV)*cW),2):2;
     var col=_RETURN_PAL[(i+4)%_RETURN_PAL.length];
-    _retReasonBars.push({label:k,qty:reasonsObj[k],color:col,x:padL,y:yRow,w:LW-padL,h:rowH});
+    _retReasonBars.push({label:k,qty:reasonsObj[k],color:col,x:0,y:yRow,w:LW,h:rowH});
     var isH=(i===hov);
-    ctx.save();
-    if(isH){ctx.shadowColor=col;ctx.shadowBlur=10;}
-    ctx.beginPath(); ctx.roundRect(padL,yRow+barOff,bw,barH,4);
-    ctx.fillStyle=isH?col:col+'cc'; ctx.fill();
-    ctx.restore();
-    ctx.textAlign='right'; ctx.textBaseline='middle';
+    // 라벨 (좌측 정렬)
+    ctx.textAlign='left'; ctx.textBaseline='middle';
     ctx.font=(isH?'bold ':'')+'11px -apple-system,system-ui,sans-serif';
     ctx.fillStyle=isH?fg:mu;
-    ctx.fillText(k,padL-6,yRow+rowH/2);
+    ctx.fillText(k,padL,yRow+rowH/2);
+    // 막대
+    ctx.save();
+    if(isH){ctx.shadowColor=col;ctx.shadowBlur=10;}
+    ctx.beginPath(); ctx.roundRect(barX,yRow+barOff,bw,barH,4);
+    ctx.fillStyle=isH?col:col+'cc'; ctx.fill();
+    ctx.restore();
+    // 수량 (막대 우측)
     ctx.textAlign='left'; ctx.textBaseline='middle';
     ctx.font='bold 11px -apple-system,system-ui,sans-serif';
     ctx.fillStyle=fg;
-    ctx.fillText(reasonsObj[k]+'건',padL+bw+6,yRow+rowH/2);
+    ctx.fillText(reasonsObj[k]+'건',barX+bw+6,yRow+rowH/2);
   });
 }
 
