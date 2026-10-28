@@ -1531,6 +1531,7 @@ var _prevRetHeaderBrand = undefined;
 var _retChartCache = {};
 /* === TOTAL MODE STATE === */
 var _retTotalMode = false;
+var _retTotalCache = null;
 var _retBrandAll  = {};   // {brandKey:{total,prod:{name:{total,reasons:{r:qty}}}}}
 var _retPrevAll   = {};   // previous month aggregation for MoM
 var _retBrandSegs = [];
@@ -1552,7 +1553,7 @@ function _detectBrand(prodName){
   return null;
 }
 function _clearReturnChart(){
-  _retTotalMode=false; _retSelBrand=null; _retBrandAll={}; _retPrevAll={};
+  _retTotalMode=false; _retTotalCache=null; _retSelBrand=null; _retBrandAll={}; _retPrevAll={};
   _retBrandSegs=[]; _retBrandHov=-1; _retBrandBars=[]; _retBrandBarHov=-1;
   var area=document.getElementById('return-chart-area');
   var emsg=document.getElementById('return-empty-msg');
@@ -1595,7 +1596,10 @@ function _updateReturnHeader(brand){
     show(s); show(sep); show(e); show(qb); hide(btn);
     if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
     if(!s||!s.value) _setReturnWeekDates();
-    if(brandChanged){ _clearReturnChart(); }
+    if(brandChanged){
+      if(_retTotalCache){ _renderReturnChartsTotal(_retTotalCache.dataRows,_retTotalCache.prevRows); }
+      else { _clearReturnChart(); }
+    }
   }
 }
 (function(){
@@ -1610,7 +1614,12 @@ function _updateReturnHeader(brand){
 })();
 
 /* ───────────── 교환·반품 시트 조회 ───────────── */
-var _RETURN_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/export?format=csv&gid=1198818115';
+var _RETURN_SHEET_BASE = 'https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/export?format=csv&gid=';
+var _RETURN_MONTH_GIDS = {
+  202610:'1198818115',  // 10월 구형식 (D=상품명,F=비고,H=검수수량)
+  202611:'1016294227',  // 11월 신형식 (D=상품명,E=수량,F=교환/반품,G=플랫폼,H=사유)
+};
+var _RETURN_NEW_FMT_FROM = 202611;
 var _RETURN_PAL = ['#5B7FFF','#FF6B6B','#FFB347','#4ECDC4','#A78BFA','#F472B6','#34D399','#FB923C','#60A5FA','#FBBF24'];
 var _retSegs = [];   // 도넛 세그먼트 히트 영역
 var _retBars = [];   // 막대 히트 영역
@@ -1692,6 +1701,36 @@ function _prevMonthRange(startD){
   var ps=new Date(y,m,1),pe=new Date(y,m+1,0); pe.setHours(23,59,59,999);
   return {ps:ps,pe:pe};
 }
+function _yyyymm(d){ return d.getFullYear()*100+(d.getMonth()+1); }
+function _monthsInRange(startD,endD){
+  var months=[],cur=new Date(startD.getFullYear(),startD.getMonth(),1);
+  var last=endD?new Date(endD.getFullYear(),endD.getMonth(),1):new Date(cur);
+  while(cur<=last){ months.push(_yyyymm(cur)); cur.setMonth(cur.getMonth()+1); }
+  return months;
+}
+// 10월 구형식 파서: D=상품명, F=비고(사유+교환감지), H=검수수량
+// 쿠팡 문자 포함 시 사유='변심'
+function _parseRetRow_old(r){
+  var colA=r[0]||'',colD=r[3]||'',colF=r[5]||'',colH=r[7]||'';
+  if(!colA&&!colD) return null;
+  if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) return null;
+  var qty=parseInt((colH||'0').replace(/[^0-9]/g,''),10)||0;
+  if(!qty) return null;
+  var type=(colF.indexOf('교환')>=0)?'교환':'반품';
+  var rk=(colF.indexOf('쿠팡')>=0)?'변심':(colF.trim()||'변심');
+  return {product:colD.trim(),reason:rk,type:type,qty:qty,date:_parseReturnDate(colA)};
+}
+// 11월+ 신형식 파서: D=상품명, E=수량, F=교환/반품, G=플랫폼, H=사유
+function _parseRetRow_new(r){
+  var colA=r[0]||'',colD=r[3]||'',colE=r[4]||'',colF=r[5]||'',colH=r[7]||'';
+  if(!colA&&!colD) return null;
+  if(colD.indexOf('사은품')>=0) return null;
+  var qty=parseInt(colE.replace(/[^0-9]/g,''),10)||0;
+  if(!qty) return null;
+  var type=(colF.trim()==='교환')?'교환':'반품';
+  var rk=colH.trim()||'변심';
+  return {product:colD.trim(),reason:rk,type:type,qty:qty,date:_parseReturnDate(colA)};
+}
 function _fetchReturnData(){
   var sEl=document.getElementById('return-start-date');
   var eEl=document.getElementById('return-end-date');
@@ -1705,44 +1744,55 @@ function _fetchReturnData(){
   if(qb){ qb.disabled=true; qb.textContent='조회 중...'; }
   var isTotalMode=!brand;
   var prevRange=isTotalMode&&_isSingleMonth(startD,endD)?_prevMonthRange(startD):null;
-  fetch(_RETURN_SHEET_CSV)
-    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
-    .then(function(text){
+  // 필요한 월 목록 + 이전 달(MoM용)
+  var months=startD?_monthsInRange(startD,endD||startD):[_yyyymm(new Date())];
+  var prevMonthYm=prevRange?_yyyymm(prevRange.ps):null;
+  var allYms=months.slice();
+  if(prevMonthYm&&allYms.indexOf(prevMonthYm)<0) allYms.push(prevMonthYm);
+  var fetchList=allYms.filter(function(m){ return _RETURN_MONTH_GIDS[m]; })
+    .map(function(m){ return {ym:m,gid:_RETURN_MONTH_GIDS[m]}; });
+  if(!fetchList.length) fetchList=[{ym:202610,gid:'1198818115'}];
+  var promises=fetchList.map(function(item){
+    return fetch(_RETURN_SHEET_BASE+item.gid)
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+      .then(function(text){ return {ym:item.ym,rows:_parseCSV(text)}; });
+  });
+  Promise.all(promises)
+    .then(function(results){
       if(qb){ qb.disabled=false; qb.textContent='조회'; }
-      var rows=_parseCSV(text);
-      var dataRows=[], prevRows=[];
-      for(var i=1;i<rows.length;i++){
-        var r=rows[i];
-        var colA=r[0]||'',colD=r[3]||'',colF=r[5]||'',colH=r[7]||'';
-        if(!colA&&!colD) continue;
-        if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) continue;
-        var d=_parseReturnDate(colA);
-        var qty=parseInt((colH||'0').replace(/[^0-9]/g,''),10)||0;
-        var type=(colF.indexOf('교환')>=0)?'교환':'반품';
-        var rk=colF.trim()||'변심';
-        var row={product:colD.trim(),reason:rk,type:type,qty:qty};
-        if(isTotalMode){
-          // 브랜드 필터 없이 전체 집계
-          if(d&&startD&&d>=startD&&(!endD||d<=endD)) dataRows.push(row);
-          else if(d&&prevRange&&d>=prevRange.ps&&d<=prevRange.pe) prevRows.push(row);
-        } else {
-          if(brandProds){
-            var ok=false;
-            for(var k=0;k<brandProds.length;k++){
-              if(colD.indexOf(brandProds[k])>=0||brandProds[k].indexOf(colD)>=0){ok=true;break;}
+      var dataRows=[],prevRows=[];
+      results.forEach(function(res){
+        var isNew=res.ym>=_RETURN_NEW_FMT_FROM;
+        var isPrevSheet=(prevMonthYm===res.ym);
+        for(var i=1;i<res.rows.length;i++){
+          var row=isNew?_parseRetRow_new(res.rows[i]):_parseRetRow_old(res.rows[i]);
+          if(!row) continue;
+          var d=row.date;
+          if(isTotalMode){
+            if(isPrevSheet){
+              if(d&&prevRange&&d>=prevRange.ps&&d<=prevRange.pe) prevRows.push(row);
+            } else {
+              if(d&&startD&&d>=startD&&(!endD||d<=endD)) dataRows.push(row);
             }
-            if(!ok) continue;
+          } else {
+            if(brandProds){
+              var ok=false;
+              for(var k=0;k<brandProds.length;k++){
+                if(row.product.indexOf(brandProds[k])>=0||brandProds[k].indexOf(row.product)>=0){ok=true;break;}
+              }
+              if(!ok) continue;
+            }
+            if(startD&&d&&d<startD) continue;
+            if(endD&&d&&d>endD) continue;
+            dataRows.push(row);
           }
-          if(startD&&d&&d<startD) continue;
-          if(endD&&d&&d>endD) continue;
-          dataRows.push(row);
         }
-      }
+      });
       if(!isTotalMode){
         if(brand&&dataRows.length) _retChartCache[brand]=dataRows;
         _renderReturnCharts(dataRows);
       } else {
-        _renderReturnChartsTotal(dataRows, prevRows);
+        _renderReturnChartsTotal(dataRows,prevRows);
       }
     })
     .catch(function(err){
@@ -1988,8 +2038,7 @@ function _attachRetHover(){
 function _drawRetReasonBar(reasonsObj,hov){
   var canvas=document.getElementById('return-reason-canvas');
   if(!canvas||!reasonsObj) return;
-  var par=canvas.parentElement;
-  var LW=par?Math.max(par.offsetWidth-4,160):200;
+  var LW=176;
   var keys=Object.keys(reasonsObj).filter(function(k){return reasonsObj[k]>0;}).sort(function(a,b){return reasonsObj[b]-reasonsObj[a];});
   if(!keys.length) return;
   var rowH=28, padT=6, padB=6, padR=40;
@@ -2058,6 +2107,7 @@ function _attachRetReasonHover(){
 
 /* ═══════════════ 총합 모드 렌더링 ═══════════════ */
 function _renderReturnChartsTotal(dataRows, prevRows){
+  _retTotalCache={dataRows:dataRows,prevRows:prevRows};
   _retTotalMode=true; _retSelBrand=null; _retBrandHov=-1; _retBrandBarHov=-1;
   var area=document.getElementById('return-chart-area');
   var emsg=document.getElementById('return-empty-msg');
