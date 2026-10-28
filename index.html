@@ -498,12 +498,16 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 
     <!-- VOC 섹션 -->
     <div id="voc-section-wrap" class="stock-section">
-      <div class="stock-section-hd">
+      <div class="stock-section-hd" id="voc-section-hd">
         <div class="plat-label" style="font-size:16px;font-weight:600">VOC</div>
+        <input type="date" id="voc-start-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <span id="voc-date-sep" style="display:none;font-size:12px;color:var(--muted)">~</span>
+        <input type="date" id="voc-end-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <button class="stock-sync-btn" id="voc-query-btn" style="display:none" onclick="_fetchVocData()">조회</button>
       </div>
       <div style="min-height:16px;margin-bottom:6px"></div>
       <div class="stock-card" style="min-width:220px;min-height:80px;padding:16px 18px">
-        <div id="voc-content" style="font-size:12px;color:var(--muted);text-align:center;padding:20px 0">내용을 입력하세요</div>
+        <div id="voc-content" style="font-size:12px;color:var(--muted);text-align:center;padding:20px 0">날짜를 선택하고 조회 버튼을 눌러주세요</div>
       </div>
     </div>
 
@@ -1528,18 +1532,133 @@ function _toggleReturnCollapse(){
   var btn = document.getElementById('return-collapse-btn');
   if(btn){ btn.innerHTML = _returnCollapsed ? _CHEV_SVG_DOWN : _CHEV_SVG_UP; btn.title = _returnCollapsed ? '펼치기' : '접기'; }
 }
-function _setReturnWeekDates(){
-  var s = document.getElementById('return-start-date');
-  var e = document.getElementById('return-end-date');
-  if(!s || !e) return;
-  var today = new Date();
+var _WEEK_FLOOR = new Date(2026, 10, 1); // 2026-11-01 (11월 기준 바닥)
+function _calcWeekRange(){
+  var today = new Date(); today.setHours(0,0,0,0);
   var day = today.getDay();
   var diffToMon = (day === 0) ? -6 : 1 - day;
   var mon = new Date(today); mon.setDate(today.getDate() + diffToMon);
   var sun = new Date(mon);   sun.setDate(mon.getDate() + 6);
+  if(mon < _WEEK_FLOOR){ mon = new Date(_WEEK_FLOOR); sun = new Date(2026,10,7); }
   var fmt = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-  if(!s.value) s.value = fmt(mon);
-  if(!e.value) e.value = fmt(sun);
+  return { s: fmt(mon), e: fmt(sun) };
+}
+function _setReturnWeekDates(){
+  var s = document.getElementById('return-start-date');
+  var e = document.getElementById('return-end-date');
+  if(!s || !e) return;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var needsUpdate = !e.value || (e.value && new Date(e.value) < today);
+  if(!needsUpdate && s.value) return;
+  var rng = _calcWeekRange();
+  s.value = rng.s; e.value = rng.e;
+}
+function _setVocWeekDates(){
+  var s = document.getElementById('voc-start-date');
+  var e = document.getElementById('voc-end-date');
+  if(!s || !e) return;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var needsUpdate = !e.value || (e.value && new Date(e.value) < today);
+  if(!needsUpdate && s.value) return;
+  var rng = _calcWeekRange();
+  s.value = rng.s; e.value = rng.e;
+}
+var _VOC_URL = 'https://docs.google.com/spreadsheets/d/1ewL4dZ-vj0FoDjTXUBLg9a62IYPoI8weoPBZxLeHY7M/export?format=csv&gid=1595981393';
+var _vocCache = {};
+var _prevVocHeaderBrand = undefined;
+function _updateVocHeader(brand){
+  var s   = document.getElementById('voc-start-date');
+  var sep = document.getElementById('voc-date-sep');
+  var e   = document.getElementById('voc-end-date');
+  var qb  = document.getElementById('voc-query-btn');
+  function show(el){ if(el) el.style.display=''; }
+  function hide(el){ if(el) el.style.display='none'; }
+  if(brand){
+    show(s); show(sep); show(e); show(qb);
+    _setVocWeekDates();
+  } else {
+    hide(s); hide(sep); hide(e); hide(qb);
+  }
+  _prevVocHeaderBrand = brand;
+}
+function _fetchVocData(){
+  var sEl = document.getElementById('voc-start-date');
+  var eEl = document.getElementById('voc-end-date');
+  var content = document.getElementById('voc-content');
+  if(!content) return;
+  var brand = (typeof activeBrand !== 'undefined') ? activeBrand : null;
+  if(!brand){ content.innerHTML = '<span style="color:var(--muted)">브랜드를 선택해주세요</span>'; return; }
+  content.innerHTML = '<span style="color:var(--muted)">불러오는 중...</span>';
+  function localDate(v){ var p=v.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+  var startD = sEl&&sEl.value ? localDate(sEl.value) : null;
+  var endD   = eEl&&eEl.value ? localDate(eEl.value) : null;
+  if(endD) endD.setHours(23,59,59,999);
+  fetch(_VOC_URL).then(function(r){ return r.text(); }).then(function(csv){
+    var rows = csv.split('\n').map(function(r){ return r.split(',').map(function(c){ return c.replace(/^"|"$/g,'').trim(); }); });
+    var data = [];
+    rows.forEach(function(r,i){
+      if(i===0) return; // header
+      var dateStr=r[0]||'', brandStr=r[1]||'', prod=r[2]||'', plat=r[3]||'', type=r[5]||'', subtype=r[6]||'', text=r[7]||'';
+      if(!dateStr&&!brandStr) return;
+      // brand filter
+      var bDisp = (_BRAND_DISP&&_BRAND_DISP[brand])||brand;
+      if(brandStr&&brandStr.indexOf(bDisp)<0&&bDisp.indexOf(brandStr)<0) return;
+      // date filter
+      var d=null; var m=dateStr.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+      if(m) d=new Date(+m[1],+m[2]-1,+m[3]);
+      if(startD&&(!d||d<startD)) return;
+      if(endD&&(!d||d>endD)) return;
+      data.push({date:dateStr,brand:brandStr,prod:prod,plat:plat,type:type,subtype:subtype,text:text});
+    });
+    if(!data.length){ content.innerHTML = '<span style="color:var(--muted)">해당 기간 VOC 데이터가 없습니다</span>'; return; }
+    // 유형 집계
+    var typeCnt={}, subtypeCnt={};
+    data.forEach(function(d){
+      typeCnt[d.type]=(typeCnt[d.type]||0)+1;
+      subtypeCnt[d.subtype]=(subtypeCnt[d.subtype]||0)+1;
+    });
+    var total=data.length;
+    var html='<div style="font-size:12px">';
+    html+='<div style="font-weight:600;margin-bottom:6px">총 '+total+'건</div>';
+    // 유형 목록
+    var types=Object.keys(typeCnt).sort(function(a,b){return typeCnt[b]-typeCnt[a];});
+    types.forEach(function(t){
+      var cnt=typeCnt[t]; var pct=Math.round(cnt/total*100);
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">';
+      html+='<span style="flex:0 0 auto;width:72px;color:var(--muted)">'+t+'</span>';
+      html+='<div style="flex:1;background:var(--border);border-radius:4px;height:8px;overflow:hidden"><div style="background:var(--accent,#3b6ef8);height:100%;border-radius:4px;width:'+pct+'%"></div></div>';
+      html+='<span style="flex:0 0 auto;width:32px;text-align:right">'+cnt+'건</span>';
+      html+='</div>';
+    });
+    // 상세유형 목록
+    if(Object.keys(subtypeCnt).length){
+      html+='<div style="border-top:1px solid var(--border);margin:8px 0 6px;font-weight:600">상세유형</div>';
+      var subtypes=Object.keys(subtypeCnt).sort(function(a,b){return subtypeCnt[b]-subtypeCnt[a];});
+      subtypes.forEach(function(st){
+        var cnt=subtypeCnt[st]; var pct=Math.round(cnt/total*100);
+        html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">';
+        html+='<span style="flex:0 0 auto;width:90px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+st+'">'+st+'</span>';
+        html+='<div style="flex:1;background:var(--border);border-radius:4px;height:8px;overflow:hidden"><div style="background:#6ea8fe;height:100%;border-radius:4px;width:'+pct+'%"></div></div>';
+        html+='<span style="flex:0 0 auto;width:32px;text-align:right">'+cnt+'건</span>';
+        html+='</div>';
+      });
+    }
+    // 내용 목록
+    if(data.some(function(d){return d.text;})){
+      html+='<div style="border-top:1px solid var(--border);margin:8px 0 6px;font-weight:600">내용 ('+total+'건)</div>';
+      data.forEach(function(d,i){
+        if(!d.text) return;
+        html+='<div style="margin-bottom:4px;padding:4px 6px;background:var(--card-bg,#fff);border-radius:4px;border:1px solid var(--border)">';
+        html+='<div style="font-size:10px;color:var(--muted);margin-bottom:2px">'+d.date+' · '+d.plat+'</div>';
+        html+='<div>'+d.text+'</div>';
+        html+='</div>';
+      });
+    }
+    html+='</div>';
+    content.innerHTML = html;
+  }).catch(function(){
+    content.innerHTML = '<span style="color:var(--muted)">데이터를 불러올 수 없습니다</span>';
+  });
 }
 var _prevRetHeaderBrand = undefined;
 var _retChartCache = {};
@@ -2576,6 +2695,7 @@ function updateExpiryTable(brand) {
     });
   });
   if(typeof _updateReturnHeader === 'function') _updateReturnHeader(brand);
+  if(typeof _updateVocHeader === 'function') _updateVocHeader(brand);
 }
 
 function syncExpiry() {
@@ -2657,6 +2777,7 @@ function updateStockTable(brand) {
   }
   requestAnimationFrame(function(){ if(window._syncReturnWidth) window._syncReturnWidth(); });
   if(typeof _updateReturnHeader === 'function') _updateReturnHeader(brand);
+  if(typeof _updateVocHeader === 'function') _updateVocHeader(brand);
 }
 var WARN_RULES = {
   '헬리코컷':      {field:'stock8w',  threshold:50000},
