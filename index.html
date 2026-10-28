@@ -474,6 +474,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
                 <div id="return-donut-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
                 <canvas id="return-donut-canvas"></canvas>
                 <div id="return-donut-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;width:100%"></div>
+                <div id="return-type-summary" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;white-space:nowrap"></div>
               </div>
               <!-- 막대 차트 (사유별) -->
               <div style="flex:1;min-width:0;display:flex;flex-direction:column">
@@ -1608,6 +1609,7 @@ var _retHovBar = -1;
 var _retProd = {};
 var _retReason = {};
 var _retTotal = 0;
+var _retTypeCount = {교환:0, 반품:0};
 
 function _retCSSVar(n,fb){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||fb; }
 function _retFitText(ctx,text,maxW){
@@ -1701,7 +1703,7 @@ function _fetchReturnData(){
         if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) continue;
         var d=_parseReturnDate(colA);
         var qty=parseInt((colH||'0').replace(/[^0-9]/g,''),10)||0;
-        var type=(colF.trim()==='교환')?'교환':'반품';
+        var type=(/^교환/.test(colF.trim()))?'교환':'반품';
         var rk=type==='교환'?'교환':(colF.trim()||'변심');
         var row={product:colD.trim(),reason:rk,type:type,qty:qty};
         if(isTotalMode){
@@ -1748,7 +1750,7 @@ function _renderReturnCharts(dataRows){
   var dl=document.getElementById('return-donut-label');
   var bl=document.getElementById('return-bar-label');
   if(dl) dl.textContent='제품별';
-  if(bl) bl.textContent='사유별';
+  if(bl){ bl.textContent='사유별'; bl.style.paddingLeft='12px'; }
   var area=document.getElementById('return-chart-area');
   var emsg=document.getElementById('return-empty-msg');
   if(!dataRows.length){
@@ -1759,11 +1761,12 @@ function _renderReturnCharts(dataRows){
   if(area) area.style.display='';
   if(emsg) emsg.style.display='none';
 
-  _retProd={}; _retReason={};
+  _retProd={}; _retReason={}; _retTypeCount={교환:0,반품:0};
   dataRows.forEach(function(r){
     _retProd[r.product]=(_retProd[r.product]||0)+r.qty;
     var rk=r.type==='교환'?'교환':r.reason;
     _retReason[rk]=(_retReason[rk]||0)+r.qty;
+    _retTypeCount[r.type]=(_retTypeCount[r.type]||0)+r.qty;
   });
   _retTotal=Object.keys(_retProd).reduce(function(s,k){return s+_retProd[k];},0);
   _retHovSeg=-1; _retHovBar=-1;
@@ -1828,6 +1831,8 @@ function _drawRetDonut(hov){
       leg.appendChild(row);
     });
   }
+  var ts=document.getElementById('return-type-summary');
+  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건';
 }
 
 function _drawRetBar(hov){
@@ -1954,10 +1959,10 @@ function _renderReturnChartsTotal(dataRows, prevRows){
   var dl=document.getElementById('return-donut-label');
   var bl=document.getElementById('return-bar-label');
   if(dl) dl.textContent='브랜드별';
-  if(bl) bl.textContent='제품별 (브랜드 클릭)';
+  if(bl){ bl.textContent='제품별 (브랜드 클릭)'; bl.style.paddingLeft='12px'; }
 
   // 브랜드별 집계
-  _retBrandAll={};
+  _retBrandAll={}; _retTypeCount={교환:0,반품:0};
   dataRows.forEach(function(r){
     var b=_detectBrand(r.product)||'기타';
     if(!_retBrandAll[b]) _retBrandAll[b]={total:0,prod:{}};
@@ -1966,6 +1971,7 @@ function _renderReturnChartsTotal(dataRows, prevRows){
     _retBrandAll[b].prod[r.product].total+=r.qty;
     var rk=r.reason;
     _retBrandAll[b].prod[r.product].reasons[rk]=(_retBrandAll[b].prod[r.product].reasons[rk]||0)+r.qty;
+    _retTypeCount[r.type]=(_retTypeCount[r.type]||0)+r.qty;
   });
   // 전월 집계
   _retPrevAll={};
@@ -2075,6 +2081,8 @@ function _drawRetDonutBrands(hov){
       leg.appendChild(row);
     });
   }
+  var ts=document.getElementById('return-type-summary');
+  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건';
 }
 
 function _clearRetBarCanvas(){
@@ -2089,7 +2097,7 @@ function _clearRetBarCanvas(){
 function _selectRetBrand(bKey){
   _retSelBrand=bKey; _retBrandHov=-1;
   var bl=document.getElementById('return-bar-label');
-  if(bl) bl.textContent=(_BRAND_DISP[bKey]||bKey)+' 제품별';
+  if(bl){ bl.textContent=(_BRAND_DISP[bKey]||bKey)+' 제품별'; bl.style.paddingLeft='12px'; }
   _drawRetDonutBrands(-1);
   _drawRetBarForBrand(bKey,-1);
   _attachRetBarHoverTotal();
