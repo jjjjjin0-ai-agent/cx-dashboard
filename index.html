@@ -1610,6 +1610,13 @@ var _retReason = {};
 var _retTotal = 0;
 
 function _retCSSVar(n,fb){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||fb; }
+function _retFitText(ctx,text,maxW){
+  if(!text) return '';
+  if(ctx.measureText(text).width<=maxW) return text;
+  var t=text;
+  while(t.length>1&&ctx.measureText(t+'…').width>maxW) t=t.slice(0,-1);
+  return t+'…';
+}
 
 function _retTooltip(){
   var t=document.getElementById('_ret-tip');
@@ -1862,10 +1869,10 @@ function _drawRetBar(hov){
     ctx.fillStyle=isH?fg:fg;
     ctx.font=(isH?'bold ':'bold ')+'12px -apple-system,system-ui,sans-serif';
     ctx.fillText(_retReason[k].toLocaleString(),x+barW/2,y-7);
-    // x 레이블 — 숫자만 표시
-    ctx.font='11px -apple-system,system-ui,sans-serif';
+    // x 레이블 — 사유 텍스트 (한 줄, 넘치면 축약)
+    ctx.font='9.5px -apple-system,system-ui,sans-serif';
     ctx.fillStyle=isH?fg:mu;
-    ctx.fillText(String(i+1),x+barW/2,LH-padB+14);
+    ctx.fillText(_retFitText(ctx,k,barW+10),x+barW/2,LH-padB+14);
   });
   // baseline
   ctx.beginPath(); ctx.moveTo(padL,padT+cH); ctx.lineTo(LW-padR,padT+cH);
@@ -2124,9 +2131,9 @@ function _drawRetBarForBrand(brandKey,hov){
     ctx.textAlign='center'; ctx.fillStyle=fg;
     ctx.font='bold 12px -apple-system,system-ui,sans-serif';
     ctx.fillText(t.toLocaleString(),x+barW/2,y-7);
-    ctx.font='11px -apple-system,system-ui,sans-serif';
+    ctx.font='9.5px -apple-system,system-ui,sans-serif';
     ctx.fillStyle=isH?fg:mu;
-    ctx.fillText(String(i+1),x+barW/2,LH-padB+14);
+    ctx.fillText(_retFitText(ctx,p,barW+10),x+barW/2,LH-padB+14);
   });
   ctx.beginPath(); ctx.moveTo(padL,padT+cH); ctx.lineTo(LW-padR,padT+cH);
   ctx.strokeStyle=mu; ctx.globalAlpha=0.18; ctx.lineWidth=1; ctx.stroke();
