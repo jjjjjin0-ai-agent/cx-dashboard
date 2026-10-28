@@ -1587,7 +1587,9 @@ function _updateReturnHeader(brand){
     if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
     _setReturnWeekDates();
     if(brandChanged){
-      var cached=_retChartCache[brand];
+      var _cs=document.getElementById('return-start-date'),_ce=document.getElementById('return-end-date');
+      var _ck=brand+'|'+(_cs?_cs.value||'':'')+'~'+(_ce?_ce.value||'':'');
+      var cached=_retChartCache[_ck];
       if(cached&&cached.length){ _renderReturnCharts(cached); }
       else { _clearReturnChart(); }
     }
@@ -1722,6 +1724,7 @@ function _dedupeByOrderNo(rows){
 function _parseRetRow_old(r){
   var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'';
   if(!colA&&!colD) return null;
+  if(!colD.trim()) return null;
   if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) return null;
   var type=(colF.indexOf('교환')>=0)?'교환':'반품';
   var rk=(colF.indexOf('쿠팡')>=0)?'변심':(colF.trim()||'변심');
@@ -1731,6 +1734,7 @@ function _parseRetRow_old(r){
 function _parseRetRow_new(r){
   var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'',colG=r[6]||'',colH=r[7]||'',colI=r[8]||'';
   if(!colA&&!colD) return null;
+  if(!colD.trim()) return null;
   if(colD.indexOf('사은품')>=0) return null;
   var type=(colF.trim()==='교환')?'교환':'반품';
   var rk=colH.trim()||(colI.trim()||'변심');
@@ -1791,8 +1795,8 @@ function _fetchReturnData(){
               }
               if(!ok) continue;
             }
-            if(startD&&d&&d<startD) continue;
-            if(endD&&d&&d>endD) continue;
+            if(startD&&(!d||d<startD)) continue;
+            if(endD&&(!d||d>endD)) continue;
             dataRows.push(row);
           }
         }
@@ -1800,7 +1804,7 @@ function _fetchReturnData(){
       dataRows=_dedupeByOrderNo(dataRows);
       prevRows=_dedupeByOrderNo(prevRows);
       if(!isTotalMode){
-        if(brand&&dataRows.length) _retChartCache[brand]=dataRows;
+        if(brand&&dataRows.length){ var _ck2=brand+'|'+(sEl.value||'')+'~'+(eEl.value||''); _retChartCache[_ck2]=dataRows; }
         _renderReturnCharts(dataRows);
       } else {
         _renderReturnChartsTotal(dataRows,prevRows);
