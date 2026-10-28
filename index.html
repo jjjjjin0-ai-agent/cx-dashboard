@@ -464,18 +464,20 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
       <div class="return-scroll-wrap" id="return-scroll-wrap">
-        <div id="return-chart-area" style="display:none;padding:14px 16px 10px">
-          <div style="display:flex;gap:20px;align-items:flex-start;min-height:220px">
-            <!-- 도넛 차트 (제품별) -->
-            <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
-              <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.02em">제품별</div>
-              <canvas id="return-donut-canvas" width="160" height="160"></canvas>
-              <div id="return-donut-legend" style="margin-top:8px;font-size:10.5px;display:flex;flex-direction:column;gap:3px"></div>
-            </div>
-            <!-- 막대 차트 (사유별) -->
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-              <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.02em">사유별</div>
-              <canvas id="return-bar-canvas" style="width:100%;height:180px"></canvas>
+        <div id="return-chart-area" style="display:none">
+          <div class="stock-card" style="padding:14px 16px 14px;margin:0">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <!-- 도넛 차트 (제품별) -->
+              <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
+                <canvas id="return-donut-canvas"></canvas>
+                <div id="return-donut-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;width:100%"></div>
+              </div>
+              <!-- 막대 차트 (사유별) -->
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">사유별</div>
+                <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
+              </div>
             </div>
           </div>
         </div>
@@ -1543,6 +1545,36 @@ function _updateReturnHeader(brand){
 
 /* ───────────── 교환·반품 시트 조회 ───────────── */
 var _RETURN_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/export?format=csv&gid=1198818115';
+var _RETURN_PAL = ['#5B7FFF','#FF6B6B','#FFB347','#4ECDC4','#A78BFA','#F472B6','#34D399','#FB923C','#60A5FA','#FBBF24'];
+var _retSegs = [];   // 도넛 세그먼트 히트 영역
+var _retBars = [];   // 막대 히트 영역
+var _retHovSeg = -1;
+var _retHovBar = -1;
+var _retProd = {};
+var _retReason = {};
+var _retTotal = 0;
+
+function _retCSSVar(n,fb){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||fb; }
+
+function _retTooltip(){
+  var t=document.getElementById('_ret-tip');
+  if(!t){
+    t=document.createElement('div');
+    t.id='_ret-tip';
+    t.style.cssText='display:none;position:fixed;z-index:9999;background:rgba(18,18,28,.9);color:#fff;font-size:12px;font-weight:500;padding:6px 11px;border-radius:7px;pointer-events:none;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.3)';
+    document.body.appendChild(t);
+  }
+  return t;
+}
+function _showRetTip(cx,cy,html){
+  var t=_retTooltip(); t.innerHTML=html; t.style.display='block';
+  var tw=t.offsetWidth,th=t.offsetHeight,vw=window.innerWidth,vh=window.innerHeight;
+  var lx=cx+14,ly=cy-th-10;
+  if(lx+tw>vw-8) lx=cx-tw-14;
+  if(ly<8) ly=cy+14;
+  t.style.left=lx+'px'; t.style.top=ly+'px';
+}
+function _hideRetTip(){ var t=document.getElementById('_ret-tip'); if(t) t.style.display='none'; }
 
 function _parseCSV(text){
   var rows=[]; var lines=text.split(/\r?\n/);
@@ -1565,13 +1597,10 @@ function _parseReturnDate(str){
   if(!str) return null;
   str=str.replace(/\s/g,'');
   var m;
-  // YYYY-MM-DD or YYYY/MM/DD
   m=str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if(m) return new Date(+m[1],+m[2]-1,+m[3]);
-  // YY-MM-DD or YY/MM/DD (e.g. 26-10-01)
   m=str.match(/^(\d{2})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if(m) return new Date(2000+ +m[1],+m[2]-1,+m[3]);
-  // M/D or MM/DD (no year → use current year)
   m=str.match(/^(\d{1,2})\/(\d{1,2})$/);
   if(m) return new Date(new Date().getFullYear(),+m[1]-1,+m[2]);
   return null;
@@ -1582,40 +1611,54 @@ function _fetchReturnData(){
   var eEl=document.getElementById('return-end-date');
   var qb=document.getElementById('return-query-btn');
   if(!sEl||!eEl) return;
-  var startStr=sEl.value, endStr=eEl.value;
-  var startD=startStr?new Date(startStr):null;
-  var endD=endStr?new Date(endStr):null;
+  var startD=sEl.value?new Date(sEl.value):null;
+  var endD=eEl.value?new Date(eEl.value):null;
   if(endD) endD.setHours(23,59,59,999);
+  // 브랜드별 제품 필터
+  var brand=(typeof activeBrand!=='undefined')?activeBrand:null;
+  var brandProds=brand?(STOCK_PRODUCTS[brand]||[]):null;
   if(qb){ qb.disabled=true; qb.textContent='조회 중...'; }
   fetch(_RETURN_SHEET_CSV)
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
     .then(function(text){
       if(qb){ qb.disabled=false; qb.textContent='조회'; }
       var rows=_parseCSV(text);
-      // skip header row(s): skip until we find a row whose col A looks like a date
       var dataRows=[];
       for(var i=1;i<rows.length;i++){
         var r=rows[i];
-        var colA=r[0]||''; var colD=r[3]||''; var colF=r[5]||''; var colH=r[7]||'';
+        var colA=r[0]||'',colD=r[3]||'',colF=r[5]||'',colH=r[7]||'';
         if(!colA&&!colD) continue;
-        // filter out 사은품
         if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) continue;
-        // parse date
+        // 브랜드 제품 매칭 (부분 포함)
+        if(brandProds){
+          var ok=false;
+          for(var k=0;k<brandProds.length;k++){
+            if(colD.indexOf(brandProds[k])>=0||brandProds[k].indexOf(colD)>=0){ok=true;break;}
+          }
+          if(!ok) continue;
+        }
         var d=_parseReturnDate(colA);
         if(startD&&d&&d<startD) continue;
         if(endD&&d&&d>endD) continue;
         var qty=parseInt((colH||'0').replace(/[^0-9]/g,''),10)||0;
         var type=(colF.trim()==='교환')?'교환':'반품';
-        var reason=colF.trim()||'변심';
-        dataRows.push({product:colD.trim(), reason:reason, type:type, qty:qty});
+        dataRows.push({product:colD.trim(),reason:colF.trim()||'변심',type:type,qty:qty});
       }
       _renderReturnCharts(dataRows);
     })
     .catch(function(err){
       if(qb){ qb.disabled=false; qb.textContent='조회'; }
       var em=document.getElementById('return-empty-msg');
-      if(em){ em.style.display=''; em.textContent='데이터를 불러오지 못했습니다: '+err.message; }
+      if(em){ em.style.display=''; em.textContent='불러오기 실패: '+err.message; }
     });
+}
+
+function _retHiDPI(canvas,lw,lh){
+  var dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(lw*dpr); canvas.height=Math.round(lh*dpr);
+  canvas.style.width=lw+'px'; canvas.style.height=lh+'px';
+  var ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  return ctx;
 }
 
 function _renderReturnCharts(dataRows){
@@ -1629,103 +1672,187 @@ function _renderReturnCharts(dataRows){
   if(area) area.style.display='';
   if(emsg) emsg.style.display='none';
 
-  // aggregate by product
-  var prodMap={};
+  _retProd={}; _retReason={};
   dataRows.forEach(function(r){
-    if(!prodMap[r.product]) prodMap[r.product]=0;
-    prodMap[r.product]+=r.qty;
+    _retProd[r.product]=(_retProd[r.product]||0)+r.qty;
+    var rk=r.type==='교환'?'교환':r.reason;
+    _retReason[rk]=(_retReason[rk]||0)+r.qty;
   });
-  // aggregate by reason
-  var reasonMap={};
-  dataRows.forEach(function(r){
-    var key=r.type==='교환'?'교환':r.reason;
-    if(!reasonMap[key]) reasonMap[key]=0;
-    reasonMap[key]+=r.qty;
-  });
+  _retTotal=Object.keys(_retProd).reduce(function(s,k){return s+_retProd[k];},0);
+  _retHovSeg=-1; _retHovBar=-1;
+  _drawRetDonut(-1);
+  _drawRetBar(-1);
+  _attachRetHover();
+}
 
-  var PALETTE=['#5B7FFF','#FF6B6B','#FFB347','#4ECDC4','#A78BFA','#F472B6','#34D399','#FB923C','#60A5FA','#FBBF24'];
+function _drawRetDonut(hov){
+  var canvas=document.getElementById('return-donut-canvas');
+  if(!canvas) return;
+  var LW=176,LH=176;
+  var ctx=_retHiDPI(canvas,LW,LH);
+  var prods=Object.keys(_retProd).sort(function(a,b){return _retProd[b]-_retProd[a];});
+  var total=_retTotal; if(!total) return;
+  var cx=LW/2,cy=LH/2,R=74,Ri=R*0.50;
+  var surf=_retCSSVar('--surface','#fff');
+  var fg=_retCSSVar('--fg','#1a1a2e');
+  var mu=_retCSSVar('--muted','#888');
 
-  // ── 도넛 차트
-  var dCanvas=document.getElementById('return-donut-canvas');
-  if(dCanvas){
-    var W=dCanvas.width, H=dCanvas.height;
-    var ctx=dCanvas.getContext('2d');
-    ctx.clearRect(0,0,W,H);
-    var prods=Object.keys(prodMap).sort(function(a,b){return prodMap[b]-prodMap[a];});
-    var total=prods.reduce(function(s,k){return s+prodMap[k];},0);
-    var cx=W/2, cy=H/2, R=Math.min(W,H)/2-8, r=R*0.52;
-    var angle=-Math.PI/2;
-    prods.forEach(function(p,i){
-      var slice=(prodMap[p]/total)*2*Math.PI;
-      ctx.beginPath(); ctx.moveTo(cx,cy);
-      ctx.arc(cx,cy,R,angle,angle+slice);
-      ctx.closePath();
-      ctx.fillStyle=PALETTE[i%PALETTE.length];
-      ctx.fill();
-      angle+=slice;
-    });
-    // center hole
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
-    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()||'#fff';
+  _retSegs=[];
+  var angle=-Math.PI/2;
+  prods.forEach(function(p,i){
+    var slice=(_retProd[p]/total)*2*Math.PI;
+    var sa=angle,ea=angle+slice,mid=sa+(ea-sa)/2;
+    var col=_RETURN_PAL[i%_RETURN_PAL.length];
+    _retSegs.push({product:p,qty:_retProd[p],pct:Math.round(_retProd[p]/total*100),color:col,sa:sa,ea:ea,mid:mid,cx:cx,cy:cy,R:R,Ri:Ri});
+    var ox=0,oy=0;
+    if(i===hov){ox=Math.cos(mid)*8;oy=Math.sin(mid)*8;}
+    ctx.beginPath();
+    ctx.moveTo(cx+ox,cy+oy);
+    ctx.arc(cx+ox,cy+oy,R+(i===hov?3:0),sa,ea);
+    ctx.closePath();
+    ctx.fillStyle=col;
+    ctx.globalAlpha=(i===hov)?1:0.88;
     ctx.fill();
-    // center total
-    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim()||'#222';
-    ctx.font='bold 15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(total.toLocaleString(),cx,cy-7);
-    ctx.font='10px sans-serif';
-    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#888';
-    ctx.fillText('총합',cx,cy+9);
-    // legend
-    var leg=document.getElementById('return-donut-legend');
-    if(leg){
-      leg.innerHTML='';
-      prods.forEach(function(p,i){
-        var pct=Math.round(prodMap[p]/total*100);
-        var row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;gap:5px;white-space:nowrap';
-        row.innerHTML='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+PALETTE[i%PALETTE.length]+'"></span>'
-          +'<span style="color:var(--fg)">'+p+'</span>'
-          +'<span style="color:var(--muted);margin-left:auto;padding-left:8px">'+prodMap[p].toLocaleString()+'('+pct+'%)</span>';
-        leg.appendChild(row);
-      });
+    if(i===hov){
+      ctx.shadowColor=col; ctx.shadowBlur=12; ctx.fill();
+      ctx.shadowBlur=0;
     }
-  }
+    ctx.globalAlpha=1;
+    angle+=slice;
+  });
+  // hole
+  ctx.beginPath(); ctx.arc(cx,cy,Ri,0,2*Math.PI);
+  ctx.fillStyle=surf; ctx.fill();
+  // center text
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=fg; ctx.font='bold 17px -apple-system,system-ui,sans-serif';
+  ctx.fillText(total.toLocaleString(),cx,cy-8);
+  ctx.fillStyle=mu; ctx.font='11px -apple-system,system-ui,sans-serif';
+  ctx.fillText('총 반품',cx,cy+10);
 
-  // ── 막대 차트
-  var bCanvas=document.getElementById('return-bar-canvas');
-  if(bCanvas){
-    var keys=Object.keys(reasonMap).sort(function(a,b){return reasonMap[b]-reasonMap[a];});
-    var maxV=Math.max.apply(null,keys.map(function(k){return reasonMap[k];}));
-    var bW=bCanvas.offsetWidth||300, bH=180;
-    bCanvas.width=bW; bCanvas.height=bH;
-    var bCtx=bCanvas.getContext('2d');
-    bCtx.clearRect(0,0,bW,bH);
-    var padL=8, padR=8, padT=12, padB=40;
-    var chartW=bW-padL-padR, chartH=bH-padT-padB;
-    var barW=Math.min(40, Math.floor(chartW/keys.length)-8);
-    var gap=(chartW-barW*keys.length)/(keys.length+1);
-    var fgColor=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#888';
-    keys.forEach(function(k,i){
-      var x=padL+gap*(i+1)+barW*i;
-      var barH2=maxV>0?Math.round((reasonMap[k]/maxV)*chartH):0;
-      var y=padT+chartH-barH2;
-      bCtx.fillStyle=PALETTE[i%PALETTE.length];
-      bCtx.beginPath();
-      bCtx.roundRect(x,y,barW,barH2,3);
-      bCtx.fill();
-      // value label
-      bCtx.fillStyle=fgColor;
-      bCtx.font='bold 10px sans-serif'; bCtx.textAlign='center';
-      bCtx.fillText(reasonMap[k].toLocaleString(),x+barW/2,y-3);
-      // x label
-      var label=k.length>4?k.slice(0,4)+'…':k;
-      bCtx.font='10px sans-serif'; bCtx.fillStyle=fgColor;
-      bCtx.fillText(label,x+barW/2,bH-padB+14);
+  // legend (최초 렌더 또는 재빌드)
+  var leg=document.getElementById('return-donut-legend');
+  if(leg){
+    leg.innerHTML='';
+    prods.forEach(function(p,i){
+      var pct=Math.round(_retProd[p]/total*100);
+      var row=document.createElement('div');
+      var isH=(i===hov);
+      row.style.cssText='display:flex;align-items:center;gap:6px;white-space:nowrap;line-height:1.5;opacity:'+(isH?'1':'0.82');
+      row.innerHTML='<span style="display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;background:'+_RETURN_PAL[i%_RETURN_PAL.length]+'"></span>'
+        +'<span style="color:var(--fg);font-size:11.5px;font-weight:'+(isH?'700':'500')+'">'+p+'</span>'
+        +'<span style="color:var(--muted);margin-left:auto;padding-left:8px;font-size:11px">'+_retProd[p].toLocaleString()+' <span style="opacity:.7">('+pct+'%)</span></span>';
+      leg.appendChild(row);
     });
-    // baseline
-    bCtx.beginPath(); bCtx.moveTo(padL,padT+chartH); bCtx.lineTo(bW-padR,padT+chartH);
-    bCtx.strokeStyle=fgColor; bCtx.globalAlpha=0.2; bCtx.lineWidth=1; bCtx.stroke();
-    bCtx.globalAlpha=1;
+  }
+}
+
+function _drawRetBar(hov){
+  var canvas=document.getElementById('return-bar-canvas');
+  if(!canvas) return;
+  var par=canvas.parentElement;
+  var LW=par?Math.max(par.offsetWidth-4,200):280;
+  var LH=210;
+  var ctx=_retHiDPI(canvas,LW,LH);
+  var keys=Object.keys(_retReason).sort(function(a,b){return _retReason[b]-_retReason[a];});
+  if(!keys.length) return;
+  var maxV=Math.max.apply(null,keys.map(function(k){return _retReason[k];}));
+  var fg=_retCSSVar('--fg','#1a1a2e');
+  var mu=_retCSSVar('--muted','#999');
+  var surf=_retCSSVar('--surface','#fff');
+  var padL=12,padR=12,padT=32,padB=48;
+  var cW=LW-padL-padR,cH=LH-padT-padB;
+  var n=keys.length;
+  var barW=Math.min(52,Math.floor(cW/(n+1)));
+  var spacing=(cW-barW*n)/(n+1);
+
+  _retBars=[];
+  keys.forEach(function(k,i){
+    var x=padL+spacing*(i+1)+barW*i;
+    var bh=maxV>0?Math.round((_retReason[k]/maxV)*cH):2;
+    var y=padT+cH-bh;
+    var col=_RETURN_PAL[i%_RETURN_PAL.length];
+    _retBars.push({label:k,qty:_retReason[k],color:col,x:x,y:y,w:barW,h:bh});
+    var isH=(i===hov);
+    ctx.save();
+    if(isH){ ctx.shadowColor=col; ctx.shadowBlur=14; }
+    ctx.beginPath();
+    ctx.roundRect(x,y,barW,Math.max(bh,2),5);
+    ctx.fillStyle=isH?col:col+'cc';
+    ctx.fill();
+    ctx.restore();
+    // 수치 레이블
+    ctx.textAlign='center';
+    ctx.fillStyle=isH?fg:mu;
+    ctx.font=(isH?'bold ':'')+'12px -apple-system,system-ui,sans-serif';
+    ctx.fillText(_retReason[k].toLocaleString(),x+barW/2,y-7);
+    // x 레이블
+    var lbl=k.length>5?k.slice(0,5)+'…':k;
+    ctx.font=(isH?'bold ':'')+'11px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle=isH?fg:mu;
+    ctx.fillText(lbl,x+barW/2,LH-padB+16);
+  });
+  // baseline
+  ctx.beginPath(); ctx.moveTo(padL,padT+cH); ctx.lineTo(LW-padR,padT+cH);
+  ctx.strokeStyle=mu; ctx.globalAlpha=0.18; ctx.lineWidth=1; ctx.stroke();
+  ctx.globalAlpha=1;
+}
+
+function _attachRetHover(){
+  var dc=document.getElementById('return-donut-canvas');
+  var bc=document.getElementById('return-bar-canvas');
+  if(dc){
+    dc.onmousemove=function(e){
+      var rect=dc.getBoundingClientRect();
+      var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      var hit=-1;
+      for(var i=0;i<_retSegs.length;i++){
+        var s=_retSegs[i];
+        var dx=mx-s.cx,dy=my-s.cy,dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist>=s.Ri&&dist<=s.R+4){
+          var a=Math.atan2(dy,dx);
+          var sa=s.sa,ea=s.ea;
+          // 각도 정규화
+          while(a<sa-0.01) a+=2*Math.PI;
+          while(a>ea+0.01) a-=2*Math.PI;
+          if(a>=sa&&a<=ea){hit=i;break;}
+        }
+      }
+      if(hit!==_retHovSeg){ _retHovSeg=hit; _drawRetDonut(hit); }
+      if(hit>=0){
+        var s=_retSegs[hit];
+        _showRetTip(e.clientX,e.clientY,
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+s.color+';margin-right:6px;vertical-align:middle"></span>'
+          +'<b>'+s.product+'</b>&ensp;'+s.qty.toLocaleString()+'건&ensp;<span style="opacity:.7">('+s.pct+'%)</span>');
+      } else { _hideRetTip(); }
+    };
+    dc.onmouseleave=function(){
+      if(_retHovSeg>=0){ _retHovSeg=-1; _drawRetDonut(-1); }
+      _hideRetTip();
+    };
+  }
+  if(bc){
+    bc.onmousemove=function(e){
+      var rect=bc.getBoundingClientRect();
+      var sx=bc.offsetWidth/(_retBars.length?(_retBars[_retBars.length-1].x+_retBars[_retBars.length-1].w+12):bc.offsetWidth);
+      var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      var hit=-1;
+      for(var i=0;i<_retBars.length;i++){
+        var b=_retBars[i];
+        if(mx>=b.x&&mx<=b.x+b.w&&my>=b.y&&my<=b.y+b.h+48){hit=i;break;}
+      }
+      if(hit!==_retHovBar){ _retHovBar=hit; _drawRetBar(hit); }
+      if(hit>=0){
+        var b=_retBars[hit];
+        _showRetTip(e.clientX,e.clientY,
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+b.color+';margin-right:6px;vertical-align:middle"></span>'
+          +'<b>'+b.label+'</b>&ensp;'+b.qty.toLocaleString()+'건');
+      } else { _hideRetTip(); }
+    };
+    bc.onmouseleave=function(){
+      if(_retHovBar>=0){ _retHovBar=-1; _drawRetBar(-1); }
+      _hideRetTip();
+    };
   }
 }
 </script>
