@@ -469,22 +469,23 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <div id="return-chart-area" style="display:none">
           <div class="stock-card" style="padding:14px 16px 14px;margin:0">
             <div style="display:flex;gap:12px;align-items:flex-start">
-              <!-- 도넛 차트 (제품별) -->
+              <!-- 도넛 차트 + 사유별 서브차트 (세로 배치) -->
               <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
                 <div id="return-donut-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
                 <canvas id="return-donut-canvas"></canvas>
                 <div id="return-donut-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;width:100%"></div>
                 <div id="return-type-summary" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;white-space:nowrap"></div>
+                <!-- 사유별 서브 차트 (제품 클릭 시 표시) -->
+                <div id="return-reason-area" style="display:none;flex-direction:column;width:100%">
+                  <div style="border-top:1px solid var(--line);margin:10px 0 6px"></div>
+                  <div id="return-reason-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase;text-align:left">사유별</div>
+                  <canvas id="return-reason-canvas" style="display:block;width:100%"></canvas>
+                </div>
               </div>
               <!-- 막대 차트 (제품별) -->
               <div style="flex:1;min-width:0;display:flex;flex-direction:column">
                 <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
                 <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
-              </div>
-              <!-- 사유별 서브 차트 (제품 클릭 시 표시) -->
-              <div id="return-reason-area" style="display:none;min-width:0;flex-direction:column">
-                <div id="return-reason-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;padding-left:12px;text-transform:uppercase">사유별</div>
-                <canvas id="return-reason-canvas" style="display:block;width:100%"></canvas>
               </div>
             </div>
           </div>
@@ -1971,7 +1972,7 @@ function _attachRetHover(){
       } else {
         _retSelProd=b.label;
         if(rl) rl.textContent=b.label+' 사유별';
-        if(ra){ ra.style.display='flex'; ra.style.flex='1'; }
+        if(ra) ra.style.display='flex';
         _retCurReasonObj=_retProdReasons[_retSelProd]||{};
         requestAnimationFrame(function(){ _drawRetReasonBar(_retCurReasonObj,-1); _attachRetReasonHover(); });
       }
@@ -2310,7 +2311,7 @@ function _attachRetBarHoverTotal(){
       _retSelProd=b.label;
       _retCurReasonObj=b.reasons||{};
       if(rl) rl.textContent=b.label+' 사유별';
-      if(ra){ ra.style.display='flex'; ra.style.flex='1'; }
+      if(ra) ra.style.display='flex';
       requestAnimationFrame(function(){ _drawRetReasonBar(_retCurReasonObj,-1); _attachRetReasonHover(); });
     }
     _drawRetBarForBrand(_retSelBrand,_retBrandBarHov);
