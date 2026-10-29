@@ -2046,7 +2046,7 @@ function _renderReturnCharts(dataRows){
     _attachRetHover();
     var _dcA=document.getElementById('return-donut-canvas');
     var _coA=(_dcA&&_dcA.parentElement)?(_dcA.parentElement.offsetWidth+12):0;
-    var _piA=document.getElementById('return-plat-info'); if(_piA) _piA.style.paddingLeft='12px';
+    var _piA=document.getElementById('return-plat-info'); if(_piA) _piA.style.paddingLeft=(_retBars&&_retBars[0]?_retBars[0].x+'px':'12px');
   });
 }
 
