@@ -2023,9 +2023,9 @@ function _renderReturnCharts(dataRows){
   _retTotal=Object.keys(_retProd).reduce(function(s,k){return s+_retProd[k];},0);
   _retHovSeg=-1; _retHovBar=-1;
   var _platCount={};
-  dataRows.forEach(function(r){ var p=(r.platform||'').trim()||'기타'; _platCount[p]=(_platCount[p]||0)+r.qty; });
+  dataRows.forEach(function(r){ var p=(r.platform||'').trim(); if(p) _platCount[p]=(_platCount[p]||0)+r.qty; });
   var _platEl=document.getElementById('return-plat-info');
-  if(_platEl){ var _pk=Object.keys(_platCount); if(_pk.length){ _platEl.textContent=_pk.map(function(k){return k+' '+_platCount[k]+'건';}).join(' · '); _platEl.style.display=''; } else { _platEl.style.display='none'; } }
+  if(_platEl){ var _pk=Object.keys(_platCount); if(_pk.length){ _platEl.innerHTML=_pk.map(function(k){return '<b>'+k+' '+_platCount[k]+'건</b>';}).join('<br>'); _platEl.style.display=''; } else { _platEl.style.display='none'; } }
   requestAnimationFrame(function(){
     _drawRetDonut(-1);
     _drawRetBar(-1);
@@ -2469,9 +2469,9 @@ function _selectRetBrand(bKey){
   var _sPlatEl=document.getElementById('return-plat-info');
   if(_sPlatEl&&_retTotalCache&&_retTotalCache.dataRows){
     var _sPc={};
-    _retTotalCache.dataRows.forEach(function(r){ if((_detectBrand(r.product)||'기타')===bKey){ var p=(r.platform||'').trim()||'기타'; _sPc[p]=(_sPc[p]||0)+r.qty; } });
+    _retTotalCache.dataRows.forEach(function(r){ if((_detectBrand(r.product)||'기타')===bKey){ var p=(r.platform||'').trim(); if(p) _sPc[p]=(_sPc[p]||0)+r.qty; } });
     var _spk=Object.keys(_sPc);
-    if(_spk.length){ _sPlatEl.textContent=_spk.map(function(k){return k+' '+_sPc[k]+'건';}).join(' · '); _sPlatEl.style.display=''; }
+    if(_spk.length){ _sPlatEl.innerHTML=_spk.map(function(k){return '<b>'+k+' '+_sPc[k]+'건</b>';}).join('<br>'); _sPlatEl.style.display=''; }
     else { _sPlatEl.style.display='none'; }
   }
 }
