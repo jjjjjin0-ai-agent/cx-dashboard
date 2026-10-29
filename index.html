@@ -480,11 +480,9 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
                 </div>
                 <!-- 막대 차트 (제품별) -->
                 <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-                  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-                    <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap">제품별</div>
-                    <div id="return-plat-info" style="display:none;font-size:11px;color:var(--muted);line-height:1.9"></div>
-                  </div>
+                  <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
                   <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
+                  <div id="return-plat-info" style="display:none;font-size:11px;color:var(--muted);margin-top:10px;line-height:2;text-align:left"></div>
                 </div>
               </div>
               <!-- 하단: 사유별 서브차트 (전체 너비, 제품 클릭 시 표시) -->
