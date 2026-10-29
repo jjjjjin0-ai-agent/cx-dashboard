@@ -2039,7 +2039,7 @@ function _renderReturnCharts(dataRows){
   var _platCount={};
   dataRows.forEach(function(r){ var p=(r.platform||'').trim(); if(p) _platCount[p]=(_platCount[p]||0)+r.qty; });
   var _platEl=document.getElementById('return-plat-info');
-  if(_platEl){ var _pk=Object.keys(_platCount); if(_pk.length){ _platEl.innerHTML=_pk.map(function(k){return '<b>'+k+' '+_platCount[k]+'건</b>';}).join('<br>'); _platEl.style.display=''; } else { _platEl.style.display='none'; } }
+  if(_platEl){ var _pk=Object.keys(_platCount); if(_pk.length){ _platEl.innerHTML='<div style="display:table;line-height:2">'+_pk.map(function(k){return '<div style="display:table-row"><span style="display:table-cell;padding-right:16px;white-space:nowrap">'+k+'</span><b style="display:table-cell">'+_platCount[k]+'건</b></div>';}).join('')+'</div>'; _platEl.style.display=''; } else { _platEl.style.display='none'; } }
   requestAnimationFrame(function(){
     _drawRetDonut(-1);
     _drawRetBar(-1);
@@ -2502,7 +2502,7 @@ function _selectRetBrand(bKey){
     var _sPc={};
     _retTotalCache.dataRows.forEach(function(r){ if((_detectBrand(r.product)||'기타')===bKey){ var p=(r.platform||'').trim(); if(p) _sPc[p]=(_sPc[p]||0)+r.qty; } });
     var _spk=Object.keys(_sPc);
-    if(_spk.length){ _sPlatEl.innerHTML=_spk.map(function(k){return '<b>'+k+' '+_sPc[k]+'건</b>';}).join('<br>'); _sPlatEl.style.display=''; _sPlatEl.style.paddingLeft=(_retBrandBars&&_retBrandBars[0]?_retBrandBars[0].x+'px':'12px'); }
+    if(_spk.length){ _sPlatEl.innerHTML='<div style="display:table;line-height:2">'+_spk.map(function(k){return '<div style="display:table-row"><span style="display:table-cell;padding-right:16px;white-space:nowrap">'+k+'</span><b style="display:table-cell">'+_sPc[k]+'건</b></div>';}).join('')+'</div>'; _sPlatEl.style.display=''; _sPlatEl.style.paddingLeft=(_retBrandBars&&_retBrandBars[0]?_retBrandBars[0].x+'px':'12px'); }
     else { _sPlatEl.style.display='none'; }
   }
 }
