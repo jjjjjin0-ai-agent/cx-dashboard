@@ -2036,6 +2036,9 @@ function _renderReturnCharts(dataRows){
     _drawRetDonut(-1);
     _drawRetBar(-1);
     _attachRetHover();
+    var _dcA=document.getElementById('return-donut-canvas');
+    var _coA=(_dcA&&_dcA.parentElement)?(_dcA.parentElement.offsetWidth+12):0;
+    var _piA=document.getElementById('return-plat-info'); if(_piA) _piA.style.paddingLeft=(_coA>0?_coA+'px':'');
   });
 }
 
@@ -2242,7 +2245,19 @@ function _drawRetReasonBar(reasonsObj,hov){
   var qtyW=tmp.measureText(maxV+'건').width;
   // 부모 너비를 우선 사용, 텍스트가 더 길면 캔버스 확장
   var par=canvas.parentElement;
-  var availW=par?(par.offsetWidth||0):0;
+  var rawAvailW=par?(par.offsetWidth||0):0;
+  // 도넛 컬럼 너비 계산 → 바 라벨 기준선으로 정렬
+  var _dc=document.getElementById('return-donut-canvas');
+  var _colOff=(_dc&&_dc.parentElement)?(_dc.parentElement.offsetWidth+12):0;
+  var availW=rawAvailW>_colOff?rawAvailW-_colOff:rawAvailW;
+  if(_colOff>0){
+    canvas.style.marginLeft=_colOff+'px';
+    // 세로 회색 구분선
+    var _ra=document.getElementById('return-reason-area');
+    if(_ra){ _ra.style.position='relative'; var _vl=document.getElementById('ret-reason-vline'); if(!_vl){_vl=document.createElement('div');_vl.id='ret-reason-vline';_ra.appendChild(_vl);} _vl.style.cssText='position:absolute;left:'+_colOff+'px;top:0;bottom:0;width:1px;background:var(--line);pointer-events:none'; }
+    // 플랫폼 텍스트도 동일 기준선
+    var _pi=document.getElementById('return-plat-info'); if(_pi) _pi.style.paddingLeft=_colOff+'px';
+  } else { canvas.style.marginLeft=''; var _pi2=document.getElementById('return-plat-info'); if(_pi2) _pi2.style.paddingLeft=''; }
   var padL=8, padR=Math.ceil(qtyW)+14, barAreaW=80;
   var minW=Math.ceil(maxLabelW)+padL+12+barAreaW+padR;
   var LW=Math.max(minW, availW>0?availW:minW);
@@ -2477,7 +2492,7 @@ function _selectRetBrand(bKey){
     var _sPc={};
     _retTotalCache.dataRows.forEach(function(r){ if((_detectBrand(r.product)||'기타')===bKey){ var p=(r.platform||'').trim(); if(p) _sPc[p]=(_sPc[p]||0)+r.qty; } });
     var _spk=Object.keys(_sPc);
-    if(_spk.length){ _sPlatEl.innerHTML=_spk.map(function(k){return '<b>'+k+' '+_sPc[k]+'건</b>';}).join('<br>'); _sPlatEl.style.display=''; }
+    if(_spk.length){ _sPlatEl.innerHTML=_spk.map(function(k){return '<b>'+k+' '+_sPc[k]+'건</b>';}).join('<br>'); _sPlatEl.style.display=''; var _dcS=document.getElementById('return-donut-canvas'); var _coS=(_dcS&&_dcS.parentElement)?(_dcS.parentElement.offsetWidth+12):0; if(_coS>0) _sPlatEl.style.paddingLeft=_coS+'px'; }
     else { _sPlatEl.style.display='none'; }
   }
 }
