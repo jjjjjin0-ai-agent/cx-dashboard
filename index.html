@@ -2343,7 +2343,7 @@ function _renderReturnChartsTotal(dataRows, prevRows){
   });
 
   _showRetMoM();
-  var _platElT=document.getElementById('return-plat-info'); if(_platElT) _platElT.style.display='none';
+  var _platElT=document.getElementById('return-plat-info'); if(_platElT){ _platElT.textContent=''; _platElT.style.display='none'; }
   _retBrandSegs=[]; _retBrandBars=[];
   var leg=document.getElementById('return-donut-legend');
   if(leg) leg.innerHTML='';
@@ -2465,6 +2465,15 @@ function _selectRetBrand(bKey){
   _drawRetDonutBrands(-1);
   _drawRetBarForBrand(bKey,-1);
   _attachRetBarHoverTotal();
+  // 플랫폼 건수 표시
+  var _sPlatEl=document.getElementById('return-plat-info');
+  if(_sPlatEl&&_retTotalCache&&_retTotalCache.dataRows){
+    var _sPc={};
+    _retTotalCache.dataRows.forEach(function(r){ if((_detectBrand(r.product)||'기타')===bKey){ var p=(r.platform||'').trim()||'기타'; _sPc[p]=(_sPc[p]||0)+r.qty; } });
+    var _spk=Object.keys(_sPc);
+    if(_spk.length){ _sPlatEl.textContent=_spk.map(function(k){return k+' '+_sPc[k]+'건';}).join(' · '); _sPlatEl.style.display=''; }
+    else { _sPlatEl.style.display='none'; }
+  }
 }
 
 function _drawRetBarForBrand(brandKey,hov){
