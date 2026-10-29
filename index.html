@@ -480,9 +480,11 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
                 </div>
                 <!-- 막대 차트 (제품별) -->
                 <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-                  <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">제품별</div>
+                  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+                    <div id="return-bar-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap">제품별</div>
+                    <div id="return-plat-info" style="display:none;font-size:11px;color:var(--muted);line-height:1.9"></div>
+                  </div>
                   <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
-                  <div id="return-plat-info" style="display:none;font-size:11px;color:var(--muted);margin-top:8px;line-height:1.9;padding:0 2px"></div>
                 </div>
               </div>
               <!-- 하단: 사유별 서브차트 (전체 너비, 제품 클릭 시 표시) -->
@@ -1716,7 +1718,7 @@ function _detectBrand(prodName){
   return null;
 }
 function _clearReturnChart(){
-  _retTotalMode=false; _retTotalCache=null; _retSelBrand=null; _retBrandAll={}; _retPrevAll={};
+  _retTotalMode=false; _retSelBrand=null; _retBrandAll={}; _retPrevAll={};
   _retBrandSegs=[]; _retBrandHov=-1; _retBrandBars=[]; _retBrandBarHov=-1;
   var area=document.getElementById('return-chart-area');
   var emsg=document.getElementById('return-empty-msg');
@@ -1754,7 +1756,7 @@ function _updateReturnHeader(brand){
       var _ck=brand+'|'+(_cs?_cs.value||'':'')+'~'+(_ce?_ce.value||'':'');
       var cached=_retChartCache[_ck];
       if(cached&&cached.length){ _renderReturnCharts(cached); }
-      else { _clearReturnChart(); }
+      else { var _ca=document.getElementById('return-chart-area'),_em=document.getElementById('return-empty-msg'); if(_ca) _ca.style.display='none'; if(_em){ _em.style.display=''; _em.textContent='날짜를 선택하고 조회 버튼을 눌러주세요'; } }
     }
   } else {
     // 총합 뷰: 날짜+조회만 표시, 접기 버튼 숨김
@@ -1940,14 +1942,19 @@ function _fetchReturnData(){
       results.forEach(function(res){
         var isNew=res.ym>=_RETURN_NEW_FMT_FROM;
         var isPrevSheet=(prevMonthYm===res.ym);
-        var lastDate=null,lastOrderNo='',lastPlatform='';
+        var lastDate=null,lastOrderNo='',lastPlatform='',lastReason='';
         for(var i=1;i<res.rows.length;i++){
-          var row=isNew?_parseRetRow_new(res.rows[i]):_parseRetRow_old(res.rows[i]);
+          var _rawRow=res.rows[i];
+          var _colI=(_rawRow[8]||'').trim();
+          var _isSaeum=_colI.indexOf('사은품')>=0;
+          var row=isNew?_parseRetRow_new(_rawRow):_parseRetRow_old(_rawRow);
           if(!row) continue;
           // 병합셀: A/B/G열 빈 행은 직전 행 값 이어받기
           if(row.date) lastDate=row.date; else if(lastDate) row.date=lastDate;
           if(row.orderNo) lastOrderNo=row.orderNo; else if(lastOrderNo) row.orderNo=lastOrderNo;
           if(row.platform) lastPlatform=row.platform; else if(lastPlatform) row.platform=lastPlatform;
+          // I열 사은품: 직전 행 사유 이어받고 (사은품) 표기
+          if(_isSaeum){ row.reason=lastReason+'(사은품)'; } else { lastReason=row.reason; }
           var d=row.date;
           if(isTotalMode){
             if(isPrevSheet){
