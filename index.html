@@ -1752,7 +1752,7 @@ function _updateReturnHeader(brand){
 var _RETURN_SHEET_BASE = 'https://docs.google.com/spreadsheets/d/1PDlxObUPYwjjddk0XlAM3bj2qR7IKnRJF01vZT27FjY/export?format=csv&gid=';
 var _RETURN_MONTH_GIDS = {
   202610:'1198818115',  // 10월 구형식 (D=상품명,F=비고,H=검수수량)
-  202611:'1016294227',  // 11월 신형식 (D=상품명,E=수량,F=교환/반품,G=플랫폼,H=사유)
+  202611:'1016294227',  // 11월 신형식 (A=날짜,B=주문번호,D=상품명,E=교환/반품,G=플랫폼,H=사유)
 };
 var _RETURN_NEW_FMT_FROM = 202611;
 var _RETURN_PAL = ['#5B7FFF','#FF6B6B','#FFB347','#4ECDC4','#A78BFA','#F472B6','#34D399','#FB923C','#60A5FA','#FBBF24'];
@@ -1864,14 +1864,14 @@ function _parseRetRow_old(r){
   var rk=(colF.indexOf('쿠팡')>=0)?'변심':(colF.trim()||'변심');
   return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA)};
 }
-// 11월+ 신형식 파서: A=날짜, B=주문번호, D=상품명, F=교환/반품, G=플랫폼, H=사유, I=비고
+// 11월+ 신형식 파서: A=날짜, B=주문번호, D=상품명, E=교환/반품, G=플랫폼, H=사유
 function _parseRetRow_new(r){
-  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'',colG=r[6]||'',colH=r[7]||'',colI=r[8]||'';
+  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colE=r[4]||'',colG=r[6]||'',colH=r[7]||'';
   if(!colA&&!colD) return null;
   if(!colD.trim()) return null;
   if(colD.indexOf('사은품')>=0) return null;
-  var type=(colF.trim()==='교환')?'교환':'반품';
-  var rk=colH.trim()||(colI.trim()||'변심');
+  var type=(colE.trim()==='교환')?'교환':'반품';
+  var rk=colH.trim()||'변심';
   return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:colG.trim()};
 }
 function _fetchReturnData(){
