@@ -1572,13 +1572,9 @@ function _updateVocHeader(brand){
   var e   = document.getElementById('voc-end-date');
   var qb  = document.getElementById('voc-query-btn');
   function show(el){ if(el) el.style.display=''; }
-  function hide(el){ if(el) el.style.display='none'; }
-  if(brand){
-    show(s); show(sep); show(e); show(qb);
-    _setVocWeekDates();
-  } else {
-    hide(s); hide(sep); hide(e); hide(qb);
-  }
+  // 브랜드 선택 여부 무관하게 날짜+조회 항상 표시
+  show(s); show(sep); show(e); show(qb);
+  _setVocWeekDates();
   _prevVocHeaderBrand = brand;
 }
 function _fetchVocData(){
@@ -1587,7 +1583,6 @@ function _fetchVocData(){
   var content = document.getElementById('voc-content');
   if(!content) return;
   var brand = (typeof activeBrand !== 'undefined') ? activeBrand : null;
-  if(!brand){ content.innerHTML = '<span style="color:var(--muted)">브랜드를 선택해주세요</span>'; return; }
   content.innerHTML = '<span style="color:var(--muted)">불러오는 중...</span>';
   function localDate(v){ var p=v.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
   var startD = sEl&&sEl.value ? localDate(sEl.value) : null;
@@ -1600,9 +1595,11 @@ function _fetchVocData(){
       if(i===0) return; // header
       var dateStr=r[0]||'', brandStr=r[1]||'', prod=r[2]||'', plat=r[3]||'', type=r[5]||'', subtype=r[6]||'', text=r[7]||'';
       if(!dateStr&&!brandStr) return;
-      // brand filter
-      var bDisp = (_BRAND_DISP&&_BRAND_DISP[brand])||brand;
-      if(brandStr&&brandStr.indexOf(bDisp)<0&&bDisp.indexOf(brandStr)<0) return;
+      // brand filter (브랜드 미선택 시 전체)
+      if(brand){
+        var bDisp = (_BRAND_DISP&&_BRAND_DISP[brand])||brand;
+        if(brandStr&&brandStr.indexOf(bDisp)<0&&bDisp.indexOf(brandStr)<0) return;
+      }
       // date filter
       var d=null; var m=dateStr.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
       if(m) d=new Date(+m[1],+m[2]-1,+m[3]);
