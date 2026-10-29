@@ -1940,13 +1940,14 @@ function _fetchReturnData(){
       results.forEach(function(res){
         var isNew=res.ym>=_RETURN_NEW_FMT_FROM;
         var isPrevSheet=(prevMonthYm===res.ym);
-        var lastDate=null;
+        var lastDate=null,lastOrderNo='',lastPlatform='';
         for(var i=1;i<res.rows.length;i++){
           var row=isNew?_parseRetRow_new(res.rows[i]):_parseRetRow_old(res.rows[i]);
           if(!row) continue;
-          // 날짜 병합셀: A열 빈 행은 직전 행 날짜 이어받기
-          if(row.date) lastDate=row.date;
-          else if(lastDate) row.date=lastDate;
+          // 병합셀: A/B/G열 빈 행은 직전 행 값 이어받기
+          if(row.date) lastDate=row.date; else if(lastDate) row.date=lastDate;
+          if(row.orderNo) lastOrderNo=row.orderNo; else if(lastOrderNo) row.orderNo=lastOrderNo;
+          if(row.platform) lastPlatform=row.platform; else if(lastPlatform) row.platform=lastPlatform;
           var d=row.date;
           if(isTotalMode){
             if(isPrevSheet){
