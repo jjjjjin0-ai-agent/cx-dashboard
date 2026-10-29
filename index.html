@@ -2241,7 +2241,11 @@ function _attachRetHover(){
 function _drawRetReasonBar(reasonsObj,hov){
   var canvas=document.getElementById('return-reason-canvas');
   if(!canvas||!reasonsObj) return;
-  var keys=Object.keys(reasonsObj).filter(function(k){return reasonsObj[k]>0;}).sort(function(a,b){return reasonsObj[b]-reasonsObj[a];});
+  var keys=Object.keys(reasonsObj).filter(function(k){return reasonsObj[k]>0;});
+  var _gKey=function(s){var p=s.indexOf('(');return p>0?s.substring(0,p).trim():s;};
+  var _gTot={};
+  keys.forEach(function(k){var g=_gKey(k);_gTot[g]=(_gTot[g]||0)+reasonsObj[k];});
+  keys.sort(function(a,b){var ga=_gKey(a),gb=_gKey(b);if(ga!==gb)return _gTot[gb]-_gTot[ga];return reasonsObj[b]-reasonsObj[a];});
   if(!keys.length) return;
   // 텍스트 너비 사전 측정 (잘림 없도록 전체 측정)
   var tmp=document.createElement('canvas').getContext('2d');
@@ -2498,7 +2502,7 @@ function _selectRetBrand(bKey){
     var _sPc={};
     _retTotalCache.dataRows.forEach(function(r){ if((_detectBrand(r.product)||'기타')===bKey){ var p=(r.platform||'').trim(); if(p) _sPc[p]=(_sPc[p]||0)+r.qty; } });
     var _spk=Object.keys(_sPc);
-    if(_spk.length){ _sPlatEl.innerHTML=_spk.map(function(k){return '<b>'+k+' '+_sPc[k]+'건</b>';}).join('<br>'); _sPlatEl.style.display=''; var _dcS=document.getElementById('return-donut-canvas'); var _coS=(_dcS&&_dcS.parentElement)?(_dcS.parentElement.offsetWidth+12):0; if(_coS>0) _sPlatEl.style.paddingLeft=_coS+'px'; }
+    if(_spk.length){ _sPlatEl.innerHTML=_spk.map(function(k){return '<b>'+k+' '+_sPc[k]+'건</b>';}).join('<br>'); _sPlatEl.style.display=''; _sPlatEl.style.paddingLeft=(_retBrandBars&&_retBrandBars[0]?_retBrandBars[0].x+'px':'12px'); }
     else { _sPlatEl.style.display='none'; }
   }
 }
