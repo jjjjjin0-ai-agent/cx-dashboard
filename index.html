@@ -2046,7 +2046,7 @@ function _renderReturnCharts(dataRows){
     _attachRetHover();
     var _dcA=document.getElementById('return-donut-canvas');
     var _coA=(_dcA&&_dcA.parentElement)?(_dcA.parentElement.offsetWidth+12):0;
-    // return-plat-info는 이미 바 컬럼 내부 → paddingLeft 불필요
+    var _piA=document.getElementById('return-plat-info'); if(_piA) _piA.style.paddingLeft='12px';
   });
 }
 
@@ -2283,11 +2283,11 @@ function _drawRetReasonBar(reasonsObj,hov){
     var col=_RETURN_PAL[(i+4)%_RETURN_PAL.length];
     _retReasonBars.push({label:k,qty:reasonsObj[k],color:col,x:0,y:yRow,w:LW,h:rowH});
     var isH=(i===hov);
-    // 라벨: 빨간선 왼쪽, 우측 정렬
-    ctx.textAlign='right'; ctx.textBaseline='middle';
+        // 라벨: 좌측 정렬
+    ctx.textAlign='left'; ctx.textBaseline='middle';
     ctx.font=(isH?'bold ':'')+'11px -apple-system,system-ui,sans-serif';
     ctx.fillStyle=isH?fg:mu;
-    ctx.fillText(k,_colOff>0?_colOff-8:padL,yRow+rowH/2);
+    ctx.fillText(k,padL,yRow+rowH/2);
     // 막대
     ctx.save();
     if(isH){ctx.shadowColor=col;ctx.shadowBlur=10;}
