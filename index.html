@@ -1580,6 +1580,7 @@ function _setReturnDates(mode){
   }
   _retDateMode = mode;
 }
+var _VOC_MONTH_FLOOR = new Date(2026, 10, 1); // 2026-11-01
 function _setVocDates(mode){
   var s = document.getElementById('voc-start-date');
   var e = document.getElementById('voc-end-date');
@@ -1588,8 +1589,15 @@ function _setVocDates(mode){
   var endPassed = e.value && new Date(e.value) < today;
   var modeChanged = (_vocDateMode !== mode);
   if(!s.value || !e.value || endPassed || modeChanged){
-    var rng = (mode === 'week') ? _calcWeekRange() : _calcMonthRange();
-    s.value = rng.s; e.value = rng.e;
+    if(mode === 'week'){
+      var rng = _calcWeekRange();
+      if(new Date(rng.s) < _VOC_MONTH_FLOOR){ s.value='2026-11-01'; e.value='2026-11-07'; }
+      else { s.value=rng.s; e.value=rng.e; }
+    } else {
+      var y=today.getFullYear(), m=today.getMonth();
+      if(new Date(y,m,1) < _VOC_MONTH_FLOOR){ y=2026; m=10; }
+      s.value=_fmt(new Date(y,m,1)); e.value=_fmt(new Date(y,m+1,0));
+    }
   }
   _vocDateMode = mode;
 }
