@@ -3279,7 +3279,7 @@ function cssUpdate(){
   +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디그로우 · 셀로핏 · 파미코젠</b></div></div></div>');
   var live=c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssBrandCol[x[0]]||_cssPal[i]]});
   window._cssCur=c;window._cssSel=null;
-  S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div><div class="csd-tot"><b id="csd-tot-n">'+c.total+'</b><span>건</span></div></div>'
+  S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div></div>'
   +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg')+'<div class="csd-rs" id="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
   +'<div class="csd-card" id="csd-detail"></div></div>'
   +'<p class="csd-note">'+c.note+'</p></div>');
