@@ -209,6 +209,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-fill .csd-grid{min-height:0}
 #csd-detail .csd-br{padding:4px 0;font-size:15px}
 .csd-hint{flex:none}
+.csd-rsum{display:flex;gap:28px;font-size:22px;font-weight:600}
+.csd-rsum b{font-size:30px;font-weight:900;margin:0 2px;font-variant-numeric:tabular-nums}
 .csd{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .csd-dc{pointer-events:none}
 .csd-seg,.csd-vbar,.csd-line span{outline:none}
@@ -3217,6 +3219,7 @@ function _cssShowR(name){
   p.innerHTML='<div class="csd-ch">'+pre+'제품별 교환 · 반품</div>'+prods.map(function(x,i){
     return '<div class="csd-row"><small style="margin:0;width:22px">'+(i<9?'0':'')+(i+1)+'</small><span><b>'+x[0]+'</b>'+(x[4]?'<small>'+x[4]+'</small>':'')+'</span><em class="csd-pt">반품 '+x[2]+' · 교환 '+x[3]+'</em><b>'+x[1]+'건</b></div>';}).join('');
   q.innerHTML='<div class="csd-ch">'+pre+'사유별</div>'+_cssRows(rs.map(function(x){return [x[0],x[1],_cssRc(x[0])]}),tot);
+  var sm=document.getElementById('csd-rsum');if(sm){var ex=b?b.exc:r.exc,rt=b?b.ret:r.ret;sm.innerHTML='<span>교환 <b style="color:var(--c-blue)">'+ex+'</b>건</span><span>반품 <b style="color:var(--c-red)">'+rt+'</b>건</span>';}
   document.querySelectorAll('#csd-vp .csd-vb').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-pickr')!==name);});
 }
 function _cssPickR(name){window._cssSelR=(window._cssSelR===name)?null:name;_cssShowR(window._cssSelR);}
@@ -3288,7 +3291,7 @@ function cssUpdate(){
   }).join('');
   window._cssCurR=r;window._cssSelR=null;
   S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">02 · 교환 · 반품</div><h2>브랜드별 교환 · 반품</h2></div></div>'
-  +'<div class="csd-grid csd-g02"><div class="csd-card csd-vcard"><div class="csd-ch">브랜드별</div><div class="csd-vchart">'+vbars+'</div></div>'
+  +'<div class="csd-grid csd-g02"><div class="csd-card csd-vcard"><div class="csd-rsum" id="csd-rsum"></div><div class="csd-vchart">'+vbars+'</div></div>'
   +'<div class="csd-card" id="csd-rp"></div><div class="csd-card" id="csd-rr"></div></div>'
   +'<p class="csd-note">'+r.note+'</p></div>');
   var dots=S.map(function(_,k){return '<i class="csd-dot'+(k?'':' on')+'"></i>'}).join('');
