@@ -1787,7 +1787,13 @@ var _BRAND_DISP = {
   terafugen:'테라퓨젠',frozenlab:'프로즌랩',dentipla:'덴티플라',
   mediglow:'메디그로우',cellofit:'셀로핏',pamicogen:'파미코젠',기타:'기타'
 };
+var _RET_ALIAS={'오메가3':'terafugen','실톡스SET':'frozenlab'};
 function _detectBrand(prodName){
+  var _pn=String(prodName).replace(/\s+/g,'');
+  for(var k in _RET_ALIAS){ if(_pn.indexOf(k)>=0) return _RET_ALIAS[k]; }
+  return _detectBrand0(prodName);
+}
+function _detectBrand0(prodName){
   for(var b in STOCK_PRODUCTS){
     var arr=STOCK_PRODUCTS[b]||[];
     for(var i=0;i<arr.length;i++){
@@ -2041,6 +2047,7 @@ function _fetchReturnData(){
               for(var k=0;k<brandProds.length;k++){
                 if(row.product.indexOf(brandProds[k])>=0||brandProds[k].indexOf(row.product)>=0){ok=true;break;}
               }
+              if(!ok&&_detectBrand(row.product)===brand) ok=true;
               if(!ok) continue;
             }
             if(startD&&(!d||d<startD)) continue;
