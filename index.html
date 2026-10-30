@@ -3153,7 +3153,7 @@ function _cssShow(name){
   var b=name?c.byBrand.filter(function(x){return x.n===name})[0]:null;
   if(rs)rs.innerHTML='<div class="csd-ch">'+(b?b.n+' 사유별':'사유별')+'</div>'+(b?_cssRows(b.g,b.t):_cssRows(c.reasons,c.total));
   if(b){
-    box.innerHTML='<div class="csd-dh">'+b.n+' 결제 후 취소 사유 <small>'+b.p+'건</small></div>'+_cssTopBars(b.d,b.p,_cssBrandCol[b.n]);
+    box.innerHTML='<div class="csd-dh">'+b.n+' 취소 사유 <small>'+b.p+'건</small></div>'+_cssTopBars(b.d,b.p,_cssBrandCol[b.n]);
   }else{
     var m={};c.byBrand.forEach(function(x){x.d.forEach(function(r){m[r[0]]=(m[r[0]]||0)+r[1];});});
     var all=Object.keys(m).map(function(k){return [k,m[k]]}).sort(function(p,q){return q[1]-p[1]});
