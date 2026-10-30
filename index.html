@@ -1984,7 +1984,7 @@ function _parseRetRow_old(r){
   var type=(colE.indexOf('교환')>=0)?'교환':'반품';
   var rk=colH.trim()||'변심';
   var platform=colG.trim();
-  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:platform,gift:(r[8]||'').indexOf('사은품')>=0};
+  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:platform};
 }
 // 11월+ 신형식 파서: A=날짜, B=주문번호, D=상품명, F=교환/반품, G=플랫폼, H=사유, I=비고
 function _parseRetRow_new(r){
@@ -1994,7 +1994,7 @@ function _parseRetRow_new(r){
   if(colD.indexOf('사은품')>=0) return null;
   var type=(colF.trim()==='교환')?'교환':'반품';
   var rk=colH.trim()||(colI.trim()||'변심');
-  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:colG.trim(),gift:(r[8]||'').indexOf('사은품')>=0};
+  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:colG.trim()};
 }
 function _fetchReturnData(){
   var sEl=document.getElementById('return-start-date');
@@ -2107,11 +2107,11 @@ function _renderReturnCharts(dataRows){
   dataRows.forEach(function(r){ if(r.platform) _platTemp[r.platform]=(_platTemp[r.platform]||0)+r.qty; });
   dataRows.forEach(function(r){
     _retProd[r.product]=(_retProd[r.product]||0)+r.qty;
-    var rk=r.gift?'반품 (사은품)':(r.type==='교환'?'교환':r.reason);
+    var rk=r.type==='교환'?'교환':r.reason;
     _retReason[rk]=(_retReason[rk]||0)+r.qty;
     if(!_retProdReasons[r.product]) _retProdReasons[r.product]={};
     _retProdReasons[r.product][rk]=(_retProdReasons[r.product][rk]||0)+r.qty;
-    var _tk=r.gift?'반품 (사은품)':r.type; _retTypeCount[_tk]=(_retTypeCount[_tk]||0)+r.qty;
+    _retTypeCount[r.type]=(_retTypeCount[r.type]||0)+r.qty;
   });
   _retTotal=Object.keys(_retProd).reduce(function(s,k){return s+_retProd[k];},0);
   _retHovSeg=-1; _retHovBar=-1;
@@ -2180,7 +2180,7 @@ function _drawRetDonut(hov){
     });
   }
   var ts=document.getElementById('return-type-summary');
-  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건'+(_retTypeCount['반품 (사은품)']?'  ·  반품 (사은품) '+_retTypeCount['반품 (사은품)']+'건':'');
+  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건';
 }
 
 function _drawRetBar(hov){
@@ -2412,9 +2412,9 @@ function _renderReturnChartsTotal(dataRows, prevRows){
     _retBrandAll[b].total+=r.qty;
     if(!_retBrandAll[b].prod[r.product]) _retBrandAll[b].prod[r.product]={total:0,reasons:{}};
     _retBrandAll[b].prod[r.product].total+=r.qty;
-    var rk=r.gift?'반품 (사은품)':r.reason;
+    var rk=r.reason;
     _retBrandAll[b].prod[r.product].reasons[rk]=(_retBrandAll[b].prod[r.product].reasons[rk]||0)+r.qty;
-    var _tk=r.gift?'반품 (사은품)':r.type; _retTypeCount[_tk]=(_retTypeCount[_tk]||0)+r.qty;
+    _retTypeCount[r.type]=(_retTypeCount[r.type]||0)+r.qty;
   });
   // 전월 집계
   _retPrevAll={};
@@ -2563,7 +2563,7 @@ function _drawRetDonutBrands(hov){
     });
   }
   var ts=document.getElementById('return-type-summary');
-  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건'+(_retTypeCount['반품 (사은품)']?'  ·  반품 (사은품) '+_retTypeCount['반품 (사은품)']+'건':'');
+  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건';
 }
 
 function _clearRetBarCanvas(){
