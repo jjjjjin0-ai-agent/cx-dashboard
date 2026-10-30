@@ -525,6 +525,12 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
                 <div id="return-reason-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase;text-align:left">사유별</div>
                 <canvas id="return-reason-canvas" style="display:block;max-width:100%;overflow:visible"></canvas>
               </div>
+              <!-- 하단: 플랫폼별 -->
+              <div id="return-platform-area" style="display:none;flex-direction:column;width:100%">
+                <div style="border-top:1px solid var(--line);margin:10px 0 6px"></div>
+                <div style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase">플랫폼별</div>
+                <div id="return-platform-bars" style="display:flex;flex-direction:column;gap:5px"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1941,6 +1947,8 @@ function _renderReturnCharts(dataRows){
   _retSelProd=null; _retReasonBars=[]; _retReasonBarHov=-1;
 
   _retProd={}; _retReason={}; _retProdReasons={}; _retTypeCount={교환:0,반품:0};
+  var _platTemp={};
+  dataRows.forEach(function(r){ if(r.platform) _platTemp[r.platform]=(_platTemp[r.platform]||0)+r.qty; });
   dataRows.forEach(function(r){
     _retProd[r.product]=(_retProd[r.product]||0)+r.qty;
     var rk=r.type==='교환'?'교환':r.reason;
@@ -1951,6 +1959,7 @@ function _renderReturnCharts(dataRows){
   });
   _retTotal=Object.keys(_retProd).reduce(function(s,k){return s+_retProd[k];},0);
   _retHovSeg=-1; _retHovBar=-1;
+  _renderRetPlatform(dataRows);
   requestAnimationFrame(function(){
     _drawRetDonut(-1);
     _drawRetBar(-1);
@@ -2267,6 +2276,9 @@ function _renderReturnChartsTotal(dataRows, prevRows){
     _retPrevAll[b].prod[r.product].total+=r.qty;
   });
 
+  // 플랫폼별 집계
+  _renderRetPlatform(dataRows);
+
   _showRetMoM();
   _retBrandSegs=[]; _retBrandBars=[];
   var leg=document.getElementById('return-donut-legend');
@@ -2276,6 +2288,39 @@ function _renderReturnChartsTotal(dataRows, prevRows){
     _clearRetBarCanvas();
     _attachRetHoverTotal();
   });
+}
+
+function _renderRetPlatform(dataRows){
+  var pa=document.getElementById('return-platform-area');
+  var pb=document.getElementById('return-platform-bars');
+  if(!pa||!pb) return;
+  var platMap={};
+  dataRows.forEach(function(r){ var p=r.platform||''; if(p) platMap[p]=(platMap[p]||0)+r.qty; });
+  var platKeys=Object.keys(platMap).filter(function(p){return platMap[p]>0;}).sort(function(a,b){return platMap[b]-platMap[a];});
+  if(!platKeys.length){ pa.style.display='none'; return; }
+  var total=platKeys.reduce(function(s,p){return s+platMap[p];},0);
+  var colors=['#6C8EF5','#FF8EB4','#5ECBAA','#FFB457','#A78BFA','#F87171'];
+  pb.innerHTML='';
+  platKeys.forEach(function(p,i){
+    var qty=platMap[p], pct=Math.round(qty/total*100);
+    var col=colors[i%colors.length];
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px';
+    var nameEl=document.createElement('span');
+    nameEl.style.cssText='min-width:72px;color:var(--fg);font-weight:500;flex-shrink:0';
+    nameEl.textContent=p;
+    var barWrap=document.createElement('div');
+    barWrap.style.cssText='flex:1;height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden';
+    var barFill=document.createElement('div');
+    barFill.style.cssText='height:100%;border-radius:4px;background:'+col+';width:'+pct+'%';
+    barWrap.appendChild(barFill);
+    var valEl=document.createElement('span');
+    valEl.style.cssText='min-width:36px;color:var(--muted);text-align:right;flex-shrink:0';
+    valEl.textContent=qty+'건';
+    row.appendChild(nameEl); row.appendChild(barWrap); row.appendChild(valEl);
+    pb.appendChild(row);
+  });
+  pa.style.display='flex';
 }
 
 function _showRetMoM(){
@@ -2893,16 +2938,17 @@ function fmtNum(v, dec) {
 
 /* ===== CS SUMMARY 드롭다운 초기화 & 업데이트 ===== */
 (function _cssInit(){
-  var now=new Date(), curY=now.getFullYear(), curM=now.getMonth()+1;
+  var now=new Date(), curY=now.getFullYear();
   var yEl=document.getElementById('css-year');
   var mEl=document.getElementById('css-month');
   var wEl=document.getElementById('css-week');
   if(!yEl||!mEl||!wEl) return;
-  // 연도: 2025~현재
-  for(var y=2025;y<=curY;y++){
+  // 연도: 26, 27 (필요 시 추가)
+  var years=[2026,2027];
+  years.forEach(function(y){
     var o=document.createElement('option');o.value=y;o.textContent=y+'년';yEl.appendChild(o);
-  }
-  yEl.value=curY;
+  });
+  yEl.value=(curY>=2026&&curY<=2027)?curY:2026;
   // 월 초기화
   _cssPopMonth();
   // 주차 초기화
@@ -2916,12 +2962,13 @@ function _cssPopMonth(){
   var selY=+yEl.value;
   var prevM=mEl.value?+mEl.value:curM;
   mEl.innerHTML='';
+  // 26년: 10~12월만 / 27년+: 1~12월
+  var minM=(selY===2026)?10:1;
+  // 현재 연도이면 현재 월까지만, 아니면 12월까지
   var maxM=(selY===curY)?curM:12;
-  var minM=(selY===2025)?10:1;
   for(var m=minM;m<=maxM;m++){
     var o=document.createElement('option');o.value=m;o.textContent=m+'월';mEl.appendChild(o);
   }
-  // 현재 선택 유지 또는 최신 월
   mEl.value=(prevM>=minM&&prevM<=maxM)?prevM:maxM;
 }
 function _cssPopWeek(){
@@ -2930,8 +2977,9 @@ function _cssPopWeek(){
   var mEl=document.getElementById('css-month');
   var wEl=document.getElementById('css-week');
   if(!yEl||!mEl||!wEl) return;
-  var selY=+yEl.value, selM=+mEl.value;
+  var selY=+yEl.value, selM=+(mEl.value||mEl.options[mEl.options.length-1].value);
   wEl.innerHTML='';
+  // 현재 연/월이면 주차 선택 비활성(아직 완료되지 않은 달)
   var isCurrent=(selY===curY&&selM===curM);
   var weeks=['1주차','2주차','3주차','4주차'];
   for(var i=0;i<4;i++){
