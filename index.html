@@ -3094,7 +3094,7 @@ function _cssBars(a){var mx=Math.max.apply(null,a.map(function(x){return x[1]}))
   return a.map(function(x){return '<div class="csd-bar"><i>'+x[0]+'</i><div><u style="width:'+(x[1]/mx*100)+'%"></u></div><em>'+x[1]+'</em></div>'}).join('');}
 function _cssRows(a,tot){return a.map(function(x){return '<div class="csd-row"><s style="background:'+x[2]+'"></s><span>'+x[0]+'</span><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');}
 function _cssDrows(a,tot){return a.map(function(x){return '<div class="csd-row"><span>'+x[0]+'</span><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');}
-var _cssPal=['var(--c-fg)','var(--c-blue)','var(--c-gold)','var(--c-red)','var(--c-dim)'];
+var _cssPal=['#14a58a','var(--c-blue)','var(--c-gold)','var(--c-red)','var(--c-dim)'];
 function _cssDonut(items,total,unit,mode){
   var R=46,C=2*Math.PI*R,acc=0,seg='';
   items.forEach(function(x){
