@@ -1820,16 +1820,16 @@ function _dedupeByOrderNo(rows){
     seen[r.orderNo]=true; return true;
   });
 }
-// 10월 구형식 파서: A=날짜, B=주문번호, D=상품명, F=비고(사유+교환감지)
-// 수량 대신 주문당 1건, 쿠팡 포함 시 사유='변심'
+// 10월 구형식 파서: A=날짜, B=주문번호, D=상품명, F=교환/반품구분, G=플랫폼, H=사유
 function _parseRetRow_old(r){
-  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'';
+  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'',colG=r[6]||'',colH=r[7]||'';
   if(!colA&&!colD) return null;
   if(!colD.trim()) return null;
-  if(colD.indexOf('사은품')>=0||colF.indexOf('사은품')>=0) return null;
-  var type=(colF.indexOf('교환')>=0)?'교환':'반품';
-  var rk=(colF.indexOf('쿠팡')>=0)?'변심':(colF.trim()||'변심');
-  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA)};
+  if(colD.indexOf('사은품')>=0) return null;
+  var type=(colF.indexOf('교환')>=0||colH.indexOf('교환')>=0)?'교환':'반품';
+  var rk=colH.trim()||(colF.indexOf('쿠팡')>=0?'변심':(colF.trim()||'변심'));
+  var platform=colG.trim();
+  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:platform};
 }
 // 11월+ 신형식 파서: A=날짜, B=주문번호, D=상품명, F=교환/반품, G=플랫폼, H=사유, I=비고
 function _parseRetRow_new(r){
