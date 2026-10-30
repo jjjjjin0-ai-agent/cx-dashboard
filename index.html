@@ -209,6 +209,16 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-fill .csd-grid{min-height:0}
 #csd-detail .csd-br{padding:4px 0;font-size:15px}
 .csd-hint{flex:none}
+.csd{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.csd-dc{pointer-events:none}
+.csd-seg,.csd-vbar,.csd-line span{outline:none}
+.csd-donut-svg *::selection{background:transparent}
+#csd-tip span{display:block}
+.csd-g02 .csd-card{overflow-y:auto;min-height:0}
+.csd-vl{cursor:pointer}
+.csd-vbar.dim{opacity:.35}
+.csd-vbar.dim:hover{opacity:.6}
+.csd-pt{font-style:normal;font-size:13px;color:var(--c-mut);margin-right:12px;white-space:nowrap}
 .csd-top{align-items:flex-start}
 .csd-top .csd-meta{text-align:right;font-size:16px;font-weight:500;letter-spacing:0;color:var(--c-mut)}
 .csd-top .csd-meta b{display:block;color:var(--c-fg);font-size:19px;margin-top:3px;font-weight:700}
@@ -3113,11 +3123,18 @@ var _CSS_DATA={'2026-10':{
      {n:"파미코젠",t:42,p:26,g:[["입금 전 취소 (사유 미기재)",16,"var(--c-gold)"],["재주문",1,"var(--c-blue)"],["단순 변심",23,"var(--c-fg)"],["오주문",2,"var(--c-red)"]],d:[["단순 변심",22],["오주문",2],["재주문",1],["단순 변심 (나이아신 부작용)",1]]},
      {n:"메디그로우",t:6,p:1,g:[["입금 전 취소 (사유 미기재)",5,"var(--c-gold)"],["단순 변심",1,"var(--c-fg)"]],d:[["고객 변심",1]]}
     ]},
-  ret:{total:56,ret:51,exc:5,brands:[['테라퓨젠',43],['덴티플라',7],['파미코젠',4],['메디그로우',1],['프로즌랩',1]],
-    products:[['헬리코컷','테라퓨젠',19],['콜레스컷','테라퓨젠',13],['구강케어정','덴티플라',6],['조인트본','테라퓨젠',5],['콜리젠 · 오메가3','테라퓨젠',3]],
-    platforms:[['자사몰',31,'var(--c-fg)'],['쿠팡',12,'var(--c-blue)'],['옥션',3,'var(--c-gold)'],['G마켓',2,'var(--c-dim)'],['기타/미상',8,'var(--c-dim)']],
-    reasons:[['단순 변심',45,'var(--c-fg)'],['배송 문제 / 상품 파손',4,'var(--c-red)'],['효과 없음 / 성분 불만',4,'var(--c-gold)'],['오주문 / 기타',3,'var(--c-dim)']],
-    note:'헬리코컷·콜레스컷(테라퓨젠) 2개 제품이 전체 반품의 절반 이상. 자사몰 비중이 가장 높음. ※ 반품·교환 수치는 시트 기준 집계로 일부 오차 가능.'}
+  ret:{total:56,ret:49,exc:7,
+    brands:[['테라퓨젠',43],['덴티플라',7],['파미코젠',4],['메디그로우',1],['프로즌랩',1]],
+    prod:[['헬리코컷',19,17,2,'테라퓨젠'],['콜레스컷',13,11,2,'테라퓨젠'],['구강케어정',6,6,0,'덴티플라'],['조인트본',5,4,1,'테라퓨젠'],['콜라겐',3,3,0,'테라퓨젠'],['오메가3',3,2,1,'테라퓨젠'],['코티프로',2,2,0,'파미코젠'],['알코프로',2,1,1,'파미코젠'],['실톡스 SET',1,1,0,'프로즌랩'],['잇몸케어 치약',1,1,0,'덴티플라'],['아나모나',1,1,0,'메디그로우']],
+    reasons:[['단순 변심',47],['배송 문제 / 상품 파손',6],['오주문',1],['다른 상품 교환',1],['재발송(주소 오기재)',1]],
+    byBrand:[
+     {n:'테라퓨젠',t:43,ret:37,exc:6,plat:[['자사몰',31],['쿠팡',10],['G마켓',1],['옥션',1]],prod:[['헬리코컷',19,17,2],['콜레스컷',13,11,2],['조인트본',5,4,1],['콜라겐',3,3,0],['오메가3',3,2,1]],reasons:[['단순 변심',36],['배송 문제 / 상품 파손',5],['오주문',1],['다른 상품 교환',1]]},
+     {n:'덴티플라',t:7,ret:7,exc:0,plat:[['자사몰',3],['옥션',2],['쿠팡',1],['G마켓',1]],prod:[['구강케어정',6,6,0],['잇몸케어 치약',1,1,0]],reasons:[['단순 변심',6],['배송 문제 / 상품 파손',1]]},
+     {n:'파미코젠',t:4,ret:3,exc:1,plat:[['자사몰',4]],prod:[['코티프로',2,2,0],['알코프로',2,1,1]],reasons:[['단순 변심',3],['재발송(주소 오기재)',1]]},
+     {n:'메디그로우',t:1,ret:1,exc:0,plat:[['쿠팡',1]],prod:[['아나모나',1,1,0]],reasons:[['단순 변심',1]]},
+     {n:'프로즌랩',t:1,ret:1,exc:0,plat:[['자사몰',1]],prod:[['실톡스 SET',1,1,0]],reasons:[['단순 변심',1]]}
+    ],
+    note:'헬리코컷·콜레스컷(테라퓨젠) 2개 제품이 전체 교환·반품의 절반 이상(32건, 57%). 자사몰 비중이 가장 높음(39건, 70%). 배송 문제·상품 파손 6건 중 5건은 교환 처리.'}
 }};
 function _cssBars(a){var mx=Math.max.apply(null,a.map(function(x){return x[1]}))||1;
   return a.map(function(x){return '<div class="csd-bar"><i>'+x[0]+'</i><div><u style="width:'+(x[1]/mx*100)+'%"></u></div><em>'+x[1]+'</em></div>'}).join('');}
@@ -3150,7 +3167,7 @@ if(!window._cssTip){window._cssTip=1;
   document.addEventListener('mousemove',function(e){
     var g=e.target&&e.target.classList&&(e.target.classList.contains('csd-seg')||e.target.classList.contains('csd-vb'))?e.target:null;
     if(!g){_t.style.display='none';return;}
-    _t.innerHTML='<b>'+g.getAttribute('data-l')+'</b><span>'+g.getAttribute('data-v')+'건 · '+g.getAttribute('data-p')+'%</span>';
+    var hh=g.getAttribute('data-h');_t.innerHTML=hh?hh:'<b>'+g.getAttribute('data-l')+'</b><span>'+g.getAttribute('data-v')+'건 · '+g.getAttribute('data-p')+'%</span>';
     _t.style.display='block';
     var w=_t.offsetWidth,x=e.clientX-w/2,y=e.clientY-_t.offsetHeight-18;
     if(x<8)x=8;if(x+w>window.innerWidth-8)x=window.innerWidth-w-8;if(y<8)y=e.clientY+22;
@@ -3188,9 +3205,21 @@ function _cssPick(name){
   _cssShow(window._cssSel);
 }
 if(!window._cssClk){window._cssClk=1;document.addEventListener('click',function(e){
+  var tr=e.target&&e.target.closest?e.target.closest('[data-pickr]'):null;if(tr){_cssPickR(tr.getAttribute('data-pickr'));return;}
   var t=e.target&&e.target.closest?e.target.closest('.csd-seg,[data-pick]'):null;if(!t)return;
   _cssPick(t.getAttribute('data-pick')||t.getAttribute('data-l'));
 });}
+function _cssRc(l){return l==='단순 변심'?'var(--c-fg)':l.indexOf('배송')===0?'var(--c-red)':l==='오주문'?'var(--c-gold)':'var(--c-dim)';}
+function _cssShowR(name){
+  var r=window._cssCurR,p=document.getElementById('csd-rp'),q=document.getElementById('csd-rr');if(!r||!p||!q)return;
+  var b=name?r.byBrand.filter(function(x){return x.n===name})[0]:null;
+  var prods=b?b.prod:r.prod,rs=b?b.reasons:r.reasons,tot=b?b.t:r.total,pre=b?b.n+' ':'';
+  p.innerHTML='<div class="csd-ch">'+pre+'제품별 교환 · 반품</div>'+prods.map(function(x,i){
+    return '<div class="csd-row"><small style="margin:0;width:22px">'+(i<9?'0':'')+(i+1)+'</small><span><b>'+x[0]+'</b>'+(x[4]?'<small>'+x[4]+'</small>':'')+'</span><em class="csd-pt">반품 '+x[2]+' · 교환 '+x[3]+'</em><b>'+x[1]+'건</b></div>';}).join('');
+  q.innerHTML='<div class="csd-ch">'+pre+'사유별</div>'+_cssRows(rs.map(function(x){return [x[0],x[1],_cssRc(x[0])]}),tot);
+  document.querySelectorAll('#csd-vp .csd-vb').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-pickr')!==name);});
+}
+function _cssPickR(name){window._cssSelR=(window._cssSelR===name)?null:name;_cssShowR(window._cssSelR);}
 var _cssIdx=0,_cssBusy=false;
 function _cssGo(n){
   var vp=document.getElementById('csd-vp');if(!vp)return;
@@ -3211,7 +3240,7 @@ function _cssBind(vp){
   vp.addEventListener('wheel',function(e){
     var s=vp.querySelectorAll('.csd-slide')[_cssIdx];
     var dir=e.deltaY>0?1:-1;
-    var inner=e.target&&e.target.closest?e.target.closest('#csd-detail'):null;
+    var inner=e.target&&e.target.closest?e.target.closest('#csd-detail,.csd-g02 .csd-card'):null;
     if(inner&&inner.scrollHeight>inner.clientHeight+2){var iEnd=inner.scrollTop+inner.clientHeight>=inner.scrollHeight-2,iTop=inner.scrollTop<=0;if((dir>0&&!iEnd)||(dir<0&&!iTop))return;}
     if(s&&s.scrollHeight>s.clientHeight+2){
       var atEnd=s.scrollTop+s.clientHeight>=s.scrollHeight-2,atTop=s.scrollTop<=0;
@@ -3251,18 +3280,21 @@ function cssUpdate(){
   +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg')+'<div class="csd-rs" id="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
   +'<div class="csd-card" id="csd-detail"></div></div>'
   +'<p class="csd-note">'+c.note+'</p></div>');
-  var rmax=Math.max.apply(null,r.brands.map(function(x){return x[1]}))||1;
-  var vbars=r.brands.map(function(x){return '<div class="csd-vcol"><div class="csd-vtrack"><div class="csd-vwrap" style="height:'+(x[1]/rmax*86)+'%"><span class="csd-vval">'+x[1]+'</span><div class="csd-vbar csd-vb" style="background:'+(_cssBrandCol[x[0]]||'var(--c-dim)')+'" data-l="'+x[0]+'" data-v="'+x[1]+'" data-p="'+Math.round(x[1]/r.total*100)+'"></div></div></div><div class="csd-vl">'+x[0]+'</div></div>'}).join('');
-  var plat=r.platforms.map(function(x){return '<div class="csd-pl"><s style="background:'+x[2]+'"></s>'+x[0]+'<b>'+x[1]+'</b><small>'+Math.round(x[1]/r.total*100)+'%</small></div>'}).join('');
+  var rmax=Math.max.apply(null,r.byBrand.map(function(x){return x.t}))||1;
+  function _e(x){return String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
+  var vbars=r.byBrand.map(function(b){
+    var tip='<b>'+b.n+'</b><span>교환 '+b.exc+'건 · 반품 '+b.ret+'건</span><span>'+b.plat.map(function(p){return p[0]+' '+p[1]+'건'}).join(' · ')+'</span>';
+    return '<div class="csd-vcol"><div class="csd-vtrack"><div class="csd-vwrap" style="height:'+(b.t/rmax*86)+'%"><span class="csd-vval">'+b.t+'</span><div class="csd-vbar csd-vb" style="background:'+(_cssBrandCol[b.n]||'var(--c-dim)')+'" data-pickr="'+b.n+'" data-h="'+_e(tip)+'"></div></div></div><div class="csd-vl" data-pickr="'+b.n+'">'+b.n+'</div></div>';
+  }).join('');
+  window._cssCurR=r;window._cssSelR=null;
   S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">02 · 교환 · 반품</div><h2>브랜드별 교환 · 반품</h2></div></div>'
-  +'<div class="csd-grid csd-g02"><div class="csd-card csd-vcard"><div class="csd-vtop"><div class="csd-ch">브랜드별</div><div class="csd-plat"><div class="csd-ch">플랫폼별</div>'+plat+'</div></div><div class="csd-vchart">'+vbars+'</div></div>'
-  +'<div class="csd-card"><div class="csd-ch">제품별 상위</div>'+r.products.map(function(p,i){return '<div class="csd-row"><small style="margin:0;width:14px">0'+(i+1)+'</small><span><b>'+p[0]+'</b><small>'+p[1]+'</small></span><b>'+p[2]+'건</b></div>'}).join('')+'</div>'
-  +'<div class="csd-card"><div class="csd-ch">사유별</div>'+_cssRows(r.reasons,r.total)+'</div></div>'
+  +'<div class="csd-grid csd-g02"><div class="csd-card csd-vcard"><div class="csd-ch">브랜드별</div><div class="csd-vchart">'+vbars+'</div></div>'
+  +'<div class="csd-card" id="csd-rp"></div><div class="csd-card" id="csd-rr"></div></div>'
   +'<p class="csd-note">'+r.note+'</p></div>');
   var dots=S.map(function(_,k){return '<i class="csd-dot'+(k?'':' on')+'"></i>'}).join('');
   box.innerHTML='<div class="csd"><div class="csd-vp" id="csd-vp">'+S.join('')+'<div class="csd-dots">'+dots+'</div></div></div>';
   _cssIdx=0;_cssBusy=false;
-  var vp=document.getElementById('csd-vp');_cssGo(0);_cssBind(vp);_cssShow(null);
+  var vp=document.getElementById('csd-vp');_cssGo(0);_cssBind(vp);_cssShow(null);_cssShowR(null);
 }
 
 cssUpdate();
