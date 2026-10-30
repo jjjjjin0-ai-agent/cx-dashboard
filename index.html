@@ -517,7 +517,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
             </div>
           </div>
         </div>
-        <div id="return-empty-msg" style="padding:40px 16px;text-align:center;color:var(--muted);font-size:12px">날짜를 선택하고 조회 버튼을 눌러주세요</div>
+        <div class="stock-card" style="min-width:220px"><div id="return-empty-msg" style="padding:30px 16px;text-align:center;color:var(--muted);font-size:12px">날짜를 선택하고 조회 버튼을 눌러주세요</div></div>
       </div>
     </div>
 
@@ -525,10 +525,14 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     <div id="voc-section-wrap" class="stock-section">
       <div class="stock-section-hd">
         <div class="plat-label" style="font-size:16px;font-weight:600">VOC</div>
+        <button type="button" class="dp-btn" id="voc-start-date-btn" onclick="dpOpen('voc-start-date')">날짜</button><input type="hidden" id="voc-start-date" value="">
+        <span style="font-size:12px;color:var(--muted)">~</span>
+        <button type="button" class="dp-btn" id="voc-end-date-btn" onclick="dpOpen('voc-end-date')">날짜</button><input type="hidden" id="voc-end-date" value="">
+        <button class="stock-sync-btn">조회</button>
       </div>
       <div style="min-height:16px;margin-bottom:6px"></div>
       <div class="stock-card" style="min-width:220px;min-height:80px;padding:16px 18px">
-        <div id="voc-content" style="font-size:12px;color:var(--muted);text-align:center;padding:20px 0">내용을 입력하세요</div>
+        <div id="voc-content" style="font-size:12px;color:var(--muted);text-align:center;padding:20px 0">날짜를 선택하고 조회 버튼을 눌러주세요</div>
       </div>
     </div>
 
@@ -2875,7 +2879,7 @@ function fmtNum(v, dec) {
     var el=document.getElementById(id),btn=document.getElementById(id+'-btn');
     if(!el||!btn)return;
     var p=_parse(el.value);
-    btn.textContent=p?(wide?(p.y+'년 '+(p.m+1)+'월 '+p.d+'일'):((p.m+1)+'/'+p.d)):(wide?'날짜 선택':'날짜');
+    btn.textContent=p?(wide?(p.y+'년 '+(p.m+1)+'월 '+p.d+'일'):(String(p.y).slice(2)+'-'+String(p.m+1).padStart(2,'0')+'-'+String(p.d).padStart(2,'0'))):(wide?'날짜 선택':'날짜');
   }
   function _render(){
     var inp=document.getElementById(_id);
@@ -2936,7 +2940,7 @@ function fmtNum(v, dec) {
     _pop.style.left=left+'px';_pop.style.top=top+'px';
   };
   // Hook all date inputs so .value setter auto-updates button label
-  ['stock-start-date','stock-end-date','return-start-date','return-end-date'].forEach(function(id){_hook(id,false);});
+  ['stock-start-date','stock-end-date','return-start-date','return-end-date','voc-start-date','voc-end-date'].forEach(function(id){_hook(id,false);});
   ['cal-modal-start','cal-modal-end'].forEach(function(id){_hook(id,true);});
 })();
 </script>
