@@ -132,6 +132,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .seg-btn.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .seg-btn:disabled{opacity:.32;cursor:not-allowed}
 .seg-btn:disabled:hover{background:none;color:var(--muted)}
+.css-sel{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:5px 30px 5px 12px;font-size:13px;font-weight:600;color:var(--fg);font-family:inherit;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:border-color .15s}
+.css-sel:focus{border-color:var(--accent)}
 
 section h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.45}#sc-section-title{margin-bottom:8px;font-size:16px}
 section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
@@ -564,18 +566,10 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 
     <!-- CS SUMMARY 뷰 -->
     <section id="cs-summary-view" style="display:none;padding:24px 0">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <div class="seg-group">
-          <button class="seg-btn on" id="css-btn-month" onclick="cssSetMode('month')">월</button>
-          <button class="seg-btn" id="css-btn-week" onclick="cssSetMode('week')">주차</button>
-        </div>
-        <div class="seg-group" id="css-week-tabs" style="display:none">
-          <button class="seg-btn" id="css-w1" onclick="cssSetWeek(1)" disabled>1주차</button>
-          <button class="seg-btn" id="css-w2" onclick="cssSetWeek(2)" disabled>2주차</button>
-          <button class="seg-btn" id="css-w3" onclick="cssSetWeek(3)" disabled>3주차</button>
-          <button class="seg-btn" id="css-w4" onclick="cssSetWeek(4)" disabled>4주차</button>
-          <button class="seg-btn on" id="css-w-total" onclick="cssSetWeek('total')">한달 총합</button>
-        </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <select class="css-sel" id="css-year" onchange="_cssPopMonth();_cssPopWeek()"></select>
+        <select class="css-sel" id="css-month" onchange="_cssPopWeek()"></select>
+        <select class="css-sel" id="css-week"></select>
       </div>
       <div style="color:var(--muted);font-size:14px;text-align:center;margin-top:60px">CS SUMMARY 준비 중입니다.</div>
     </section>
@@ -2897,23 +2891,56 @@ function fmtNum(v, dec) {
   return n.toLocaleString('ko-KR', {maximumFractionDigits: dec || 0});
 }
 
-/* ===== CS SUMMARY 모드 ===== */
-function cssSetMode(mode){
-  var bm=document.getElementById('css-btn-month'),bw=document.getElementById('css-btn-week');
-  var wt=document.getElementById('css-week-tabs');
-  if(bm)bm.classList.toggle('on',mode==='month');
-  if(bw)bw.classList.toggle('on',mode==='week');
-  if(wt)wt.style.display=mode==='week'?'':'none';
+/* ===== CS SUMMARY 드롭다운 초기화 & 업데이트 ===== */
+(function _cssInit(){
+  var now=new Date(), curY=now.getFullYear(), curM=now.getMonth()+1;
+  var yEl=document.getElementById('css-year');
+  var mEl=document.getElementById('css-month');
+  var wEl=document.getElementById('css-week');
+  if(!yEl||!mEl||!wEl) return;
+  // 연도: 2025~현재
+  for(var y=2025;y<=curY;y++){
+    var o=document.createElement('option');o.value=y;o.textContent=y+'년';yEl.appendChild(o);
+  }
+  yEl.value=curY;
+  // 월 초기화
+  _cssPopMonth();
+  // 주차 초기화
+  _cssPopWeek();
+})();
+function _cssPopMonth(){
+  var now=new Date(), curY=now.getFullYear(), curM=now.getMonth()+1;
+  var yEl=document.getElementById('css-year');
+  var mEl=document.getElementById('css-month');
+  if(!yEl||!mEl) return;
+  var selY=+yEl.value;
+  var prevM=mEl.value?+mEl.value:curM;
+  mEl.innerHTML='';
+  var maxM=(selY===curY)?curM:12;
+  var minM=(selY===2025)?10:1;
+  for(var m=minM;m<=maxM;m++){
+    var o=document.createElement('option');o.value=m;o.textContent=m+'월';mEl.appendChild(o);
+  }
+  // 현재 선택 유지 또는 최신 월
+  mEl.value=(prevM>=minM&&prevM<=maxM)?prevM:maxM;
 }
-function cssSetWeek(w){
-  // 10월(현재 월)은 한달 총합만 허용
-  var now=new Date(), curM=now.getMonth()+1;
-  if(w!=='total'&&curM===10) return;
-  ['css-w1','css-w2','css-w3','css-w4','css-w-total'].forEach(function(id){
-    var b=document.getElementById(id); if(b)b.classList.remove('on');
-  });
-  var sel=w==='total'?'css-w-total':'css-w'+w;
-  var b=document.getElementById(sel); if(b)b.classList.add('on');
+function _cssPopWeek(){
+  var now=new Date(), curY=now.getFullYear(), curM=now.getMonth()+1;
+  var yEl=document.getElementById('css-year');
+  var mEl=document.getElementById('css-month');
+  var wEl=document.getElementById('css-week');
+  if(!yEl||!mEl||!wEl) return;
+  var selY=+yEl.value, selM=+mEl.value;
+  wEl.innerHTML='';
+  var isCurrent=(selY===curY&&selM===curM);
+  var weeks=['1주차','2주차','3주차','4주차'];
+  for(var i=0;i<4;i++){
+    var o=document.createElement('option');o.value=i+1;o.textContent=weeks[i];
+    if(isCurrent) o.disabled=true;
+    wEl.appendChild(o);
+  }
+  var ot=document.createElement('option');ot.value='total';ot.textContent='한달 통합';wEl.appendChild(ot);
+  wEl.value='total';
 }
 
 /* ===== 날짜 세그먼트 & 자동 초기화 ===== */
