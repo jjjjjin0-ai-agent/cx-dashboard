@@ -209,6 +209,10 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-fill .csd-grid{min-height:0}
 #csd-detail .csd-br{padding:4px 0;font-size:15px}
 .csd-hint{flex:none}
+.csd-top{align-items:flex-start}
+.csd-top .csd-meta{text-align:right;font-size:16px;font-weight:500;letter-spacing:0;color:var(--c-mut)}
+.csd-top .csd-meta b{display:block;color:var(--c-fg);font-size:19px;margin-top:3px;font-weight:700}
+.csd-cover .csd-bot{justify-content:flex-end;text-align:right}
 .csd-fill .csd-g02{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr 1fr}
 .csd-vcard{grid-row:1/3}
 .csd-vtop{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
@@ -3236,11 +3240,11 @@ function cssUpdate(){
   if(!d||w!=='total'){box.innerHTML='<div class="csd-empty">'+(d?'주차별 데이터는 준비 중입니다. “한달 통합”을 선택해 주세요.':'해당 기간의 CS SUMMARY 데이터가 없습니다.')+'</div>';return;}
   var c=d.cancel,r=d.ret,mm=String(m).padStart(2,'0'),tones=['csd-lt','csd-lt'],ti=0;
   var S=[];
-  S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><span>'+y+'.'+mm+'</span></div>'
+  S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><div class="csd-meta">데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
   +'</div>'
   +'<p class="csd-sub">주문취소 <b style="color:var(--c-fg)">'+c.total+'건</b>(입금 전 '+c.dep+'건 · 결제 후 '+c.paid+'건), 반품 <b style="color:var(--c-red)">'+r.ret+'건</b>, 교환 <b style="color:var(--c-blue)">'+r.exc+'건</b><br>결제 후 취소 사유의 49%는 재주문(재결제), 43% 단순 변심.<br>반품 <b style="color:var(--c-fg)">1위</b>: 헬리코컷 19건</p>'
-  +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디그로우 · 셀로핏 · 파미코젠</b></div><div>데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div></div>');
+  +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디그로우 · 셀로핏 · 파미코젠</b></div></div></div>');
   var live=c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssBrandCol[x[0]]||_cssPal[i]]});
   window._cssCur=c;window._cssSel=null;
   S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
