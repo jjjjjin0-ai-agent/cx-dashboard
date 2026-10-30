@@ -3234,7 +3234,7 @@ function cssUpdate(){
   var y=document.getElementById('css-year').value,m=+document.getElementById('css-month').value,w=document.getElementById('css-week').value;
   var d=_CSS_DATA[y+'-'+m];
   if(!d||w!=='total'){box.innerHTML='<div class="csd-empty">'+(d?'주차별 데이터는 준비 중입니다. “한달 통합”을 선택해 주세요.':'해당 기간의 CS SUMMARY 데이터가 없습니다.')+'</div>';return;}
-  var c=d.cancel,r=d.ret,mm=String(m).padStart(2,'0'),tones=['csd-lt','csd-tint'],ti=0;
+  var c=d.cancel,r=d.ret,mm=String(m).padStart(2,'0'),tones=['csd-lt','csd-lt'],ti=0;
   var S=[];
   S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><span>'+y+'.'+mm+'</span></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
