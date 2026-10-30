@@ -3134,8 +3134,7 @@ function _cssDonut(items,total,unit,mode){
     acc+=len;
   });
   var svg='<svg class="csd-donut-svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="var(--c-line)" stroke-width="16"/>'+seg
-    +'<text x="60" y="58" text-anchor="middle" font-size="22" font-weight="900" fill="var(--c-fg)">'+total+'</text>'
-    +'<text x="60" y="74" text-anchor="middle" font-size="9" fill="var(--c-mut)">'+unit+'</text></svg>';
+    +'<text class="csd-dc" x="60" y="67" text-anchor="middle" font-size="22" font-weight="900" fill="var(--c-fg)">'+total+'<tspan font-size="10" font-weight="500" fill="var(--c-mut)" dx="2">'+unit+'</tspan></text></svg>';
   if(mode==='svg')return svg;
   var live=items.filter(function(x){return x[1]>0});
   if(mode==='top')return '<div class="csd-donut csd-donut-top"><div class="csd-line">'+live.map(function(x){return '<span><s style="background:'+x[2]+'"></s>'+x[0]+' <b>'+x[1]+'</b><small>'+Math.round(x[1]/total*100)+'%</small></span>'}).join('')+'</div>'+svg+'</div>';
@@ -3178,6 +3177,9 @@ function _cssShow(name){
     box.innerHTML='<div class="csd-dh">취소 사유 <small>'+c.paid+'건</small></div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
       +'<div class="csd-hint">그래프나 브랜드를 누르면 브랜드별로 바뀝니다.</div>';
   }
+  var tv=b?b.t:c.total,dc=document.querySelector('#csd-vp .csd-dc'),tn=document.getElementById('csd-tot-n');
+  if(dc&&dc.firstChild)dc.firstChild.nodeValue=tv;
+  if(tn)tn.textContent=tv;
   document.querySelectorAll('#csd-vp .csd-seg').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-l')!==name);});
   document.querySelectorAll('#csd-vp [data-pick]').forEach(function(g){g.classList.toggle('sel',g.getAttribute('data-pick')===name);});
 }
@@ -3245,7 +3247,7 @@ function cssUpdate(){
   +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디그로우 · 셀로핏 · 파미코젠</b></div></div></div>');
   var live=c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssBrandCol[x[0]]||_cssPal[i]]});
   window._cssCur=c;window._cssSel=null;
-  S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
+  S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div><div class="csd-tot"><b id="csd-tot-n">'+c.total+'</b><span>건</span></div></div>'
   +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg')+'<div class="csd-rs" id="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
   +'<div class="csd-card" id="csd-detail"></div></div>'
   +'<p class="csd-note">'+c.note+'</p></div>');
