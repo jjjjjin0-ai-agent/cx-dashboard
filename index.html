@@ -127,6 +127,9 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .dp-day.dp-out{visibility:hidden;pointer-events:none}
 .dp-day.dp-today:not(.dp-sel){font-weight:700;box-shadow:inset 0 0 0 1.5px var(--accent)}
 .dp-day.dp-sel{background:var(--accent);color:var(--on-accent);font-weight:700}
+.seg-group{display:flex;gap:2px;background:var(--surface-2);border-radius:8px;padding:2px}
+.seg-btn{border:none;background:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;transition:background .12s,color .12s;white-space:nowrap}
+.seg-btn.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 
 section h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.45}#sc-section-title{margin-bottom:8px;font-size:16px}
 section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
@@ -486,6 +489,10 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <span id="return-date-sep" style="display:none;font-size:12px;color:var(--muted)">~</span>
         <button type="button" class="dp-btn" id="return-end-date-btn" style="display:none" onclick="dpOpen('return-end-date')">날짜</button><input type="hidden" id="return-end-date" value="">
         <button class="stock-sync-btn" id="return-query-btn" style="display:none" onclick="_fetchReturnData()">조회</button>
+        <div class="seg-group" id="return-seg-group" style="display:none">
+          <button class="seg-btn on" id="return-seg-week" onclick="_setReturnSeg('week')">주간</button>
+          <button class="seg-btn" id="return-seg-month" onclick="_setReturnSeg('month')">월간</button>
+        </div>
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
       <div style="min-height:16px;margin-bottom:6px"><span id="return-status" style="font-size:11px;color:var(--muted)"></span></div>
@@ -529,6 +536,10 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <span style="font-size:12px;color:var(--muted)">~</span>
         <button type="button" class="dp-btn" id="voc-end-date-btn" onclick="dpOpen('voc-end-date')">날짜</button><input type="hidden" id="voc-end-date" value="">
         <button class="stock-sync-btn">조회</button>
+        <div class="seg-group">
+          <button class="seg-btn on" id="voc-seg-week" onclick="_setVocSeg('week')">주간</button>
+          <button class="seg-btn" id="voc-seg-month" onclick="_setVocSeg('month')">월간</button>
+        </div>
       </div>
       <div style="min-height:16px;margin-bottom:6px"></div>
       <div class="stock-card" style="min-width:220px;min-height:80px;padding:16px 18px">
@@ -1596,8 +1607,8 @@ function _setReturnWeekDates(){
   var mon = new Date(today); mon.setDate(today.getDate() + diffToMon);
   var sun = new Date(mon);   sun.setDate(mon.getDate() + 6);
   var fmt = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-  if(!s.value) s.value = fmt(mon);
-  if(!e.value) e.value = fmt(sun);
+  s.value = fmt(mon);
+  e.value = fmt(sun);
 }
 var _prevRetHeaderBrand = undefined;
 var _retChartCache = {};
@@ -1656,6 +1667,7 @@ function _updateReturnHeader(brand){
   _prevRetHeaderBrand = brand;
   if(brand){
     show(s); show(sep); show(e); show(qb); hide(btn);
+    var _rsg=document.getElementById('return-seg-group'); if(_rsg) _rsg.style.display='';
     if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
     _setReturnWeekDates();
     if(brandChanged){
@@ -1668,6 +1680,7 @@ function _updateReturnHeader(brand){
   } else {
     // 총합 뷰: 날짜+조회만 표시, 접기 버튼 숨김
     show(s); show(sep); show(e); show(qb); hide(btn);
+    var _rsg2=document.getElementById('return-seg-group'); if(_rsg2) _rsg2.style.display='';
     if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
     if(!s||!s.value) _setReturnWeekDates();
     if(brandChanged){
@@ -2869,6 +2882,38 @@ function fmtNum(v, dec) {
   return n.toLocaleString('ko-KR', {maximumFractionDigits: dec || 0});
 }
 
+/* ===== 날짜 세그먼트 & 자동 초기화 ===== */
+function _fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function _weekRange(){
+  var t=new Date(),dw=t.getDay(),diff=(dw===0)?-6:1-dw;
+  var mon=new Date(t);mon.setDate(t.getDate()+diff);
+  var sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return{s:mon,e:sun};
+}
+function _monthRange(){
+  var t=new Date();
+  return{s:new Date(t.getFullYear(),t.getMonth(),1),e:new Date(t.getFullYear(),t.getMonth()+1,0)};
+}
+function _setVocWeekDates(){
+  var r=_weekRange();
+  var s=document.getElementById('voc-start-date'),e=document.getElementById('voc-end-date');
+  if(s)s.value=_fmtD(r.s);if(e)e.value=_fmtD(r.e);
+}
+function _setVocSeg(mode){
+  var r=mode==='month'?_monthRange():_weekRange();
+  var s=document.getElementById('voc-start-date'),e=document.getElementById('voc-end-date');
+  if(s)s.value=_fmtD(r.s);if(e)e.value=_fmtD(r.e);
+  var bw=document.getElementById('voc-seg-week'),bm=document.getElementById('voc-seg-month');
+  if(bw)bw.classList.toggle('on',mode==='week');if(bm)bm.classList.toggle('on',mode==='month');
+}
+function _setReturnSeg(mode){
+  var r=mode==='month'?_monthRange():_weekRange();
+  var s=document.getElementById('return-start-date'),e=document.getElementById('return-end-date');
+  if(s)s.value=_fmtD(r.s);if(e)e.value=_fmtD(r.e);
+  var bw=document.getElementById('return-seg-week'),bm=document.getElementById('return-seg-month');
+  if(bw)bw.classList.toggle('on',mode==='week');if(bm)bm.classList.toggle('on',mode==='month');
+}
+
 /* ===== Custom Date Picker ===== */
 (function(){
   var _pop=null,_id=null,_y=0,_m=0;
@@ -2942,6 +2987,8 @@ function fmtNum(v, dec) {
   // Hook all date inputs so .value setter auto-updates button label
   ['stock-start-date','stock-end-date','return-start-date','return-end-date','voc-start-date','voc-end-date'].forEach(function(id){_hook(id,false);});
   ['cal-modal-start','cal-modal-end'].forEach(function(id){_hook(id,true);});
+  // VOC 초기 날짜 자동 설정 (이번 주)
+  if(typeof _setVocWeekDates==='function') _setVocWeekDates();
 })();
 </script>
 </div></html>
