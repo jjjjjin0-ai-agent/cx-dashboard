@@ -2032,7 +2032,7 @@ function _drawRetBar(hov){
   if(!canvas) return;
   var par=canvas.parentElement;
   var LW=par?Math.max(par.offsetWidth-4,200):280;
-  var LH=300;
+  var LH=330;
   var ctx=_retHiDPI(canvas,LW,LH);
   var keys=Object.keys(_retProd).filter(function(k){return _retProd[k]>0;}).sort(function(a,b){return _retProd[b]-_retProd[a];});
   if(!keys.length) return;
@@ -2160,23 +2160,17 @@ function _drawRetReasonBar(reasonsObj,hov){
   if(!canvas||!reasonsObj) return;
   var keys=Object.keys(reasonsObj).filter(function(k){return reasonsObj[k]>0;}).sort(function(a,b){return reasonsObj[b]-reasonsObj[a];});
   if(!keys.length) return;
-  // 텍스트 너비 사전 측정 (잘림 없도록 전체 측정)
   var tmp=document.createElement('canvas').getContext('2d');
-  tmp.font='11px -apple-system,system-ui,sans-serif';
-  var maxLabelW=0;
-  keys.forEach(function(k){ maxLabelW=Math.max(maxLabelW,tmp.measureText(k).width); });
   tmp.font='bold 11px -apple-system,system-ui,sans-serif';
   var maxV=Math.max.apply(null,keys.map(function(k){return reasonsObj[k];}));
   var qtyW=tmp.measureText(maxV+'건').width;
-  // 부모 너비를 우선 사용, 텍스트가 더 길면 캔버스 확장
   var par=canvas.parentElement;
   var availW=par?(par.offsetWidth||0):0;
-  var padL=8, padR=Math.ceil(qtyW)+14, barAreaW=80;
-  var minW=Math.ceil(maxLabelW)+padL+12+barAreaW+padR;
-  var LW=Math.max(minW, availW>0?availW:minW);
-  var labelAreaW=LW-padL-12-barAreaW-padR; // 라벨이 사용 가능한 너비
-  var barX=padL+labelAreaW+12;
-  var cW=barAreaW;
+  var padL=8, padR=Math.ceil(qtyW)+14;
+  var LW=availW>0?availW:320;
+  // 바는 정확히 중간(LW/2)부터 시작, 라벨은 왼쪽 절반
+  var barX=Math.floor(LW/2);
+  var cW=LW-barX-padR;
   var rowH=26, padT=6, padB=6;
   var LH=padT+keys.length*rowH+padB;
   var ctx=_retHiDPI(canvas,LW,LH);
@@ -2190,11 +2184,11 @@ function _drawRetReasonBar(reasonsObj,hov){
     var col=_RETURN_PAL[(i+4)%_RETURN_PAL.length];
     _retReasonBars.push({label:k,qty:reasonsObj[k],color:col,x:0,y:yRow,w:LW,h:rowH});
     var isH=(i===hov);
-    // 라벨 (좌측 정렬)
+    // 라벨 (좌측 정렬, 중간 지점 넘지 않게 자르기)
     ctx.textAlign='left'; ctx.textBaseline='middle';
     ctx.font=(isH?'bold ':'')+'11px -apple-system,system-ui,sans-serif';
     ctx.fillStyle=isH?fg:mu;
-    ctx.fillText(k,padL,yRow+rowH/2);
+    ctx.fillText(_retFitText(ctx,k,barX-padL-8),padL,yRow+rowH/2);
     // 막대
     ctx.save();
     if(isH){ctx.shadowColor=col;ctx.shadowBlur=10;}
@@ -2441,7 +2435,7 @@ function _drawRetBarForBrand(brandKey,hov){
   if(!bc||!brandKey||!_retBrandAll[brandKey]) return;
   var par=bc.parentElement;
   var LW=par?Math.max(par.offsetWidth-4,200):280;
-  var LH=300;
+  var LH=330;
   var ctx=_retHiDPI(bc,LW,LH);
   var prodData=_retBrandAll[brandKey].prod;
   var prods=Object.keys(prodData).filter(function(p){return prodData[p].total>0;})
