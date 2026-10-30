@@ -519,17 +519,17 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
                   <canvas id="return-bar-canvas" style="display:block;width:100%"></canvas>
                 </div>
               </div>
-              <!-- 하단: 사유별 서브차트 (전체 너비, 제품 클릭 시 표시) -->
-              <div id="return-reason-area" style="display:none;flex-direction:column;width:100%">
-                <div style="border-top:1px solid var(--line);margin:10px 0 6px"></div>
-                <div id="return-reason-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase;text-align:left">사유별</div>
-                <canvas id="return-reason-canvas" style="display:block;max-width:100%;overflow:visible"></canvas>
-              </div>
-              <!-- 하단: 플랫폼별 -->
+              <!-- 하단: 플랫폼별 (항상 데이터 있으면 표시) -->
               <div id="return-platform-area" style="display:none;flex-direction:column;width:100%">
                 <div style="border-top:1px solid var(--line);margin:10px 0 6px"></div>
                 <div style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase">플랫폼별</div>
                 <div id="return-platform-bars" style="display:flex;flex-direction:column;gap:5px"></div>
+              </div>
+              <!-- 하단: 사유별 (제품 클릭 시 표시) -->
+              <div id="return-reason-area" style="display:none;flex-direction:column;width:100%">
+                <div style="border-top:1px solid var(--line);margin:10px 0 6px"></div>
+                <div id="return-reason-label" style="font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase;text-align:left">사유별</div>
+                <canvas id="return-reason-canvas" style="display:block;max-width:100%;overflow:visible"></canvas>
               </div>
             </div>
           </div>
@@ -2032,7 +2032,7 @@ function _drawRetBar(hov){
   if(!canvas) return;
   var par=canvas.parentElement;
   var LW=par?Math.max(par.offsetWidth-4,200):280;
-  var LH=210;
+  var LH=300;
   var ctx=_retHiDPI(canvas,LW,LH);
   var keys=Object.keys(_retProd).filter(function(k){return _retProd[k]>0;}).sort(function(a,b){return _retProd[b]-_retProd[a];});
   if(!keys.length) return;
@@ -2441,7 +2441,7 @@ function _drawRetBarForBrand(brandKey,hov){
   if(!bc||!brandKey||!_retBrandAll[brandKey]) return;
   var par=bc.parentElement;
   var LW=par?Math.max(par.offsetWidth-4,200):280;
-  var LH=210;
+  var LH=300;
   var ctx=_retHiDPI(bc,LW,LH);
   var prodData=_retBrandAll[brandKey].prod;
   var prods=Object.keys(prodData).filter(function(p){return prodData[p].total>0;})
