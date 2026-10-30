@@ -138,11 +138,12 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-slide{background:var(--c-bg);color:var(--c-fg);border-radius:16px;padding:36px 40px;display:flex;flex-direction:column}
 .csd-cover{min-height:min(560px,70vh);justify-content:space-between}
 .csd-top{display:flex;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--c-mut)}
-.csd-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px;padding:24px 0}
+.csd-body{flex:1;display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:24px;padding:24px 0;flex-wrap:wrap}
 .csd h1{font-size:clamp(30px,4.6vw,56px);font-weight:900;line-height:1.12;letter-spacing:-.035em;margin:0}
 .csd .inv{background:var(--c-fg);color:var(--c-bg);padding:2px 10px 4px;border-radius:6px}
 .csd-sub{font-size:14px;color:var(--c-mut);line-height:1.7;max-width:560px;margin:0}
-.csd-kpis{display:flex;gap:36px;flex-wrap:wrap}
+.csd-kpis{display:flex;flex-direction:column;gap:22px;text-align:right;margin-left:auto}
+.csd-cover .csd-sub{margin:0 0 20px;max-width:none}
 .csd-kpi b{display:block;font-size:clamp(28px,3.6vw,44px);font-weight:900;letter-spacing:-.04em;line-height:1}
 .csd-kpi span{font-size:12px;color:var(--c-mut)}
 .csd-bot{border-top:1px solid var(--c-line);padding-top:16px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--c-mut)}
@@ -3107,8 +3108,8 @@ function cssUpdate(){
   var S=[];
   S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><span>'+y+'.'+mm+'</span></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
+  +'<div class="csd-kpis"><div class="csd-kpi"><b>'+c.total+'</b><span>주문 취소</span></div><div class="csd-kpi"><b style="color:var(--c-blue)">'+r.ret+'</b><span>반품</span></div><div class="csd-kpi"><b style="color:var(--c-red)">'+r.exc+'</b><span>교환</span></div></div>'+'</div>'
   +'<p class="csd-sub">주문 취소 '+c.total+'건(입금 전 '+c.dep+' · 결제 후 '+c.paid+'), 반품 '+r.ret+'건, 교환 '+r.exc+'건 접수.<br>결제 후 취소 사유의 49%는 재주문 재결제, 43%는 단순 변심.<br>반품 1위: 헬리코컷 19건.</p>'
-  +'<div class="csd-kpis"><div class="csd-kpi"><b>'+c.total+'</b><span>주문 취소</span></div><div class="csd-kpi"><b style="color:var(--c-blue)">'+r.ret+'</b><span>반품</span></div><div class="csd-kpi"><b style="color:var(--c-red)">'+r.exc+'</b><span>교환</span></div></div></div>'
   +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디글로우 · 셀로핏 · 파미코젠</b></div><div>데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div></div>');
   S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
   +'<div class="csd-grid"><div class="csd-card"><div class="csd-ch">브랜드별</div>'+_cssBars(c.brands)+'</div><div class="csd-card"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div>'
