@@ -1307,6 +1307,8 @@ function _ghWrite(path, data, sha, msg, cb) {
     if(stockWrap) stockWrap.style.display='none';
     if(returnWrap) returnWrap.style.display='none';
     if(vocWrap) vocWrap.style.display='none';
+    var _csV=document.getElementById('cs-summary-view'); if(_csV) _csV.style.display='none';
+    var _csN=document.getElementById('nav-cs-summary'); if(_csN){ _csN.classList.remove('on'); _csN.setAttribute('aria-current','false'); }
     if(pageTitleEl) pageTitleEl.textContent='캘린더';
     navCal.classList.add('on'); navCal.setAttribute('aria-current','page');
     renderCal();
@@ -1384,6 +1386,10 @@ $$(".brand-nav").forEach((a,i)=>{
       const _cv=document.getElementById('cal-view'), _bp=document.getElementById('sc-pamicogen');
       const _sw=document.getElementById('stock-section-wrap');
       if(_cv) _cv.style.display='none'; if(_bp) _bp.style.display=''; if(_sw) _sw.style.display='';
+      const _csv=document.getElementById('cs-summary-view'); if(_csv) _csv.style.display='none';
+      const _csn=document.getElementById('nav-cs-summary'); if(_csn){ _csn.classList.remove('on'); _csn.setAttribute('aria-current','false'); }
+      const _rw=document.getElementById('return-section-wrap'), _vw=document.getElementById('voc-section-wrap'); if(_rw) _rw.style.display=''; if(_vw) _vw.style.display='';
+      const _nc=document.getElementById('nav-calendar'); if(_nc){ _nc.classList.remove('on'); _nc.setAttribute('aria-current','false'); }
       if (viewMode === 'expiry') updateExpiryTable(activeBrand); else updateStockTable(activeBrand);
     }
 
