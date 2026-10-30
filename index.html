@@ -149,28 +149,28 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-bot{border-top:1px solid var(--c-line);padding-top:18px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:16px;color:var(--c-mut)}
 .csd-bot b{display:block;color:var(--c-fg);font-size:19px;margin-top:3px}
 .csd-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid var(--c-line)}
-.csd-eb{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--c-mut);margin-bottom:6px}
+.csd-eb{font-size:16px;font-weight:700;letter-spacing:.12em;color:var(--c-mut);margin-bottom:6px}
 .csd-lt{--c-bg:#fff;--c-fg:#1a1c1f;--c-mut:rgba(26,28,31,.55);--c-dim:rgba(26,28,31,.25);--c-line:rgba(0,0,0,.09);--c-sf:#f4f5f7;--c-red:#d6203a;--c-blue:#2b7de0;--c-gold:#d98e0b;border:1px solid rgba(0,0,0,.06)}
 .csd-tint{--c-bg:#dfe5ee;--c-fg:#1a1c1f;--c-mut:rgba(26,28,31,.55);--c-dim:rgba(26,28,31,.28);--c-line:rgba(0,0,0,.1);--c-sf:#fff;--c-red:#d6203a;--c-blue:#2b7de0;--c-gold:#d98e0b}
-.csd h2{font-size:clamp(20px,2.6vw,30px);font-weight:900;letter-spacing:-.03em;margin:0}
-.csd-tot b{font-size:clamp(32px,4vw,46px);font-weight:900;letter-spacing:-.05em}
-.csd-tot span{font-size:15px;color:var(--c-mut);margin-left:6px}
+.csd h2{font-size:clamp(30px,3.6vw,50px);font-weight:900;letter-spacing:-.03em;margin:0}
+.csd-tot b{font-size:clamp(44px,5.4vw,76px);font-weight:900;letter-spacing:-.05em}
+.csd-tot span{font-size:20px;color:var(--c-mut);margin-left:6px}
 .csd-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:800px){.csd-grid{grid-template-columns:1fr}.csd-slide{padding:24px 20px}}
-.csd-card{background:var(--c-sf);border:1px solid var(--c-line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.csd-ch{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--c-mut)}
-.csd-bar{display:flex;align-items:center;gap:10px;font-size:12px}
-.csd-bar>i{width:78px;flex:none;font-style:normal;font-weight:500}
-.csd-bar>div{flex:1;height:5px;background:var(--c-line);border-radius:3px;overflow:hidden;min-width:0}
+.csd-card{background:var(--c-sf);border:1px solid var(--c-line);border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.csd-ch{font-size:15px;font-weight:700;letter-spacing:.1em;color:var(--c-mut)}
+.csd-bar{display:flex;align-items:center;gap:12px;font-size:17px}
+.csd-bar>i{width:110px;flex:none;font-style:normal;font-weight:500}
+.csd-bar>div{flex:1;height:9px;background:var(--c-line);border-radius:3px;overflow:hidden;min-width:0}
 .csd-bar>div>u{display:block;height:100%;background:var(--c-fg);border-radius:3px}
-.csd-bar>em{width:32px;text-align:right;font-style:normal;color:var(--c-mut);font-variant-numeric:tabular-nums}
-.csd-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--c-line);font-size:12px}
+.csd-bar>em{width:44px;text-align:right;font-style:normal;color:var(--c-mut);font-variant-numeric:tabular-nums}
+.csd-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--c-line);font-size:17px}
 .csd-row:last-child{border-bottom:none}
 .csd-row s{width:7px;height:7px;border-radius:50%;flex:none}
 .csd-row span{flex:1;min-width:0}
 .csd-row b{font-variant-numeric:tabular-nums}
-.csd-row small{font-size:10px;color:var(--c-mut);margin-left:4px}
-.csd-note{font-size:12px;color:var(--c-mut);line-height:1.7;padding:12px 16px;background:var(--c-sf);border-left:2px solid var(--c-dim);border-radius:0 8px 8px 0;margin:14px 0 0}
+.csd-row small{font-size:14px;color:var(--c-mut);margin-left:4px}
+.csd-note{font-size:16px;color:var(--c-mut);line-height:1.7;padding:12px 16px;background:var(--c-sf);border-left:2px solid var(--c-dim);border-radius:0 8px 8px 0;margin:14px 0 0}
 .csd-vp{position:relative;height:calc(100vh - 140px);min-height:520px;overflow:hidden;border-radius:16px;background:#080808}
 .csd-vp .csd-slide{position:absolute;inset:0;border-radius:0;overflow-y:auto;transition:transform .65s cubic-bezier(.77,0,.18,1)}
 .csd-vp .csd-cover{min-height:0}
@@ -180,6 +180,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-donut{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
 .csd-donut-svg{width:clamp(150px,16vw,210px);height:auto;flex:none}
 .csd-legend{flex:1;min-width:180px}
+.csd-slide{padding:44px 52px}
+@media(max-width:800px){.csd-slide{padding:24px 20px}}
 .csd-empty{color:var(--muted);font-size:14px;text-align:center;margin-top:60px}
 
 section h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.45}#sc-section-title{margin-bottom:8px;font-size:16px}
@@ -3130,7 +3132,7 @@ function cssUpdate(){
   var S=[];
   S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><span>'+y+'.'+mm+'</span></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
-  +'<div class="csd-kpis"><div class="csd-kpi"><b>'+c.total+'</b><span>주문 취소</span></div><div class="csd-kpi"><b style="color:var(--c-blue)">'+r.ret+'</b><span>반품</span></div><div class="csd-kpi"><b style="color:var(--c-red)">'+r.exc+'</b><span>교환</span></div></div>'+'</div>'
+  +'</div>'
   +'<p class="csd-sub">주문 취소 '+c.total+'건(입금 전 '+c.dep+' · 결제 후 '+c.paid+'), 반품 '+r.ret+'건, 교환 '+r.exc+'건 접수.<br>결제 후 취소 사유의 49%는 재주문 재결제, 43%는 단순 변심.<br>반품 1위: 헬리코컷 19건.</p>'
   +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디글로우 · 셀로핏 · 파미코젠</b></div><div>데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div></div>');
   S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
