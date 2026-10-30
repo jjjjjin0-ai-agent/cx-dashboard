@@ -1213,11 +1213,13 @@ function _ghWrite(path, data, sha, msg, cb) {
 
   const stockWrap=document.getElementById('stock-section-wrap');
   const returnWrap=document.getElementById('return-section-wrap');
+  const vocWrap=document.getElementById('voc-section-wrap');
   function showCalendar(){
     if(brandSection) brandSection.style.display='none';
     if(calView) calView.style.display='';
     if(stockWrap) stockWrap.style.display='none';
     if(returnWrap) returnWrap.style.display='none';
+    if(vocWrap) vocWrap.style.display='none';
     if(pageTitleEl) pageTitleEl.textContent='캘린더';
     navCal.classList.add('on'); navCal.setAttribute('aria-current','page');
     renderCal();
@@ -1229,6 +1231,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     var _csSV=document.getElementById('cs-summary-view'); if(_csSV) _csSV.style.display='none';
     if(stockWrap) stockWrap.style.display='';
     if(returnWrap) returnWrap.style.display='';
+    if(vocWrap) vocWrap.style.display='';
     if(pageTitleEl && !activeBrand) pageTitleEl.textContent='CX 대시보드';
     navCal.classList.remove('on'); navCal.setAttribute('aria-current','false');
     var _navCS=document.getElementById('nav-cs-summary'); if(_navCS){ _navCS.classList.remove('on'); _navCS.setAttribute('aria-current','false'); }
@@ -1243,6 +1246,7 @@ function _ghWrite(path, data, sha, msg, cb) {
     if(csSummaryView) csSummaryView.style.display='';
     if(stockWrap) stockWrap.style.display='none';
     if(returnWrap) returnWrap.style.display='none';
+    if(vocWrap) vocWrap.style.display='none';
     if(pageTitleEl) pageTitleEl.textContent='CS SUMMARY';
     navCal.classList.remove('on'); navCal.setAttribute('aria-current','false');
     if(navCsSummary){ navCsSummary.classList.add('on'); navCsSummary.setAttribute('aria-current','page'); }
