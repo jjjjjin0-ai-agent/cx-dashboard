@@ -194,9 +194,15 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-line span.sel{background:var(--c-line)}
 .csd-seg.dim{opacity:.38}
 .csd-seg.dim:hover{opacity:.7}
-.csd-g01{grid-template-columns:1.5fr 1fr}
+.csd-g01{grid-template-columns:repeat(2,minmax(0,1fr))}
+.csd-br{display:grid;grid-template-columns:minmax(120px,36%) minmax(0,1fr) 44px 42px;align-items:center;gap:14px;padding:6px 0;font-size:16px}
+.csd-br .l{min-width:0}
+.csd-br .t{height:10px;background:var(--c-line);border-radius:5px;overflow:hidden}
+.csd-br .t u{display:block;height:100%;border-radius:5px}
+.csd-br b{text-align:right;font-variant-numeric:tabular-nums}
+.csd-br small{font-size:13px;color:var(--c-mut);text-align:right}
 .csd-main{justify-content:flex-start}
-.csd-mid{flex:1;display:flex;align-items:center;gap:40px}
+.csd-mid{flex:1;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
 .csd-mid .csd-donut-svg{width:clamp(240px,24vw,340px);margin-left:6px}
 .csd-rs{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
 #csd-detail{justify-content:flex-start;gap:8px}
@@ -3130,6 +3136,15 @@ if(!window._cssTip){window._cssTip=1;
     _t.style.left=x+'px';_t.style.top=y+'px';
   });
 }
+function _cssBarRows(a,tot,col){
+  var mx=Math.max.apply(null,a.map(function(x){return x[1]}))||1;
+  return a.map(function(x){return '<div class="csd-br"><span class="l">'+x[0]+'</span><div class="t"><u style="width:'+(x[1]/mx*100)+'%;background:'+(x[2]||col)+'"></u></div><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');
+}
+function _cssTopBars(a,tot,col){
+  var top=a.slice(0,5),rest=a.slice(5).reduce(function(n,x){return n+x[1]},0);
+  if(rest)top.push(['그 외 '+(a.length-5)+'개 사유',rest]);
+  return _cssBarRows(top,tot,col);
+}
 function _cssLine(items,total){
   return '<div class="csd-line">'+items.map(function(x){return '<span data-pick="'+x[0]+'"><s style="background:'+x[2]+'"></s>'+x[0]+' <b>'+x[1]+'</b><small>'+Math.round(x[1]/total*100)+'%</small></span>'}).join('')+'</div>';
 }
@@ -3138,14 +3153,14 @@ function _cssShow(name){
   var b=name?c.byBrand.filter(function(x){return x.n===name})[0]:null;
   if(b){
     box.innerHTML='<div class="csd-dh">'+b.n+' <small>'+b.t+'건</small></div>'
-      +'<div class="csd-ch">사유 유형별</div>'+_cssRows(b.g,b.t)
-      +'<div class="csd-ch" style="margin-top:8px">결제 후 취소 주요 사유 ('+b.p+'건)</div>'+_cssTopRows(b.d,b.p);
+      +'<div class="csd-ch">사유 유형별</div>'+_cssBarRows(b.g,b.t)
+      +'<div class="csd-ch" style="margin-top:8px">결제 후 취소 주요 사유 ('+b.p+'건)</div>'+_cssTopBars(b.d,b.p,_cssBrandCol[b.n]);
   }else{
     var m={};c.byBrand.forEach(function(x){x.d.forEach(function(r){m[r[0]]=(m[r[0]]||0)+r[1];});});
     var all=Object.keys(m).map(function(k){return [k,m[k]]}).sort(function(p,q){return q[1]-p[1]});
     box.innerHTML='<div class="csd-dh">전체 <small>'+c.total+'건</small></div>'
-      +'<div class="csd-ch">취소 시점별</div>'+_cssRows([['입금 전 취소 (사유 미기재)',c.dep,'var(--c-gold)'],['결제 후 취소',c.paid,'var(--c-fg)']],c.total)
-      +'<div class="csd-ch" style="margin-top:8px">결제 후 취소 주요 사유 ('+c.paid+'건)</div>'+_cssTopRows(all,c.paid)
+      +'<div class="csd-ch">취소 시점별</div>'+_cssBarRows([['입금 전 취소 (사유 미기재)',c.dep,'var(--c-gold)'],['결제 후 취소',c.paid,'var(--c-fg)']],c.total)
+      +'<div class="csd-ch" style="margin-top:8px">결제 후 취소 주요 사유 ('+c.paid+'건)</div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
       +'<div class="csd-hint">그래프나 브랜드를 누르면 브랜드별 상세가 표시됩니다.</div>';
   }
   document.querySelectorAll('#csd-vp .csd-seg').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-l')!==name);});
