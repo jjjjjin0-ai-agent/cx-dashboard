@@ -1946,14 +1946,14 @@ function _dedupeByOrderNo(rows){
     seen[r.orderNo]=true; return true;
   });
 }
-// 10월 구형식 파서: A=날짜, B=주문번호, D=상품명, F=교환/반품구분, G=플랫폼, H=사유
+// 10월 구형식 파서: A=날짜, B=주문번호, D=상품명, E=교환/반품구분, F=수량, G=플랫폼, H=사유
 function _parseRetRow_old(r){
-  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colF=r[5]||'',colG=r[6]||'',colH=r[7]||'';
+  var colA=r[0]||'',colB=r[1]||'',colD=r[3]||'',colE=r[4]||'',colG=r[6]||'',colH=r[7]||'';
   if(!colA&&!colD) return null;
   if(!colD.trim()) return null;
   if(colD.indexOf('사은품')>=0) return null;
-  var type=(colF.indexOf('교환')>=0||colH.indexOf('교환')>=0)?'교환':'반품';
-  var rk=colH.trim()||(colF.indexOf('쿠팡')>=0?'변심':(colF.trim()||'변심'));
+  var type=(colE.indexOf('교환')>=0)?'교환':'반품';
+  var rk=colH.trim()||'변심';
   var platform=colG.trim();
   return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:platform};
 }
@@ -3123,17 +3123,18 @@ var _CSS_DATA={'2026-10':{
      {n:"파미코젠",t:42,p:26,g:[["입금 전 취소 (사유 미기재)",16,"var(--c-gold)"],["재주문",1,"var(--c-blue)"],["단순 변심",23,"var(--c-fg)"],["오주문",2,"var(--c-red)"]],d:[["단순 변심",22],["오주문",2],["재주문",1],["단순 변심 (나이아신 부작용)",1]]},
      {n:"메디그로우",t:6,p:1,g:[["입금 전 취소 (사유 미기재)",5,"var(--c-gold)"],["단순 변심",1,"var(--c-fg)"]],d:[["고객 변심",1]]}
     ]},
-  ret:{total:49,ret:44,exc:5,
-    brands:[['테라퓨젠',39],['덴티플라',6],['파미코젠',3],['메디그로우',1]],
-    prod:[['헬리코컷',19,17,2,'테라퓨젠'],['콜레스컷',12,11,1,'테라퓨젠'],['구강케어정',6,6,0,'덴티플라'],['조인트본',5,4,1,'테라퓨젠'],['콜라겐',3,3,0,'테라퓨젠'],['코티프로',2,2,0,'파미코젠'],['알코프로',1,0,1,'파미코젠'],['아나모나',1,1,0,'메디그로우']],
-    reasons:[['단순 변심',42],['배송 문제 / 상품 파손',4],['오주문',1],['다른 상품 교환',1],['재발송(주소 오기재)',1]],
+  ret:{total:56,ret:51,exc:5,
+    brands:[['테라퓨젠',43],['덴티플라',7],['파미코젠',4],['메디그로우',1],['프로즌랩',1]],
+    prod:[['헬리코컷',19,17,2,'테라퓨젠'],['콜레스컷',13,12,1,'테라퓨젠'],['구강케어정',6,6,0,'덴티플라'],['조인트본',5,4,1,'테라퓨젠'],['콜라겐',3,3,0,'테라퓨젠'],['오메가3',3,3,0,'테라퓨젠'],['코티프로',2,2,0,'파미코젠'],['알코프로',2,1,1,'파미코젠'],['실톡스 SET',1,1,0,'프로즌랩'],['잇몸케어 치약',1,1,0,'덴티플라'],['아나모나',1,1,0,'메디그로우']],
+    reasons:[['단순 변심',49],['배송 문제 / 상품 파손',4],['오주문',1],['다른 상품 교환',1],['재발송(주소 오기재)',1]],
     byBrand:[
-     {n:'테라퓨젠',t:39,ret:35,exc:4,plat:[['자사몰',27],['쿠팡',10],['G마켓',1],['옥션',1]],prod:[['헬리코컷',19,17,2],['콜레스컷',12,11,1],['조인트본',5,4,1],['콜라겐',3,3,0]],reasons:[['단순 변심',34],['배송 문제 / 상품 파손',3],['오주문',1],['다른 상품 교환',1]]},
-     {n:'덴티플라',t:6,ret:6,exc:0,plat:[['자사몰',2],['옥션',2],['쿠팡',1],['G마켓',1]],prod:[['구강케어정',6,6,0]],reasons:[['단순 변심',5],['배송 문제 / 상품 파손',1]]},
-     {n:'파미코젠',t:3,ret:2,exc:1,plat:[['자사몰',3]],prod:[['코티프로',2,2,0],['알코프로',1,0,1]],reasons:[['단순 변심',2],['재발송(주소 오기재)',1]]},
-     {n:'메디그로우',t:1,ret:1,exc:0,plat:[['쿠팡',1]],prod:[['아나모나',1,1,0]],reasons:[['단순 변심',1]]}
+     {n:'테라퓨젠',t:43,ret:39,exc:4,plat:[['자사몰',27],['쿠팡',10],['G마켓',1],['옥션',1]],prod:[['헬리코컷',19,17,2],['콜레스컷',13,12,1],['조인트본',5,4,1],['콜라겐',3,3,0],['오메가3',3,3,0]],reasons:[['단순 변심',38],['배송 문제 / 상품 파손',3],['오주문',1],['다른 상품 교환',1]]},
+     {n:'덴티플라',t:7,ret:7,exc:0,plat:[['자사몰',2],['옥션',2],['쿠팡',1],['G마켓',1]],prod:[['구강케어정',6,6,0],['잇몸케어 치약',1,1,0]],reasons:[['단순 변심',6],['배송 문제 / 상품 파손',1]]},
+     {n:'파미코젠',t:4,ret:3,exc:1,plat:[['자사몰',3]],prod:[['코티프로',2,2,0],['알코프로',2,1,1]],reasons:[['단순 변심',3],['재발송(주소 오기재)',1]]},
+     {n:'메디그로우',t:1,ret:1,exc:0,plat:[['쿠팡',1]],prod:[['아나모나',1,1,0]],reasons:[['단순 변심',1]]},
+     {n:'프로즌랩',t:1,ret:1,exc:0,plat:[],prod:[['실톡스 SET',1,1,0]],reasons:[['단순 변심',1]]}
     ],
-    note:'주문 건 기준 집계(합배송 동봉 상품 7개는 주문 1건으로 계산). 헬리코컷·콜레스컷(테라퓨젠) 2개 제품이 전체의 절반 이상(31건, 63%). 자사몰 비중이 가장 높음(32건, 65%).'}
+    note:'시트 E열 기준 교환/반품 분류(빈칸은 반품). 헬리코컷·콜레스컷(테라퓨젠) 2개 제품이 전체의 절반 이상(32건, 57%). 플랫폼은 자사몰이 가장 많음(32건). 플랫폼 미기재 합배송 동봉 상품 7건은 플랫폼 집계에서 제외.'}
 }};
 function _cssBars(a){var mx=Math.max.apply(null,a.map(function(x){return x[1]}))||1;
   return a.map(function(x){return '<div class="csd-bar"><i>'+x[0]+'</i><div><u style="width:'+(x[1]/mx*100)+'%"></u></div><em>'+x[1]+'</em></div>'}).join('');}
@@ -3282,7 +3283,7 @@ function cssUpdate(){
   var rmax=Math.max.apply(null,r.byBrand.map(function(x){return x.t}))||1;
   function _e(x){return String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
   var vbars=r.byBrand.map(function(b){
-    var tip='<b>'+b.n+'</b><span>교환 '+b.exc+'건 · 반품 '+b.ret+'건</span><span>'+b.plat.map(function(p){return p[0]+' '+p[1]+'건'}).join(' · ')+'</span>';
+    var tip='<b>'+b.n+'</b><span>교환 '+b.exc+'건 · 반품 '+b.ret+'건</span><span>'+(b.plat.length?b.plat.map(function(p){return p[0]+' '+p[1]+'건'}).join(' · '):'플랫폼 미기재')+'</span>';
     return '<div class="csd-vcol"><div class="csd-vtrack"><div class="csd-vwrap" style="height:'+(b.t/rmax*86)+'%"><span class="csd-vval">'+b.t+'</span><div class="csd-vbar csd-vb" style="background:'+(_cssBrandCol[b.n]||'var(--c-dim)')+'" data-pickr="'+b.n+'" data-h="'+_e(tip)+'"></div></div></div><div class="csd-vl" data-pickr="'+b.n+'">'+b.n+'</div></div>';
   }).join('');
   window._cssCurR=r;window._cssSelR=null;
