@@ -210,6 +210,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 #csd-detail .csd-br{padding:4px 0;font-size:15px}
 .csd-hint{flex:none}
 .csd-topr{display:flex;align-items:center;gap:26px}
+.css-btn{margin-left:auto;font:inherit;font-size:12px;font-weight:600;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 16px;cursor:pointer;transition:background .15s}
+.css-btn:hover{background:var(--surface-2)}
 .csd-print{font:inherit;font-size:15px;font-weight:600;color:var(--c-fg);background:transparent;border:1px solid rgba(255,255,255,.38);border-radius:999px;padding:9px 18px;cursor:pointer;transition:background .15s}
 .csd-print:hover{background:rgba(255,255,255,.12)}
 @page{size:A4 landscape;margin:8mm}
@@ -716,6 +718,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         <select class="css-sel" id="css-year" onchange="_cssPopMonth();_cssPopWeek();cssUpdate()"></select>
         <select class="css-sel" id="css-month" onchange="_cssPopWeek();cssUpdate()"></select>
         <select class="css-sel" id="css-week" onchange="cssUpdate()"></select>
+        <button type="button" class="css-btn" onclick="_cssPrint()">보고용 출력</button>
       </div>
       <div id="css-content"></div>
     </section>
@@ -3307,7 +3310,7 @@ function cssUpdate(){
   if(!d||w!=='total'){box.innerHTML='<div class="csd-empty">'+(d?'주차별 데이터는 준비 중입니다. “한달 통합”을 선택해 주세요.':'해당 기간의 CS SUMMARY 데이터가 없습니다.')+'</div>';return;}
   var c=d.cancel,r=d.ret,mm=String(m).padStart(2,'0'),tones=['csd-lt','csd-lt'],ti=0;
   var S=[];
-  S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><div class="csd-topr"><div class="csd-meta">데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div><button type="button" class="csd-print" onclick="_cssPrint()">보고용 출력</button></div></div>'
+  S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><div class="csd-meta">데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
   +'</div>'
   +'<p class="csd-sub">주문취소 <b style="color:var(--c-fg)">'+c.total+'건</b>(입금 전 '+c.dep+'건 · 결제 후 '+c.paid+'건), 반품 <b style="color:var(--c-red)">'+r.ret+'건</b>, 교환 <b style="color:var(--c-blue)">'+r.exc+'건</b>, 반품 (사은품) <b style="color:var(--c-gold)">'+r.gift+'건</b><br>총 주문 '+_cssN(c.orders)+'건 기준 취소율 <b style="color:var(--c-fg)">'+_cssPct(c.total,c.orders)+'</b>(쿠팡·EMS·CJ온스타일 제외)<br>결제 후 취소 사유의 '+c.pRe+'%는 재주문(재결제), '+c.pSim+'% 단순 변심.<br>반품 <b style="color:var(--c-fg)">1위</b>: 헬리코컷 19건</p>'
