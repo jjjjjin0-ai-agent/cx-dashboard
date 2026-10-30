@@ -1981,7 +1981,7 @@ function _parseRetRow_old(r){
   var type=(colE.indexOf('교환')>=0)?'교환':'반품';
   var rk=colH.trim()||'변심';
   var platform=colG.trim();
-  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:platform};
+  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:platform,gift:(r[8]||'').indexOf('사은품')>=0};
 }
 // 11월+ 신형식 파서: A=날짜, B=주문번호, D=상품명, F=교환/반품, G=플랫폼, H=사유, I=비고
 function _parseRetRow_new(r){
@@ -1991,7 +1991,7 @@ function _parseRetRow_new(r){
   if(colD.indexOf('사은품')>=0) return null;
   var type=(colF.trim()==='교환')?'교환':'반품';
   var rk=colH.trim()||(colI.trim()||'변심');
-  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:colG.trim()};
+  return {product:colD.trim(),reason:rk,type:type,qty:1,orderNo:colB.trim(),date:_parseReturnDate(colA),platform:colG.trim(),gift:(r[8]||'').indexOf('사은품')>=0};
 }
 function _fetchReturnData(){
   var sEl=document.getElementById('return-start-date');
@@ -2104,11 +2104,11 @@ function _renderReturnCharts(dataRows){
   dataRows.forEach(function(r){ if(r.platform) _platTemp[r.platform]=(_platTemp[r.platform]||0)+r.qty; });
   dataRows.forEach(function(r){
     _retProd[r.product]=(_retProd[r.product]||0)+r.qty;
-    var rk=r.type==='교환'?'교환':r.reason;
+    var rk=r.gift?'반품 (사은품)':(r.type==='교환'?'교환':r.reason);
     _retReason[rk]=(_retReason[rk]||0)+r.qty;
     if(!_retProdReasons[r.product]) _retProdReasons[r.product]={};
     _retProdReasons[r.product][rk]=(_retProdReasons[r.product][rk]||0)+r.qty;
-    _retTypeCount[r.type]=(_retTypeCount[r.type]||0)+r.qty;
+    var _tk=r.gift?'반품 (사은품)':r.type; _retTypeCount[_tk]=(_retTypeCount[_tk]||0)+r.qty;
   });
   _retTotal=Object.keys(_retProd).reduce(function(s,k){return s+_retProd[k];},0);
   _retHovSeg=-1; _retHovBar=-1;
@@ -2177,7 +2177,7 @@ function _drawRetDonut(hov){
     });
   }
   var ts=document.getElementById('return-type-summary');
-  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건';
+  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건'+(_retTypeCount['반품 (사은품)']?'  ·  반품 (사은품) '+_retTypeCount['반품 (사은품)']+'건':'');
 }
 
 function _drawRetBar(hov){
@@ -2409,9 +2409,9 @@ function _renderReturnChartsTotal(dataRows, prevRows){
     _retBrandAll[b].total+=r.qty;
     if(!_retBrandAll[b].prod[r.product]) _retBrandAll[b].prod[r.product]={total:0,reasons:{}};
     _retBrandAll[b].prod[r.product].total+=r.qty;
-    var rk=r.reason;
+    var rk=r.gift?'반품 (사은품)':r.reason;
     _retBrandAll[b].prod[r.product].reasons[rk]=(_retBrandAll[b].prod[r.product].reasons[rk]||0)+r.qty;
-    _retTypeCount[r.type]=(_retTypeCount[r.type]||0)+r.qty;
+    var _tk=r.gift?'반품 (사은품)':r.type; _retTypeCount[_tk]=(_retTypeCount[_tk]||0)+r.qty;
   });
   // 전월 집계
   _retPrevAll={};
@@ -2560,7 +2560,7 @@ function _drawRetDonutBrands(hov){
     });
   }
   var ts=document.getElementById('return-type-summary');
-  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건';
+  if(ts) ts.textContent='반품 '+(_retTypeCount.반품||0)+'건  ·  교환 '+(_retTypeCount.교환||0)+'건'+(_retTypeCount['반품 (사은품)']?'  ·  반품 (사은품) '+_retTypeCount['반품 (사은품)']+'건':'');
 }
 
 function _clearRetBarCanvas(){
@@ -3150,18 +3150,18 @@ var _CSS_DATA={'2026-10':{
      {n:"파미코젠",o:443,t:42,p:26,g:[["입금 전 취소 (사유 미기재)",16,"var(--c-gold)"],["재주문",1,"var(--c-blue)"],["단순 변심",23,"var(--c-fg)"],["오주문",2,"var(--c-red)"]],d:[["단순 변심",22],["오주문",2],["재주문",1],["단순 변심 (나이아신 부작용)",1]]},
      {n:"메디그로우",o:54,t:6,p:1,g:[["입금 전 취소 (사유 미기재)",5,"var(--c-gold)"],["단순 변심",1,"var(--c-fg)"]],d:[["고객 변심",1]]}
     ]},
-  ret:{total:56,ret:51,exc:5,
+  ret:{total:56,ret:47,exc:5,gift:4,
     brands:[['테라퓨젠',40],['덴티플라',7],['파미코젠',4],['프로즌랩',4],['메디그로우',1]],
-    prod:[['헬리코컷',19,17,2,'테라퓨젠'],['콜레스컷',13,12,1,'테라퓨젠'],['구강케어정',6,6,0,'덴티플라'],['조인트본',5,4,1,'테라퓨젠'],['콜라겐',3,3,0,'프로즌랩'],['오메가3',3,3,0,'테라퓨젠'],['코티프로',2,2,0,'파미코젠'],['알코프로',2,1,1,'파미코젠'],['실톡스 SET',1,1,0,'프로즌랩'],['잇몸케어 치약',1,1,0,'덴티플라'],['아나모나',1,1,0,'메디그로우']],
-    reasons:[['단순 변심',49],['배송 문제 / 상품 파손',4],['오주문',1],['다른 상품 교환',1],['재발송(주소 오기재)',1]],
+    prod:[['헬리코컷',19,17,2,0,'테라퓨젠'],['콜레스컷',13,11,1,1,'테라퓨젠'],['구강케어정',6,6,0,0,'덴티플라'],['조인트본',5,4,1,0,'테라퓨젠'],['콜라겐',3,3,0,0,'프로즌랩'],['오메가3',3,1,0,2,'테라퓨젠'],['코티프로',2,2,0,0,'파미코젠'],['알코프로',2,1,1,0,'파미코젠'],['실톡스 SET',1,0,0,1,'프로즌랩'],['잇몸케어 치약',1,1,0,0,'덴티플라'],['아나모나',1,1,0,0,'메디그로우']],
+    reasons:[['단순 변심',45],['배송 문제 / 상품 파손',4],['반품 (사은품)',4],['오주문',1],['다른 상품 교환',1],['재발송(주소 오기재)',1]],
     byBrand:[
-     {n:'테라퓨젠',t:40,ret:36,exc:4,plat:[['자사몰',24],['쿠팡',10],['G마켓',1],['옥션',1]],prod:[['헬리코컷',19,17,2],['콜레스컷',13,12,1],['조인트본',5,4,1],['오메가3',3,3,0]],reasons:[['단순 변심',35],['배송 문제 / 상품 파손',3],['오주문',1],['다른 상품 교환',1]]},
-     {n:'덴티플라',t:7,ret:7,exc:0,plat:[['자사몰',2],['옥션',2],['쿠팡',1],['G마켓',1]],prod:[['구강케어정',6,6,0],['잇몸케어 치약',1,1,0]],reasons:[['단순 변심',6],['배송 문제 / 상품 파손',1]]},
-     {n:'파미코젠',t:4,ret:3,exc:1,plat:[['자사몰',3]],prod:[['코티프로',2,2,0],['알코프로',2,1,1]],reasons:[['단순 변심',3],['재발송(주소 오기재)',1]]},
-     {n:'프로즌랩',t:4,ret:4,exc:0,plat:[['자사몰',3]],prod:[['콜라겐',3,3,0],['실톡스 SET',1,1,0]],reasons:[['단순 변심',4]]},
-     {n:'메디그로우',t:1,ret:1,exc:0,plat:[['쿠팡',1]],prod:[['아나모나',1,1,0]],reasons:[['단순 변심',1]]}
+     {n:'테라퓨젠',t:40,ret:33,exc:4,gift:3,plat:[['자사몰',24],['쿠팡',10],['G마켓',1],['옥션',1]],prod:[['헬리코컷',19,17,2,0],['콜레스컷',13,11,1,1],['조인트본',5,4,1,0],['오메가3',3,1,0,2]],reasons:[['단순 변심',32],['배송 문제 / 상품 파손',3],['반품 (사은품)',3],['오주문',1],['다른 상품 교환',1]]},
+     {n:'덴티플라',t:7,ret:7,exc:0,gift:0,plat:[['자사몰',2],['옥션',2],['쿠팡',1],['G마켓',1]],prod:[['구강케어정',6,6,0,0],['잇몸케어 치약',1,1,0,0]],reasons:[['단순 변심',6],['배송 문제 / 상품 파손',1]]},
+     {n:'파미코젠',t:4,ret:3,exc:1,gift:0,plat:[['자사몰',3]],prod:[['코티프로',2,2,0,0],['알코프로',2,1,1,0]],reasons:[['단순 변심',3],['재발송(주소 오기재)',1]]},
+     {n:'프로즌랩',t:4,ret:3,exc:0,gift:1,plat:[['자사몰',3]],prod:[['콜라겐',3,3,0,0],['실톡스 SET',1,0,0,1]],reasons:[['단순 변심',3],['반품 (사은품)',1]]},
+     {n:'메디그로우',t:1,ret:1,exc:0,gift:0,plat:[['쿠팡',1]],prod:[['아나모나',1,1,0,0]],reasons:[['단순 변심',1]]}
     ],
-    note:'시트 E열 기준 교환/반품 분류(빈칸은 반품). 헬리코컷·콜레스컷(테라퓨젠) 2개 제품이 전체의 절반 이상(32건, 57%). 플랫폼은 자사몰이 가장 많음(32건). 플랫폼 미기재 합배송 동봉 상품 7건은 플랫폼 집계에서 제외.'}
+    note:'시트 E열 기준 교환/반품 분류, I열이 "사은품"인 행(4건)은 "반품 (사은품)"으로 별도 표기. 헬리코컷·콜레스컷(테라퓨젠) 2개 제품이 전체의 절반 이상(32건, 57%). 플랫폼은 자사몰이 가장 많음(32건). 플랫폼 미기재 합배송 동봉 상품 7건은 플랫폼 집계에서 제외.'}
 }};
 function _cssBars(a){var mx=Math.max.apply(null,a.map(function(x){return x[1]}))||1;
   return a.map(function(x){return '<div class="csd-bar"><i>'+x[0]+'</i><div><u style="width:'+(x[1]/mx*100)+'%"></u></div><em>'+x[1]+'</em></div>'}).join('');}
@@ -3238,15 +3238,15 @@ if(!window._cssClk){window._cssClk=1;document.addEventListener('click',function(
   var t=e.target&&e.target.closest?e.target.closest('.csd-seg,[data-pick]'):null;if(!t)return;
   _cssPick(t.getAttribute('data-pick')||t.getAttribute('data-l'));
 });}
-function _cssRc(l){return l==='단순 변심'?'var(--c-fg)':l.indexOf('배송')===0?'var(--c-red)':l==='오주문'?'var(--c-gold)':'var(--c-dim)';}
+function _cssRc(l){return l.indexOf('사은품')>=0?'var(--c-blue)':l==='단순 변심'?'var(--c-fg)':l.indexOf('배송')===0?'var(--c-red)':l==='오주문'?'var(--c-gold)':'var(--c-dim)';}
 function _cssShowR(name){
   var r=window._cssCurR,p=document.getElementById('csd-rp'),q=document.getElementById('csd-rr');if(!r||!p||!q)return;
   var b=name?r.byBrand.filter(function(x){return x.n===name})[0]:null;
   var prods=b?b.prod:r.prod,rs=b?b.reasons:r.reasons,tot=b?b.t:r.total,pre=b?b.n+' ':'';
   p.innerHTML='<div class="csd-ch">'+pre+'제품별 교환 · 반품</div>'+prods.map(function(x,i){
-    return '<div class="csd-row"><small style="margin:0;width:22px">'+(i<9?'0':'')+(i+1)+'</small><span><b>'+x[0]+'</b>'+(x[4]?'<small>'+x[4]+'</small>':'')+'</span><em class="csd-pt">반품 '+x[2]+' · 교환 '+x[3]+'</em><b>'+x[1]+'건</b></div>';}).join('');
+    return '<div class="csd-row"><small style="margin:0;width:22px">'+(i<9?'0':'')+(i+1)+'</small><span><b>'+x[0]+'</b>'+(x[5]?'<small>'+x[5]+'</small>':'')+'</span><em class="csd-pt">반품 '+x[2]+' · 교환 '+x[3]+(x[4]?' · 반품 (사은품) '+x[4]:'')+'</em><b>'+x[1]+'건</b></div>';}).join('');
   q.innerHTML='<div class="csd-ch">'+pre+'사유별</div>'+_cssRows(rs.map(function(x){return [x[0],x[1],_cssRc(x[0])]}),tot);
-  var sm=document.getElementById('csd-rsum');if(sm){var ex=b?b.exc:r.exc,rt=b?b.ret:r.ret;sm.innerHTML='<span>교환 <b style="color:var(--c-blue)">'+ex+'</b>건</span><span>반품 <b style="color:var(--c-red)">'+rt+'</b>건</span>';}
+  var sm=document.getElementById('csd-rsum');if(sm){var ex=b?b.exc:r.exc,rt=b?b.ret:r.ret;var gf=b?b.gift:r.gift;sm.innerHTML='<span>교환 <b style="color:var(--c-blue)">'+ex+'</b>건</span><span>반품 <b style="color:var(--c-red)">'+rt+'</b>건</span>'+(gf?'<span>반품 (사은품) <b style="color:var(--c-gold)">'+gf+'</b>건</span>':'');}
   document.querySelectorAll('#csd-vp .csd-vb').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-pickr')!==name);});
 }
 function _cssPickR(name){window._cssSelR=(window._cssSelR===name)?null:name;_cssShowR(window._cssSelR);}
@@ -3310,7 +3310,7 @@ function cssUpdate(){
   S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><div class="csd-topr"><div class="csd-meta">데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div><button type="button" class="csd-print" onclick="_cssPrint()">보고용 출력</button></div></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
   +'</div>'
-  +'<p class="csd-sub">주문취소 <b style="color:var(--c-fg)">'+c.total+'건</b>(입금 전 '+c.dep+'건 · 결제 후 '+c.paid+'건), 반품 <b style="color:var(--c-red)">'+r.ret+'건</b>, 교환 <b style="color:var(--c-blue)">'+r.exc+'건</b><br>총 주문 '+_cssN(c.orders)+'건 기준 취소율 <b style="color:var(--c-fg)">'+_cssPct(c.total,c.orders)+'</b>(쿠팡·EMS·CJ온스타일 제외)<br>결제 후 취소 사유의 '+c.pRe+'%는 재주문(재결제), '+c.pSim+'% 단순 변심.<br>반품 <b style="color:var(--c-fg)">1위</b>: 헬리코컷 19건</p>'
+  +'<p class="csd-sub">주문취소 <b style="color:var(--c-fg)">'+c.total+'건</b>(입금 전 '+c.dep+'건 · 결제 후 '+c.paid+'건), 반품 <b style="color:var(--c-red)">'+r.ret+'건</b>, 교환 <b style="color:var(--c-blue)">'+r.exc+'건</b>, 반품 (사은품) <b style="color:var(--c-gold)">'+r.gift+'건</b><br>총 주문 '+_cssN(c.orders)+'건 기준 취소율 <b style="color:var(--c-fg)">'+_cssPct(c.total,c.orders)+'</b>(쿠팡·EMS·CJ온스타일 제외)<br>결제 후 취소 사유의 '+c.pRe+'%는 재주문(재결제), '+c.pSim+'% 단순 변심.<br>반품 <b style="color:var(--c-fg)">1위</b>: 헬리코컷 19건</p>'
   +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디그로우 · 셀로핏 · 파미코젠</b></div></div></div>');
   var live=c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssBrandCol[x[0]]||_cssPal[i]]});
   window._cssCur=c;window._cssSel=null;
@@ -3321,7 +3321,7 @@ function cssUpdate(){
   var rmax=Math.max.apply(null,r.byBrand.map(function(x){return x.t}))||1;
   function _e(x){return String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
   var vbars=r.byBrand.map(function(b){
-    var tip='<b>'+b.n+'</b><span>교환 '+b.exc+'건 · 반품 '+b.ret+'건</span><span>'+(b.plat.length?b.plat.map(function(p){return p[0]+' '+p[1]+'건'}).join(' · '):'플랫폼 미기재')+'</span>';
+    var tip='<b>'+b.n+'</b><span>교환 '+b.exc+'건 · 반품 '+b.ret+'건'+(b.gift?' · 반품 (사은품) '+b.gift+'건':'')+'</span><span>'+(b.plat.length?b.plat.map(function(p){return p[0]+' '+p[1]+'건'}).join(' · '):'플랫폼 미기재')+'</span>';
     return '<div class="csd-vcol"><div class="csd-vtrack"><div class="csd-vwrap" style="height:'+(b.t/rmax*86)+'%"><span class="csd-vval">'+b.t+'</span><div class="csd-vbar csd-vb" style="background:'+(_cssBrandCol[b.n]||'var(--c-dim)')+'" data-pickr="'+b.n+'" data-h="'+_e(tip)+'"></div></div></div><div class="csd-vl" data-pickr="'+b.n+'">'+b.n+'</div></div>';
   }).join('');
   window._cssCurR=r;window._cssSelR=null;
