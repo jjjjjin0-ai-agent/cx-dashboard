@@ -106,6 +106,27 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .cal .cfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
 .cal .cfoot button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:13px}
 .cal .cfoot .go{border:none;background:var(--accent);color:var(--on-accent)}
+/* Custom date picker */
+.dp-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:500;cursor:pointer;color:var(--fg);font-family:inherit;white-space:nowrap;transition:border-color .15s,background .15s;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.dp-btn:hover{background:var(--surface-2);border-color:var(--accent)}
+.dp-btn-wide{width:100%;text-align:left;padding:8px 12px;font-size:13px;border-radius:9px;background:var(--surface-2);box-shadow:none}
+.dp-btn-wide:hover{background:var(--surface-2);border-color:var(--accent)}
+#_dp-pop{position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.18);width:272px}
+#_dp-pop[hidden]{display:none}
+.dp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dp-ptitle{font-size:14px;font-weight:700}
+.dp-nav-btn{border:none;background:none;cursor:pointer;border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:18px;font-family:inherit;padding:0}
+.dp-nav-btn:hover{background:var(--surface-2);color:var(--fg)}
+.dp-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
+.dp-dow{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:4px 0}
+.dp-dow.sun{color:#e05252}.dp-dow.sat{color:#4a90d9}
+.dp-day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-day{aspect-ratio:1;border:none;background:none;cursor:pointer;border-radius:999px;font-family:inherit;font-size:13px;color:var(--fg);display:flex;align-items:center;justify-content:center;padding:0;width:100%}
+.dp-day:hover:not(.dp-sel):not([disabled]){background:var(--surface-2)}
+.dp-day.sun{color:#e05252}.dp-day.sat{color:#4a90d9}
+.dp-day.dp-out{visibility:hidden;pointer-events:none}
+.dp-day.dp-today:not(.dp-sel){font-weight:700;box-shadow:inset 0 0 0 1.5px var(--accent)}
+.dp-day.dp-sel{background:var(--accent);color:var(--on-accent);font-weight:700}
 
 section h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.45}#sc-section-title{margin-bottom:8px;font-size:16px}
 section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
@@ -426,9 +447,9 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     <div id="stock-section-wrap" class="stock-section">
       <div class="stock-section-hd">
         <div class="plat-label" id="stock-view-label">재고 현황</div>
-        <input type="date" id="stock-start-date" style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <button type="button" class="dp-btn" id="stock-start-date-btn" onclick="dpOpen('stock-start-date')">날짜</button><input type="hidden" id="stock-start-date" value="">
         <span style="font-size:12px;color:var(--muted)">~</span>
-        <input type="date" id="stock-end-date" style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <button type="button" class="dp-btn" id="stock-end-date-btn" onclick="dpOpen('stock-end-date')">날짜</button><input type="hidden" id="stock-end-date" value="">
         <button class="stock-sync-btn" onclick="syncCurrent()">조회</button>
         <label class="view-toggle-sw">
           <input type="checkbox" id="view-toggle-cb" onchange="toggleStockView()">
@@ -461,9 +482,9 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     <div id="return-section-wrap" class="stock-section">
       <div class="stock-section-hd" id="return-section-hd">
         <div class="plat-label" id="return-view-label" style="cursor:pointer;font-size:16px;font-weight:600">교환 · 반품</div>
-        <input type="date" id="return-start-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <button type="button" class="dp-btn" id="return-start-date-btn" style="display:none" onclick="dpOpen('return-start-date')">날짜</button><input type="hidden" id="return-start-date" value="">
         <span id="return-date-sep" style="display:none;font-size:12px;color:var(--muted)">~</span>
-        <input type="date" id="return-end-date" style="display:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--fg);background:#fff;cursor:pointer;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <button type="button" class="dp-btn" id="return-end-date-btn" style="display:none" onclick="dpOpen('return-end-date')">날짜</button><input type="hidden" id="return-end-date" value="">
         <button class="stock-sync-btn" id="return-query-btn" style="display:none" onclick="_fetchReturnData()">조회</button>
         <button class="stock-collapse-btn" id="return-collapse-btn" onclick="_toggleReturnCollapse()" title="펼치기"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 7,8 12,3"/><polyline points="2,7 7,12 12,7"/></svg></button>
       </div>
@@ -546,7 +567,6 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
             <button type="button" class="cal-kw-btn" data-kw="프로모션">프로모션</button>
             <button type="button" class="cal-kw-btn" data-kw="사은품">사은품</button>
             <button type="button" class="cal-kw-btn" data-kw="마감">마감</button>
-            <button type="button" class="cal-kw-btn" data-kw="쿠팡(단순)">쿠팡(단순)</button>
           </div>
         </div>
         <div class="cal-field">
@@ -561,7 +581,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         </div>
         <div class="cal-field">
           <label class="cal-label">시작일</label>
-          <input type="date" id="cal-modal-start" class="cal-input">
+          <button type="button" class="dp-btn dp-btn-wide" id="cal-modal-start-btn" onclick="dpOpen('cal-modal-start')">날짜 선택</button><input type="hidden" id="cal-modal-start" value="">
         </div>
         <div class="cal-field">
           <label class="cal-label">시간 <span class="cal-opt">선택</span></label>
@@ -584,7 +604,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
         </div>
         <div class="cal-field" id="cal-end-field" style="display:none">
           <label class="cal-label">종료일</label>
-          <input type="date" id="cal-modal-end" class="cal-input">
+          <button type="button" class="dp-btn dp-btn-wide" id="cal-modal-end-btn" onclick="dpOpen('cal-modal-end')">날짜 선택</button><input type="hidden" id="cal-modal-end" value="">
         </div>
         <div class="cal-field" id="cal-end-time-field" style="display:none">
           <label class="cal-label">시간 <span class="cal-opt">선택</span></label>
@@ -1626,8 +1646,8 @@ function _updateReturnHeader(brand){
   var qb  = document.getElementById('return-query-btn');
   var btn = document.getElementById('return-collapse-btn');
   var rw  = document.getElementById('return-scroll-wrap');
-  var show = function(el){ if(el) el.style.display=''; };
-  var hide = function(el){ if(el) el.style.display='none'; };
+  var show = function(el){ if(el){ el.style.display=''; var b=el.id?document.getElementById(el.id+'-btn'):null; if(b) b.style.display=''; } };
+  var hide = function(el){ if(el){ el.style.display='none'; var b=el.id?document.getElementById(el.id+'-btn'):null; if(b) b.style.display='none'; } };
   var brandChanged = (brand !== _prevRetHeaderBrand);
   _prevRetHeaderBrand = brand;
   if(brand){
@@ -2844,5 +2864,80 @@ function fmtNum(v, dec) {
   if (isNaN(n)) return v;
   return n.toLocaleString('ko-KR', {maximumFractionDigits: dec || 0});
 }
+
+/* ===== Custom Date Picker ===== */
+(function(){
+  var _pop=null,_id=null,_y=0,_m=0;
+  var _td=new Date();
+  function _fmt(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+  function _parse(v){if(!v)return null;var p=v.split('-');if(p.length!==3)return null;return{y:+p[0],m:+p[1]-1,d:+p[2]};}
+  function _lbl(id,wide){
+    var el=document.getElementById(id),btn=document.getElementById(id+'-btn');
+    if(!el||!btn)return;
+    var p=_parse(el.value);
+    btn.textContent=p?(wide?(p.y+'년 '+(p.m+1)+'월 '+p.d+'일'):((p.m+1)+'/'+p.d)):(wide?'날짜 선택':'날짜');
+  }
+  function _render(){
+    var inp=document.getElementById(_id);
+    var sel=inp?_parse(inp.value):null;
+    var td={y:_td.getFullYear(),m:_td.getMonth(),d:_td.getDate()};
+    document.getElementById('_dp-title').textContent=_y+'년 '+(_m+1)+'월';
+    var dows=['일','월','화','수','목','금','토'];
+    document.getElementById('_dp-dows').innerHTML=dows.map(function(d,i){return'<div class="dp-dow'+(i===0?' sun':i===6?' sat':'')+'">'+(d)+'</div>';}).join('');
+    var sD=new Date(_y,_m,1).getDay(),dim=new Date(_y,_m+1,0).getDate(),html='';
+    for(var i=0;i<sD;i++)html+='<button class="dp-day dp-out" disabled></button>';
+    for(var d=1;d<=dim;d++){
+      var dw=(sD+d-1)%7;
+      var cls='dp-day'+(dw===0?' sun':dw===6?' sat':'');
+      if(sel&&sel.y===_y&&sel.m===_m&&sel.d===d)cls+=' dp-sel';
+      else if(td.y===_y&&td.m===_m&&td.d===d)cls+=' dp-today';
+      html+='<button class="'+cls+'" data-d="'+d+'">'+d+'</button>';
+    }
+    document.getElementById('_dp-days').innerHTML=html;
+  }
+  function _hook(id,wide){
+    var el=document.getElementById(id);if(!el)return;
+    var _v=el.getAttribute('value')||'';
+    try{Object.defineProperty(el,'value',{get:function(){return _v;},set:function(v){_v=v;_lbl(id,wide);},configurable:true});}catch(e){}
+    _lbl(id,wide);
+  }
+  window.dpOpen=function(id){
+    var btn=document.getElementById(id+'-btn');if(!btn)return;
+    if(_pop&&_id===id&&!_pop.hidden){_pop.hidden=true;return;}
+    if(!_pop){
+      _pop=document.createElement('div');_pop.id='_dp-pop';
+      _pop.innerHTML='<div class="dp-head"><button class="dp-nav-btn" id="_dp-prev">&#8249;</button><span class="dp-ptitle" id="_dp-title"></span><button class="dp-nav-btn" id="_dp-next">&#8250;</button></div>'
+        +'<div class="dp-dow-row" id="_dp-dows"></div><div class="dp-day-grid" id="_dp-days"></div>';
+      document.body.appendChild(_pop);
+      _pop.addEventListener('click',function(e){
+        var b=e.target.closest('.dp-day');if(!b||b.classList.contains('dp-out'))return;
+        var d=+b.dataset.d,val=_fmt(_y,_m,d);
+        var inp=document.getElementById(_id);if(inp){inp.value=val;inp.dispatchEvent(new Event('change',{bubbles:true}));}
+        _pop.hidden=true;
+      });
+      document.getElementById('_dp-prev').addEventListener('click',function(e){e.stopPropagation();_m--;if(_m<0){_m=11;_y--;}_render();});
+      document.getElementById('_dp-next').addEventListener('click',function(e){e.stopPropagation();_m++;if(_m>11){_m=0;_y++;}_render();});
+      document.addEventListener('click',function(e){
+        if(!_pop||_pop.hidden)return;
+        if(_pop.contains(e.target))return;
+        var tb=_id?document.getElementById(_id+'-btn'):null;
+        if(tb&&tb.contains(e.target))return;
+        _pop.hidden=true;
+      },true);
+    }
+    _id=id;
+    var inp=document.getElementById(id);var p=inp?_parse(inp.value):null;var now=new Date();
+    _y=p?p.y:now.getFullYear();_m=p?p.m:now.getMonth();
+    _render();_pop.hidden=false;
+    var rect=btn.getBoundingClientRect();
+    var left=rect.left,top=rect.bottom+6;
+    if(left+272>window.innerWidth)left=Math.max(4,window.innerWidth-280);
+    if(top+290>window.innerHeight)top=Math.max(4,rect.top-296);
+    _pop.style.left=left+'px';_pop.style.top=top+'px';
+  };
+  // Hook all date inputs so .value setter auto-updates button label
+  ['stock-start-date','stock-end-date','return-start-date','return-end-date'].forEach(function(id){_hook(id,false);});
+  ['cal-modal-start','cal-modal-end'].forEach(function(id){_hook(id,true);});
+})();
 </script>
 </div></html>
