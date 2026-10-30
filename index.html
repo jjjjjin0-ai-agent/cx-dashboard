@@ -205,7 +205,10 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-mid{flex:1;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
 .csd-mid .csd-donut-svg{width:clamp(240px,24vw,340px);margin-left:6px}
 .csd-rs{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
-#csd-detail{justify-content:flex-start;gap:8px}
+#csd-detail{justify-content:flex-start;gap:8px;overflow-y:auto;min-height:0}
+.csd-fill .csd-grid{min-height:0}
+#csd-detail .csd-br{padding:4px 0;font-size:15px}
+.csd-hint{flex:none}
 #csd-detail .csd-row{padding:7px 0;font-size:16px}
 .csd-hint{margin-top:auto;font-size:14px;color:var(--c-mut)}
 .csd-dh{font-size:28px;font-weight:900;letter-spacing:-.02em}
@@ -3140,11 +3143,7 @@ function _cssBarRows(a,tot,col){
   var mx=Math.max.apply(null,a.map(function(x){return x[1]}))||1;
   return a.map(function(x){return '<div class="csd-br"><span class="l">'+x[0]+'</span><div class="t"><u style="width:'+(x[1]/mx*100)+'%;background:'+(x[2]||col)+'"></u></div><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');
 }
-function _cssTopBars(a,tot,col){
-  var top=a.slice(0,5),rest=a.slice(5).reduce(function(n,x){return n+x[1]},0);
-  if(rest)top.push(['전체 사유',rest]);
-  return _cssBarRows(top,tot,col);
-}
+function _cssTopBars(a,tot,col){return _cssBarRows(a,tot,col);}
 function _cssLine(items,total){
   return '<div class="csd-line">'+items.map(function(x){return '<span data-pick="'+x[0]+'"><s style="background:'+x[2]+'"></s>'+x[0]+' <b>'+x[1]+'</b><small>'+Math.round(x[1]/total*100)+'%</small></span>'}).join('')+'</div>';
 }
@@ -3191,6 +3190,8 @@ function _cssBind(vp){
   vp.addEventListener('wheel',function(e){
     var s=vp.querySelectorAll('.csd-slide')[_cssIdx];
     var dir=e.deltaY>0?1:-1;
+    var inner=e.target&&e.target.closest?e.target.closest('#csd-detail'):null;
+    if(inner&&inner.scrollHeight>inner.clientHeight+2){var iEnd=inner.scrollTop+inner.clientHeight>=inner.scrollHeight-2,iTop=inner.scrollTop<=0;if((dir>0&&!iEnd)||(dir<0&&!iTop))return;}
     if(s&&s.scrollHeight>s.clientHeight+2){
       var atEnd=s.scrollTop+s.clientHeight>=s.scrollHeight-2,atTop=s.scrollTop<=0;
       if((dir>0&&!atEnd)||(dir<0&&!atTop))return;
