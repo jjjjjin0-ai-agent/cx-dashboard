@@ -209,6 +209,8 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-fill .csd-grid{min-height:0}
 #csd-detail .csd-br{padding:4px 0;font-size:15px}
 .csd-hint{flex:none}
+.csd-rate{font-size:15px;color:var(--c-mut);margin:-2px 0 4px}
+.csd-rate b{color:var(--c-fg);font-size:17px}
 .csd-rsum{display:flex;gap:28px;font-size:22px;font-weight:600}
 .csd-rsum b{font-size:inherit;font-weight:800;margin:0 2px;font-variant-numeric:tabular-nums}
 .csd{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
@@ -3114,16 +3116,16 @@ function _cssPopWeek(){
 }
 
 var _CSS_DATA={'2026-10':{
-  cancel:{total:945,paid:437,dep:508,pRe:47,pSim:43,
+  cancel:{orders:8605,total:945,paid:437,dep:508,pRe:47,pSim:43,
     brands:[["테라퓨젠",701],["덴티플라",119],["프로즌랩",77],["파미코젠",42],["메디그로우",6],["셀로핏",0]],
     reasons:[["입금 전 취소 (사유 미기재)",508,'var(--c-gold)'],["재주문",207,'var(--c-blue)'],["단순 변심",190,'var(--c-fg)'],["오주문",37,'var(--c-red)'],["기타 (배송 지연·내부 테스트)",3,'var(--c-dim)']],
-    note:"쿠팡 · CJ온스타일을 제외한 취소율 집계.<br>재주문 재결제 취소 192건(테라퓨젠)은 동일 주문자가 쿠폰 미적용·결제수단 변경 등을 이유로 이전 주문 취소한 건으로, 순수 이탈로 보기 어려우나 취소율 지표에 영향",
+    note:"쿠팡 · EMS · CJ온스타일을 제외한 취소율 집계.<br>재주문 재결제 취소 192건(테라퓨젠)은 동일 주문자가 쿠폰 미적용·결제수단 변경 등을 이유로 이전 주문 취소한 건으로, 순수 이탈로 보기 어려우나 취소율 지표에 영향",
     byBrand:[
-     {n:"테라퓨젠",t:701,p:331,g:[["입금 전 취소 (사유 미기재)",370,"var(--c-gold)"],["재주문",192,"var(--c-blue)"],["단순 변심",113,"var(--c-fg)"],["오주문",25,"var(--c-red)"],["기타 (배송 지연)",1,"var(--c-dim)"]],d:[["단순 변심",108],["재주문",107],["오주문",21],["재주문 (할인 링크에서 구매)",19],["재주문 (결제 수단 변경)",19],["재주문 (쿠폰 미적용)",13],["재주문 (수량 변경)",13],["재주문 (다른 상품 함께 구매)",13],["재주문 (배송지 오기재)",3],["단순 변심 (타사 가격 저렴)",3],["단순 변심 (가격 비쌈)",2],["오주문 (결제 오류)",2],["재주문 (할인 쿠폰 적용)",2],["오주문 (다른 상품 잘못 구매)",2],["재주문 (배송지 오입력)",2],["재결제",1],["배송 지연",1]]},
-     {n:"덴티플라",t:119,p:36,g:[["입금 전 취소 (사유 미기재)",83,"var(--c-gold)"],["재주문",14,"var(--c-blue)"],["단순 변심",13,"var(--c-fg)"],["오주문",7,"var(--c-red)"],["기타 (내부 테스트·배송 지연)",2,"var(--c-dim)"]],d:[["단순 변심",12],["오주문",7],["재주문",4],["재주문 (배송지 오기재)",4],["재주문 (결제 수단 변경)",2],["재주문 (다른 상품 함께 구매)",2],["재주문 (수량 변경)",1],["내부 테스트",1],["재주문 (쿠폰 미적용)",1],["단순 변심 (성분 관련)",1],["배송 지연",1]]},
-     {n:"프로즌랩",t:77,p:43,g:[["입금 전 취소 (사유 미기재)",34,"var(--c-gold)"],["단순 변심",40,"var(--c-fg)"],["오주문",3,"var(--c-red)"]],d:[["단순 변심",40],["오주문",3]]},
-     {n:"파미코젠",t:42,p:26,g:[["입금 전 취소 (사유 미기재)",16,"var(--c-gold)"],["재주문",1,"var(--c-blue)"],["단순 변심",23,"var(--c-fg)"],["오주문",2,"var(--c-red)"]],d:[["단순 변심",22],["오주문",2],["재주문",1],["단순 변심 (나이아신 부작용)",1]]},
-     {n:"메디그로우",t:6,p:1,g:[["입금 전 취소 (사유 미기재)",5,"var(--c-gold)"],["단순 변심",1,"var(--c-fg)"]],d:[["고객 변심",1]]}
+     {n:"테라퓨젠",o:6091,t:701,p:331,g:[["입금 전 취소 (사유 미기재)",370,"var(--c-gold)"],["재주문",192,"var(--c-blue)"],["단순 변심",113,"var(--c-fg)"],["오주문",25,"var(--c-red)"],["기타 (배송 지연)",1,"var(--c-dim)"]],d:[["단순 변심",108],["재주문",107],["오주문",21],["재주문 (할인 링크에서 구매)",19],["재주문 (결제 수단 변경)",19],["재주문 (쿠폰 미적용)",13],["재주문 (수량 변경)",13],["재주문 (다른 상품 함께 구매)",13],["재주문 (배송지 오기재)",3],["단순 변심 (타사 가격 저렴)",3],["단순 변심 (가격 비쌈)",2],["오주문 (결제 오류)",2],["재주문 (할인 쿠폰 적용)",2],["오주문 (다른 상품 잘못 구매)",2],["재주문 (배송지 오입력)",2],["재결제",1],["배송 지연",1]]},
+     {n:"덴티플라",o:1752,t:119,p:36,g:[["입금 전 취소 (사유 미기재)",83,"var(--c-gold)"],["재주문",14,"var(--c-blue)"],["단순 변심",13,"var(--c-fg)"],["오주문",7,"var(--c-red)"],["기타 (내부 테스트·배송 지연)",2,"var(--c-dim)"]],d:[["단순 변심",12],["오주문",7],["재주문",4],["재주문 (배송지 오기재)",4],["재주문 (결제 수단 변경)",2],["재주문 (다른 상품 함께 구매)",2],["재주문 (수량 변경)",1],["내부 테스트",1],["재주문 (쿠폰 미적용)",1],["단순 변심 (성분 관련)",1],["배송 지연",1]]},
+     {n:"프로즌랩",o:265,t:77,p:43,g:[["입금 전 취소 (사유 미기재)",34,"var(--c-gold)"],["단순 변심",40,"var(--c-fg)"],["오주문",3,"var(--c-red)"]],d:[["단순 변심",40],["오주문",3]]},
+     {n:"파미코젠",o:443,t:42,p:26,g:[["입금 전 취소 (사유 미기재)",16,"var(--c-gold)"],["재주문",1,"var(--c-blue)"],["단순 변심",23,"var(--c-fg)"],["오주문",2,"var(--c-red)"]],d:[["단순 변심",22],["오주문",2],["재주문",1],["단순 변심 (나이아신 부작용)",1]]},
+     {n:"메디그로우",o:54,t:6,p:1,g:[["입금 전 취소 (사유 미기재)",5,"var(--c-gold)"],["단순 변심",1,"var(--c-fg)"]],d:[["고객 변심",1]]}
     ]},
   ret:{total:56,ret:51,exc:5,
     brands:[['테라퓨젠',43],['덴티플라',7],['파미코젠',4],['메디그로우',1],['프로즌랩',1]],
@@ -3144,7 +3146,7 @@ function _cssRows(a,tot){return a.map(function(x){return '<div class="csd-row"><
 function _cssDrows(a,tot){return a.map(function(x){return '<div class="csd-row"><span>'+x[0]+'</span><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');}
 var _cssBrandCol={'테라퓨젠':'#2b7de0','프로즌랩':'#f4808f','덴티플라':'#7ec8f0','파미코젠':'#b79cf0','메디그로우':'#f6d36b'};
 var _cssPal=['#14a58a','var(--c-blue)','var(--c-gold)','var(--c-red)','var(--c-dim)'];
-function _cssDonut(items,total,unit,mode){
+function _cssDonut(items,total,unit,mode,sub){
   var R=46,C=2*Math.PI*R,acc=0,seg='';
   items.forEach(function(x){
     if(!x[1])return;
@@ -3153,7 +3155,8 @@ function _cssDonut(items,total,unit,mode){
     acc+=len;
   });
   var svg='<svg class="csd-donut-svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="var(--c-line)" stroke-width="16"/>'+seg
-    +'<text class="csd-dc" x="60" y="67" text-anchor="middle" font-size="22" font-weight="900" fill="var(--c-fg)">'+total+'<tspan font-size="10" font-weight="500" fill="var(--c-mut)" dx="2">'+unit+'</tspan></text></svg>';
+    +'<text class="csd-dc" x="60" y="'+(sub?60:67)+'" text-anchor="middle" font-size="22" font-weight="900" fill="var(--c-fg)">'+total+'<tspan font-size="10" font-weight="500" fill="var(--c-mut)" dx="2">'+unit+'</tspan></text>'
+    +(sub?'<text class="csd-dc2" x="60" y="77" text-anchor="middle" font-size="7.5" font-weight="600" fill="var(--c-mut)">'+sub+'</text>':'')+'</svg>';
   if(mode==='svg')return svg;
   var live=items.filter(function(x){return x[1]>0});
   if(mode==='top')return '<div class="csd-donut csd-donut-top"><div class="csd-line">'+live.map(function(x){return '<span><s style="background:'+x[2]+'"></s>'+x[0]+' <b>'+x[1]+'</b><small>'+Math.round(x[1]/total*100)+'%</small></span>'}).join('')+'</div>'+svg+'</div>';
@@ -3189,15 +3192,16 @@ function _cssShow(name){
   var b=name?c.byBrand.filter(function(x){return x.n===name})[0]:null;
   if(rs)rs.innerHTML='<div class="csd-ch">'+(b?b.n+' 사유별':'사유별')+'</div>'+(b?_cssRows(b.g,b.t):_cssRows(c.reasons,c.total));
   if(b){
-    box.innerHTML='<div class="csd-dh">'+b.n+' 취소 사유 <small>'+b.p+'건</small></div>'+_cssTopBars(b.d,b.p,_cssBrandCol[b.n]);
+    box.innerHTML='<div class="csd-dh">'+b.n+' 취소 사유 <small>'+b.p+'건</small></div><div class="csd-rate">총 주문 '+_cssN(b.o)+'건 중 취소 '+b.t+'건 · 취소율 <b>'+_cssPct(b.t,b.o)+'</b></div>'+_cssTopBars(b.d,b.p,_cssBrandCol[b.n]);
   }else{
     var m={};c.byBrand.forEach(function(x){x.d.forEach(function(r){m[r[0]]=(m[r[0]]||0)+r[1];});});
     var all=Object.keys(m).map(function(k){return [k,m[k]]}).sort(function(p,q){return q[1]-p[1]});
-    box.innerHTML='<div class="csd-dh">취소 사유 <small>'+c.paid+'건</small></div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
+    box.innerHTML='<div class="csd-dh">취소 사유 <small>'+c.paid+'건</small></div><div class="csd-rate">총 주문 '+_cssN(c.orders)+'건 중 취소 '+c.total+'건 · 취소율 <b>'+_cssPct(c.total,c.orders)+'</b></div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
       +'<div class="csd-hint">그래프나 브랜드를 누르면 브랜드별로 바뀝니다.</div>';
   }
   var tv=b?b.t:c.total,dc=document.querySelector('#csd-vp .csd-dc'),tn=document.getElementById('csd-tot-n');
   if(dc&&dc.firstChild)dc.firstChild.nodeValue=tv;
+  var dc2=document.querySelector('#csd-vp .csd-dc2');if(dc2)dc2.textContent='취소율 '+_cssPct(tv,b?b.o:c.orders);
   if(tn)tn.textContent=tv;
   document.querySelectorAll('#csd-vp .csd-seg').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-l')!==name);});
   document.querySelectorAll('#csd-vp [data-pick]').forEach(function(g){g.classList.toggle('sel',g.getAttribute('data-pick')===name);});
@@ -3223,6 +3227,8 @@ function _cssShowR(name){
   document.querySelectorAll('#csd-vp .csd-vb').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-pickr')!==name);});
 }
 function _cssPickR(name){window._cssSelR=(window._cssSelR===name)?null:name;_cssShowR(window._cssSelR);}
+function _cssPct(a,b){return b?(a/b*100).toFixed(1)+'%':'-';}
+function _cssN(n){return Number(n).toLocaleString('ko-KR');}
 var _cssIdx=0,_cssBusy=false;
 function _cssGo(n){
   var vp=document.getElementById('csd-vp');if(!vp)return;
@@ -3275,12 +3281,12 @@ function cssUpdate(){
   S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><div class="csd-meta">데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
   +'</div>'
-  +'<p class="csd-sub">주문취소 <b style="color:var(--c-fg)">'+c.total+'건</b>(입금 전 '+c.dep+'건 · 결제 후 '+c.paid+'건), 반품 <b style="color:var(--c-red)">'+r.ret+'건</b>, 교환 <b style="color:var(--c-blue)">'+r.exc+'건</b><br>결제 후 취소 사유의 '+c.pRe+'%는 재주문(재결제), '+c.pSim+'% 단순 변심.<br>반품 <b style="color:var(--c-fg)">1위</b>: 헬리코컷 19건</p>'
+  +'<p class="csd-sub">주문취소 <b style="color:var(--c-fg)">'+c.total+'건</b>(입금 전 '+c.dep+'건 · 결제 후 '+c.paid+'건), 반품 <b style="color:var(--c-red)">'+r.ret+'건</b>, 교환 <b style="color:var(--c-blue)">'+r.exc+'건</b><br>총 주문 '+_cssN(c.orders)+'건 기준 취소율 <b style="color:var(--c-fg)">'+_cssPct(c.total,c.orders)+'</b>(쿠팡·EMS·CJ온스타일 제외)<br>결제 후 취소 사유의 '+c.pRe+'%는 재주문(재결제), '+c.pSim+'% 단순 변심.<br>반품 <b style="color:var(--c-fg)">1위</b>: 헬리코컷 19건</p>'
   +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디그로우 · 셀로핏 · 파미코젠</b></div></div></div>');
   var live=c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssBrandCol[x[0]]||_cssPal[i]]});
   window._cssCur=c;window._cssSel=null;
   S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div></div>'
-  +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg')+'<div class="csd-rs" id="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
+  +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg','취소율 '+_cssPct(c.total,c.orders))+'<div class="csd-rs" id="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
   +'<div class="csd-card" id="csd-detail"></div></div>'
   +'<p class="csd-note">'+c.note+'</p></div>');
   var rmax=Math.max.apply(null,r.byBrand.map(function(x){return x.t}))||1;
