@@ -3101,7 +3101,7 @@ function _cssBars(a){var mx=Math.max.apply(null,a.map(function(x){return x[1]}))
   return a.map(function(x){return '<div class="csd-bar"><i>'+x[0]+'</i><div><u style="width:'+(x[1]/mx*100)+'%"></u></div><em>'+x[1]+'</em></div>'}).join('');}
 function _cssRows(a,tot){return a.map(function(x){return '<div class="csd-row"><s style="background:'+x[2]+'"></s><span>'+x[0]+'</span><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');}
 function _cssDrows(a,tot){return a.map(function(x){return '<div class="csd-row"><span>'+x[0]+'</span><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');}
-var _cssBrandCol={'테라퓨젠':'#6f84d9','프로즌랩':'#f4808f','덴티플라':'#7ec8f0','파미코젠':'#b79cf0','메디그로우':'#f6d36b'};
+var _cssBrandCol={'테라퓨젠':'#2b7de0','프로즌랩':'#f4808f','덴티플라':'#7ec8f0','파미코젠':'#b79cf0','메디그로우':'#f6d36b'};
 var _cssPal=['#14a58a','var(--c-blue)','var(--c-gold)','var(--c-red)','var(--c-dim)'];
 function _cssDonut(items,total,unit,mode){
   var R=46,C=2*Math.PI*R,acc=0,seg='';
@@ -3121,7 +3121,7 @@ function _cssDonut(items,total,unit,mode){
 }
 function _cssTopRows(a,tot){
   var top=a.slice(0,5),rest=a.slice(5).reduce(function(n,x){return n+x[1]},0);
-  if(rest)top.push(['그 외 '+(a.length-5)+'개 사유',rest]);
+  if(rest)top.push(['전체 사유',rest]);
   return _cssDrows(top,tot);
 }
 if(!window._cssTip){window._cssTip=1;
@@ -3142,7 +3142,7 @@ function _cssBarRows(a,tot,col){
 }
 function _cssTopBars(a,tot,col){
   var top=a.slice(0,5),rest=a.slice(5).reduce(function(n,x){return n+x[1]},0);
-  if(rest)top.push(['그 외 '+(a.length-5)+'개 사유',rest]);
+  if(rest)top.push(['전체 사유',rest]);
   return _cssBarRows(top,tot,col);
 }
 function _cssLine(items,total){
@@ -3157,7 +3157,7 @@ function _cssShow(name){
   }else{
     var m={};c.byBrand.forEach(function(x){x.d.forEach(function(r){m[r[0]]=(m[r[0]]||0)+r[1];});});
     var all=Object.keys(m).map(function(k){return [k,m[k]]}).sort(function(p,q){return q[1]-p[1]});
-    box.innerHTML='<div class="csd-dh">전체 결제 후 취소 사유 <small>'+c.paid+'건</small></div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
+    box.innerHTML='<div class="csd-dh">취소 사유 <small>'+c.paid+'건</small></div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
       +'<div class="csd-hint">그래프나 브랜드를 누르면 브랜드별로 바뀝니다.</div>';
   }
   document.querySelectorAll('#csd-vp .csd-seg').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-l')!==name);});
