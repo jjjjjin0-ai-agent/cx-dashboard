@@ -170,6 +170,12 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-row b{font-variant-numeric:tabular-nums}
 .csd-row small{font-size:10px;color:var(--c-mut);margin-left:4px}
 .csd-note{font-size:12px;color:var(--c-mut);line-height:1.7;padding:12px 16px;background:var(--c-sf);border-left:2px solid var(--c-dim);border-radius:0 8px 8px 0;margin:14px 0 0}
+.csd-vp{position:relative;height:calc(100vh - 140px);min-height:520px;overflow:hidden;border-radius:16px;background:#080808}
+.csd-vp .csd-slide{position:absolute;inset:0;border-radius:0;overflow-y:auto;transition:transform .65s cubic-bezier(.77,0,.18,1)}
+.csd-vp .csd-cover{min-height:0}
+.csd-dots{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:9px;z-index:5}
+.csd-dot{width:6px;height:6px;border-radius:50%;background:rgba(128,128,128,.45);cursor:pointer;display:block;transition:transform .25s,background .25s}
+.csd-dot.on{background:#888;transform:scale(1.6)}
 .csd-empty{color:var(--muted);font-size:14px;text-align:center;margin-top:60px}
 
 section h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.02em;line-height:1.45}#sc-section-title{margin-bottom:8px;font-size:16px}
@@ -3029,9 +3035,19 @@ function _cssPopWeek(){
 }
 
 var _CSS_DATA={'2026-10':{
-  cancel:{total:406,brands:[['테라퓨젠',311],['프로즌랩',42],['덴티플라',27],['파미코젠',25],['메디글로우',1],['셀로핏',0]],
-    reasons:[['재주문 관련 재결제',199,'var(--c-blue)'],['단순 변심',173,'var(--c-fg)'],['오주문',32,'var(--c-red)'],['기타 (배송 지연·내부 테스트)',2,'var(--c-dim)']],
-    note:'재주문 재결제 취소 187건(테라퓨젠)은 동일 주문자가 쿠폰 미적용·결제수단 변경 등을 이유로 이전 주문 취소 후 재결제한 건으로, 순수 이탈로 보기 어려우나 취소율 지표에 영향.'},
+  cancel:{total:408,
+    brands:[['테라퓨젠',311],['프로즌랩',43],['덴티플라',27],['파미코젠',26],['메디글로우',1],['셀로핏',0]],
+    reasons:[['재주문 관련 재결제',199,'var(--c-blue)'],['단순 변심',175,'var(--c-fg)'],['오주문',32,'var(--c-red)'],['기타 (배송 지연·내부 테스트)',2,'var(--c-dim)']],
+    note:'재주문 재결제 취소 187건(테라퓨젠)은 동일 주문자가 쿠폰 미적용·결제수단 변경 등을 이유로 이전 주문 취소 후 재결제한 건으로, 순수 이탈로 보기 어려우나 취소율 지표에 영향.',
+    byBrand:[
+     {n:'테라퓨젠',t:311,g:[['재주문 관련 재결제',187,'var(--c-blue)'],['단순 변심',101,'var(--c-fg)'],['오주문',22,'var(--c-red)'],['기타 (배송 지연)',1,'var(--c-dim)']],
+      d:[['재주문',107],['단순 변심',96],['재주문 (할인 링크에서 구매)',19],['오주문',18],['재주문 (결제 수단 변경)',18],['재주문 (쿠폰 미적용)',13],['재주문 (다른 상품 함께 구매)',12],['재주문 (수량 변경)',11],['재주문 (배송지 오기재)',3],['단순 변심 (타사 가격 저렴)',3],['재주문 (할인 쿠폰 적용)',2],['오주문 (결제 오류)',2],['오주문 (다른 상품 잘못 구매)',2],['단순 변심 (가격 비쌈)',2],['재주문 (배송지 오입력)',1],['재결제',1],['배송 지연',1]]},
+     {n:'프로즌랩',t:43,g:[['단순 변심',40,'var(--c-fg)'],['오주문',3,'var(--c-red)']],d:[['단순 변심',40],['오주문',3]]},
+     {n:'덴티플라',t:27,g:[['재주문 관련 재결제',11,'var(--c-blue)'],['단순 변심',10,'var(--c-fg)'],['오주문',5,'var(--c-red)'],['기타 (내부 테스트)',1,'var(--c-dim)']],
+      d:[['단순 변심',9],['오주문',5],['재주문 (배송지 오기재)',4],['재주문',3],['재주문 (결제 수단 변경)',2],['재주문 (수량 변경)',1],['재주문 (쿠폰 미적용)',1],['단순 변심 (성분 관련)',1],['내부 테스트',1]]},
+     {n:'파미코젠',t:26,g:[['단순 변심',23,'var(--c-fg)'],['오주문',2,'var(--c-red)'],['재주문 관련 재결제',1,'var(--c-blue)']],d:[['단순 변심',22],['오주문',2],['재주문',1],['단순 변심 (나이아신 부작용)',1]]},
+     {n:'메디글로우',t:1,g:[['단순 변심',1,'var(--c-fg)']],d:[['고객 변심',1]]}
+    ]},
   ret:{total:56,ret:51,exc:5,brands:[['테라퓨젠',43],['덴티플라',7],['파미코젠',4],['메디글로우',1],['프로즌랩',1]],
     products:[['헬리코컷','테라퓨젠',19],['콜레스컷','테라퓨젠',13],['구강케어정','덴티플라',6],['조인트본','테라퓨젠',5],['콜리젠 · 오메가3','테라퓨젠',3]],
     platforms:[['자사몰',31,'var(--c-fg)'],['쿠팡',12,'var(--c-blue)'],['옥션',3,'var(--c-gold)'],['G마켓',2,'var(--c-dim)'],['기타/미상',8,'var(--c-dim)']],
@@ -3041,28 +3057,78 @@ var _CSS_DATA={'2026-10':{
 function _cssBars(a){var mx=Math.max.apply(null,a.map(function(x){return x[1]}))||1;
   return a.map(function(x){return '<div class="csd-bar"><i>'+x[0]+'</i><div><u style="width:'+(x[1]/mx*100)+'%"></u></div><em>'+x[1]+'</em></div>'}).join('');}
 function _cssRows(a,tot){return a.map(function(x){return '<div class="csd-row"><s style="background:'+x[2]+'"></s><span>'+x[0]+'</span><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');}
+function _cssDrows(a,tot){return a.map(function(x){return '<div class="csd-row"><span>'+x[0]+'</span><b>'+x[1]+'</b><small>'+Math.round(x[1]/tot*100)+'%</small></div>'}).join('');}
+var _cssIdx=0,_cssBusy=false;
+function _cssGo(n){
+  var vp=document.getElementById('csd-vp');if(!vp)return;
+  var sl=vp.querySelectorAll('.csd-slide');
+  if(n<0||n>=sl.length)return;
+  _cssIdx=n;
+  sl.forEach(function(s,k){s.style.transform='translateY('+((k-n)*100)+'%)';});
+  vp.querySelectorAll('.csd-dot').forEach(function(d,k){d.classList.toggle('on',k===n);});
+}
+function _cssStep(dir){
+  if(_cssBusy)return false;
+  var vp=document.getElementById('csd-vp');if(!vp)return false;
+  var n=_cssIdx+dir,len=vp.querySelectorAll('.csd-slide').length;
+  if(n<0||n>=len)return false;
+  _cssBusy=true;_cssGo(n);setTimeout(function(){_cssBusy=false;},750);return true;
+}
+function _cssBind(vp){
+  vp.addEventListener('wheel',function(e){
+    var s=vp.querySelectorAll('.csd-slide')[_cssIdx];
+    var dir=e.deltaY>0?1:-1;
+    if(s&&s.scrollHeight>s.clientHeight+2){
+      var atEnd=s.scrollTop+s.clientHeight>=s.scrollHeight-2,atTop=s.scrollTop<=0;
+      if((dir>0&&!atEnd)||(dir<0&&!atTop))return;
+    }
+    var n=_cssIdx+dir,len=vp.querySelectorAll('.csd-slide').length;
+    if(n<0||n>=len)return;
+    e.preventDefault();
+    if(Math.abs(e.deltaY)>8)_cssStep(dir);
+  },{passive:false});
+  var y0=null;
+  vp.addEventListener('touchstart',function(e){y0=e.touches[0].clientY;},{passive:true});
+  vp.addEventListener('touchend',function(e){if(y0===null)return;var dy=y0-e.changedTouches[0].clientY;y0=null;if(Math.abs(dy)>50)_cssStep(dy>0?1:-1);},{passive:true});
+  vp.querySelectorAll('.csd-dot').forEach(function(d,k){d.addEventListener('click',function(){_cssGo(k);});});
+}
+if(!window._cssKey){window._cssKey=1;document.addEventListener('keydown',function(e){
+  var vp=document.getElementById('csd-vp');if(!vp||vp.offsetParent===null)return;
+  var t=e.target&&e.target.tagName;if(t==='SELECT'||t==='INPUT'||t==='TEXTAREA')return;
+  if(e.key==='ArrowDown'||e.key==='PageDown'){if(_cssStep(1))e.preventDefault();}
+  else if(e.key==='ArrowUp'||e.key==='PageUp'){if(_cssStep(-1))e.preventDefault();}
+});}
 function cssUpdate(){
   var box=document.getElementById('css-content');if(!box)return;
   var y=document.getElementById('css-year').value,m=+document.getElementById('css-month').value,w=document.getElementById('css-week').value;
   var d=_CSS_DATA[y+'-'+m];
   if(!d||w!=='total'){box.innerHTML='<div class="csd-empty">'+(d?'주차별 데이터는 준비 중입니다. “한달 통합”을 선택해 주세요.':'해당 기간의 CS SUMMARY 데이터가 없습니다.')+'</div>';return;}
-  var c=d.cancel,r=d.ret;
-  box.innerHTML='<div class="csd">'
-  +'<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><span>'+y+'.'+String(m).padStart(2,'0')+'</span></div>'
+  var c=d.cancel,r=d.ret,mm=String(m).padStart(2,'0'),tones=['csd-lt','csd-tint'],ti=0;
+  var S=[];
+  S.push('<div class="csd-slide csd-cover"><div class="csd-top"><span>브랜드팀</span><span>'+y+'.'+mm+'</span></div>'
   +'<div class="csd-body"><h1>'+y+'년 '+m+'월,<br><span class="inv">월간 CS Summary</span></h1>'
   +'<p class="csd-sub">주문 취소 '+c.total+'건, 반품 '+r.ret+'건, 교환 '+r.exc+'건 접수.<br>취소 사유의 49%는 재주문 재결제, 43%는 단순 변심.<br>반품 1위: 헬리코컷 19건.</p>'
   +'<div class="csd-kpis"><div class="csd-kpi"><b>'+c.total+'</b><span>주문 취소</span></div><div class="csd-kpi"><b style="color:var(--c-blue)">'+r.ret+'</b><span>반품</span></div><div class="csd-kpi"><b style="color:var(--c-red)">'+r.exc+'</b><span>교환</span></div></div></div>'
-  +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디글로우 · 셀로핏 · 파미코젠</b></div><div>데이터 범위<b>'+y+'.'+String(m).padStart(2,'0')+'.01 ~ '+String(m).padStart(2,'0')+'.31</b></div></div></div>'
-  +'<div class="csd-slide csd-lt"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
+  +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디글로우 · 셀로핏 · 파미코젠</b></div><div>데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div></div>');
+  S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
   +'<div class="csd-grid"><div class="csd-card"><div class="csd-ch">브랜드별</div>'+_cssBars(c.brands)+'</div><div class="csd-card"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div>'
-  +'<p class="csd-note">'+c.note+'</p></div>'
-  +'<div class="csd-slide csd-tint"><div class="csd-head"><div><div class="csd-eb">02 · 반품·교환</div><h2>반품·교환</h2></div><div class="csd-tot"><b style="color:var(--c-blue)">'+r.ret+'</b><span>건 반품</span><b style="color:var(--c-red);margin-left:22px">'+r.exc+'</b><span>건 교환</span></div></div>'
+  +'<p class="csd-note">'+c.note+'</p></div>');
+  c.byBrand.forEach(function(b,i){
+    S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">01-'+(i+1)+' · 브랜드별 취소 상세</div><h2>'+b.n+'</h2></div><div class="csd-tot"><b>'+b.t+'</b><span>건</span></div></div>'
+    +'<div class="csd-grid"><div class="csd-card"><div class="csd-ch">사유 유형별</div>'+_cssRows(b.g,b.t)+'</div><div class="csd-card"><div class="csd-ch">세부 사유</div>'+_cssDrows(b.d,b.t)+'</div></div></div>');
+  });
+  S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">02 · 반품·교환</div><h2>반품·교환</h2></div><div class="csd-tot"><b style="color:var(--c-blue)">'+r.ret+'</b><span>건 반품</span><b style="color:var(--c-red);margin-left:22px">'+r.exc+'</b><span>건 교환</span></div></div>'
   +'<div class="csd-grid"><div class="csd-card"><div class="csd-ch">브랜드별</div>'+_cssBars(r.brands)+'</div>'
   +'<div class="csd-card"><div class="csd-ch">제품별 상위</div>'+r.products.map(function(p,i){return '<div class="csd-row"><small style="margin:0;width:14px">0'+(i+1)+'</small><span><b>'+p[0]+'</b><small>'+p[1]+'</small></span><b>'+p[2]+'건</b></div>'}).join('')+'</div>'
   +'<div class="csd-card"><div class="csd-ch">플랫폼별</div>'+_cssRows(r.platforms,r.total)+'</div>'
   +'<div class="csd-card"><div class="csd-ch">사유별</div>'+_cssRows(r.reasons,r.total)+'</div></div>'
-  +'<p class="csd-note">'+r.note+'</p></div></div>';
+  +'<p class="csd-note">'+r.note+'</p></div>');
+  var dots=S.map(function(_,k){return '<i class="csd-dot'+(k?'':' on')+'"></i>'}).join('');
+  box.innerHTML='<div class="csd"><div class="csd-vp" id="csd-vp">'+S.join('')+'<div class="csd-dots">'+dots+'</div></div></div>';
+  _cssIdx=0;_cssBusy=false;
+  var vp=document.getElementById('csd-vp');_cssGo(0);_cssBind(vp);
 }
+
 cssUpdate();
 
 /* ===== 날짜 세그먼트 & 자동 초기화 ===== */
