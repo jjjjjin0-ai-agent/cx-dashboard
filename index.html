@@ -189,7 +189,21 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .csd-fill .csd-note{margin-top:16px}
 .csd-donut-top{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:34px}
 .csd-donut-top .csd-donut-svg{width:clamp(260px,30vw,400px);margin-left:6px}
-.csd-line{display:flex;flex-wrap:wrap;gap:10px 30px;font-size:17px}
+.csd-line{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 18px;font-size:17px}
+.csd-line span{cursor:pointer;padding:5px 12px;border-radius:999px;transition:background .15s}
+.csd-line span.sel{background:var(--c-line)}
+.csd-seg.dim{opacity:.38}
+.csd-seg.dim:hover{opacity:.7}
+.csd-g01{grid-template-columns:1.5fr 1fr}
+.csd-main{justify-content:flex-start}
+.csd-mid{flex:1;display:flex;align-items:center;gap:40px}
+.csd-mid .csd-donut-svg{width:clamp(240px,24vw,340px);margin-left:6px}
+.csd-rs{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+#csd-detail{justify-content:flex-start;gap:8px}
+#csd-detail .csd-row{padding:7px 0;font-size:16px}
+.csd-dh{font-size:28px;font-weight:900;letter-spacing:-.02em}
+.csd-dh small{font-size:18px;font-weight:500;color:var(--c-mut);margin-left:6px}
+@media(max-width:900px){.csd-g01{grid-template-columns:1fr}.csd-mid{flex-wrap:wrap}}
 .csd-line span{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
 .csd-line s{width:9px;height:9px;border-radius:50%;flex:none}
 .csd-line b{font-variant-numeric:tabular-nums}
@@ -3092,6 +3106,7 @@ function _cssDonut(items,total,unit,mode){
   var svg='<svg class="csd-donut-svg" viewBox="0 0 120 120"><circle cx="60" cy="60" r="'+R+'" fill="none" stroke="var(--c-line)" stroke-width="16"/>'+seg
     +'<text x="60" y="58" text-anchor="middle" font-size="22" font-weight="900" fill="var(--c-fg)">'+total+'</text>'
     +'<text x="60" y="74" text-anchor="middle" font-size="9" fill="var(--c-mut)">'+unit+'</text></svg>';
+  if(mode==='svg')return svg;
   var live=items.filter(function(x){return x[1]>0});
   if(mode==='top')return '<div class="csd-donut csd-donut-top"><div class="csd-line">'+live.map(function(x){return '<span><s style="background:'+x[2]+'"></s>'+x[0]+' <b>'+x[1]+'</b><small>'+Math.round(x[1]/total*100)+'%</small></span>'}).join('')+'</div>'+svg+'</div>';
   return '<div class="csd-donut">'+svg+'<div class="csd-legend">'+_cssRows(live,total)+'</div></div>';
@@ -3113,6 +3128,22 @@ if(!window._cssTip){window._cssTip=1;
     _t.style.left=x+'px';_t.style.top=y+'px';
   });
 }
+function _cssLine(items,total){
+  return '<div class="csd-line">'+items.map(function(x){return '<span data-pick="'+x[0]+'"><s style="background:'+x[2]+'"></s>'+x[0]+' <b>'+x[1]+'</b><small>'+Math.round(x[1]/total*100)+'%</small></span>'}).join('')+'</div>';
+}
+function _cssPick(name){
+  var c=window._cssCur,box=document.getElementById('csd-detail');if(!c||!box)return;
+  var b=c.byBrand.filter(function(x){return x.n===name})[0];if(!b)return;
+  box.innerHTML='<div class="csd-dh">'+b.n+' <small>'+b.t+'건</small></div>'
+    +'<div class="csd-ch">사유 유형별</div>'+_cssRows(b.g,b.t)
+    +'<div class="csd-ch" style="margin-top:8px">결제 후 취소 주요 사유 ('+b.p+'건)</div>'+_cssTopRows(b.d,b.p);
+  document.querySelectorAll('#csd-vp .csd-seg').forEach(function(g){g.classList.toggle('dim',g.getAttribute('data-l')!==name);});
+  document.querySelectorAll('#csd-vp [data-pick]').forEach(function(g){g.classList.toggle('sel',g.getAttribute('data-pick')===name);});
+}
+if(!window._cssClk){window._cssClk=1;document.addEventListener('click',function(e){
+  var t=e.target&&e.target.closest?e.target.closest('.csd-seg,[data-pick]'):null;if(!t)return;
+  _cssPick(t.getAttribute('data-pick')||t.getAttribute('data-l'));
+});}
 var _cssIdx=0,_cssBusy=false;
 function _cssGo(n){
   var vp=document.getElementById('csd-vp');if(!vp)return;
@@ -3165,13 +3196,12 @@ function cssUpdate(){
   +'</div>'
   +'<p class="csd-sub">주문취소 <b style="color:var(--c-fg)">'+c.total+'건</b>(입금 전 '+c.dep+'건 · 결제 후 '+c.paid+'건), 반품 <b style="color:var(--c-red)">'+r.ret+'건</b>, 교환 <b style="color:var(--c-blue)">'+r.exc+'건</b><br>결제 후 취소 사유의 49%는 재주문(재결제), 43% 단순 변심.<br>반품 <b style="color:var(--c-fg)">1위</b>: 헬리코컷 19건</p>'
   +'<div class="csd-bot"><div>대상 브랜드<b>테라퓨젠 · 프로즌랩 · 덴티플라 · 메디글로우 · 셀로핏 · 파미코젠</b></div><div>데이터 범위<b>'+y+'.'+mm+'.01 ~ '+mm+'.31</b></div></div></div>');
+  var live=c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssPal[i]]});
+  window._cssCur=c;
   S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
-  +'<div class="csd-grid"><div class="csd-card">'+_cssDonut(c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssPal[i]]}),c.total,'건','top')+'</div><div class="csd-card"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div>'
+  +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg')+'<div class="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
+  +'<div class="csd-card" id="csd-detail"></div></div>'
   +'<p class="csd-note">'+c.note+'</p></div>');
-  c.byBrand.forEach(function(b,i){
-    S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">01-'+(i+1)+' · 브랜드별 취소 상세</div><h2>'+b.n+'</h2></div><div class="csd-tot"><b>'+b.t+'</b><span>건</span></div></div>'
-    +'<div class="csd-grid"><div class="csd-card"><div class="csd-ch">사유 유형별</div>'+_cssDonut(b.g,b.t,'건')+'</div><div class="csd-card"><div class="csd-ch">결제 후 취소 주요 사유 ('+b.p+'건)</div>'+_cssTopRows(b.d,b.p)+'</div></div></div>');
-  });
   S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">02 · 반품·교환</div><h2>반품·교환</h2></div><div class="csd-tot"><b style="color:var(--c-blue)">'+r.ret+'</b><span>건 반품</span><b style="color:var(--c-red);margin-left:22px">'+r.exc+'</b><span>건 교환</span></div></div>'
   +'<div class="csd-grid"><div class="csd-card"><div class="csd-ch">브랜드별</div>'+_cssBars(r.brands)+'</div>'
   +'<div class="csd-card"><div class="csd-ch">제품별 상위</div>'+r.products.map(function(p,i){return '<div class="csd-row"><small style="margin:0;width:14px">0'+(i+1)+'</small><span><b>'+p[0]+'</b><small>'+p[1]+'</small></span><b>'+p[2]+'건</b></div>'}).join('')+'</div>'
@@ -3181,7 +3211,7 @@ function cssUpdate(){
   var dots=S.map(function(_,k){return '<i class="csd-dot'+(k?'':' on')+'"></i>'}).join('');
   box.innerHTML='<div class="csd"><div class="csd-vp" id="csd-vp">'+S.join('')+'<div class="csd-dots">'+dots+'</div></div></div>';
   _cssIdx=0;_cssBusy=false;
-  var vp=document.getElementById('csd-vp');_cssGo(0);_cssBind(vp);
+  var vp=document.getElementById('csd-vp');_cssGo(0);_cssBind(vp);_cssPick(c.byBrand[0].n);
 }
 
 cssUpdate();
