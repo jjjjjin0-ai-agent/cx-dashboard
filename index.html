@@ -3149,19 +3149,16 @@ function _cssLine(items,total){
   return '<div class="csd-line">'+items.map(function(x){return '<span data-pick="'+x[0]+'"><s style="background:'+x[2]+'"></s>'+x[0]+' <b>'+x[1]+'</b><small>'+Math.round(x[1]/total*100)+'%</small></span>'}).join('')+'</div>';
 }
 function _cssShow(name){
-  var c=window._cssCur,box=document.getElementById('csd-detail');if(!c||!box)return;
+  var c=window._cssCur,box=document.getElementById('csd-detail'),rs=document.getElementById('csd-rs');if(!c||!box)return;
   var b=name?c.byBrand.filter(function(x){return x.n===name})[0]:null;
+  if(rs)rs.innerHTML='<div class="csd-ch">'+(b?b.n+' 사유별':'사유별')+'</div>'+(b?_cssRows(b.g,b.t):_cssRows(c.reasons,c.total));
   if(b){
-    box.innerHTML='<div class="csd-dh">'+b.n+' <small>'+b.t+'건</small></div>'
-      +'<div class="csd-ch">사유 유형별</div>'+_cssBarRows(b.g,b.t)
-      +'<div class="csd-ch" style="margin-top:8px">결제 후 취소 주요 사유 ('+b.p+'건)</div>'+_cssTopBars(b.d,b.p,_cssBrandCol[b.n]);
+    box.innerHTML='<div class="csd-dh">'+b.n+' 결제 후 취소 사유 <small>'+b.p+'건</small></div>'+_cssTopBars(b.d,b.p,_cssBrandCol[b.n]);
   }else{
     var m={};c.byBrand.forEach(function(x){x.d.forEach(function(r){m[r[0]]=(m[r[0]]||0)+r[1];});});
     var all=Object.keys(m).map(function(k){return [k,m[k]]}).sort(function(p,q){return q[1]-p[1]});
-    box.innerHTML='<div class="csd-dh">전체 <small>'+c.total+'건</small></div>'
-      +'<div class="csd-ch">취소 시점별</div>'+_cssBarRows([['입금 전 취소 (사유 미기재)',c.dep,'var(--c-gold)'],['결제 후 취소',c.paid,'var(--c-fg)']],c.total)
-      +'<div class="csd-ch" style="margin-top:8px">결제 후 취소 주요 사유 ('+c.paid+'건)</div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
-      +'<div class="csd-hint">그래프나 브랜드를 누르면 브랜드별 상세가 표시됩니다.</div>';
+    box.innerHTML='<div class="csd-dh">전체 결제 후 취소 사유 <small>'+c.paid+'건</small></div>'+_cssTopBars(all,c.paid,'var(--c-fg)')
+      +'<div class="csd-hint">그래프나 브랜드를 누르면 브랜드별로 바뀝니다.</div>';
   }
   document.querySelectorAll('#csd-vp .csd-seg').forEach(function(g){g.classList.toggle('dim',!!name&&g.getAttribute('data-l')!==name);});
   document.querySelectorAll('#csd-vp [data-pick]').forEach(function(g){g.classList.toggle('sel',g.getAttribute('data-pick')===name);});
@@ -3229,7 +3226,7 @@ function cssUpdate(){
   var live=c.brands.filter(function(x){return x[1]>0}).map(function(x,i){return [x[0],x[1],_cssBrandCol[x[0]]||_cssPal[i]]});
   window._cssCur=c;window._cssSel=null;
   S.push('<div class="csd-slide '+tones[ti++%2]+' csd-fill"><div class="csd-head"><div><div class="csd-eb">01 · 취소 현황</div><h2>브랜드별 주문 취소</h2></div><div class="csd-tot"><b>'+c.total+'</b><span>건</span></div></div>'
-  +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg')+'<div class="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
+  +'<div class="csd-grid csd-g01"><div class="csd-card csd-main">'+_cssLine(live,c.total)+'<div class="csd-mid">'+_cssDonut(live,c.total,'건','svg')+'<div class="csd-rs" id="csd-rs"><div class="csd-ch">사유별</div>'+_cssRows(c.reasons,c.total)+'</div></div></div>'
   +'<div class="csd-card" id="csd-detail"></div></div>'
   +'<p class="csd-note">'+c.note+'</p></div>');
   S.push('<div class="csd-slide '+tones[ti++%2]+'"><div class="csd-head"><div><div class="csd-eb">02 · 반품·교환</div><h2>반품·교환</h2></div><div class="csd-tot"><b style="color:var(--c-blue)">'+r.ret+'</b><span>건 반품</span><b style="color:var(--c-red);margin-left:22px">'+r.exc+'</b><span>건 교환</span></div></div>'
