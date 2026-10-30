@@ -214,17 +214,25 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .css-btn:hover{background:var(--surface-2)}
 .csd-print{font:inherit;font-size:15px;font-weight:600;color:var(--c-fg);background:transparent;border:1px solid rgba(255,255,255,.38);border-radius:999px;padding:9px 18px;cursor:pointer;transition:background .15s}
 .csd-print:hover{background:rgba(255,255,255,.12)}
-@page{size:A4 landscape;margin:8mm}
+@page{size:A4 landscape;margin:0}
+#csd-print-root{display:none}
+.csd-ppi{display:block;background:#fff}
+.csd-ppi .csd-slide{border-radius:0;overflow:hidden;padding:30px 40px;transform:none}
+.csd-ppi .csd-card{overflow:visible!important;min-height:0;padding:16px 20px}
+.csd-ppi #csd-detail,.csd-ppi .csd-g02 .csd-card{overflow:visible!important}
+.csd-ppi .csd-grid{min-height:0}
+.csd-ppi .csd-head{padding-bottom:14px;margin-bottom:14px}
+.csd-ppi .csd-note{font-size:13px;padding:8px 14px;margin-top:12px}
+.csd-ppi .csd-br{padding:2px 0;font-size:14px}
+.csd-ppi #csd-detail .csd-br{padding:1px 0;font-size:13px}
+.csd-ppi .csd-row{padding:5px 0;font-size:14px}
+.csd-ppi .csd-dots,.csd-ppi .csd-print{display:none}
 @media print{
-  body.csd-printing .side,body.csd-printing .main>.head,body.csd-printing #cs-summary-view>div:first-child,body.csd-printing .csd-dots,body.csd-printing .csd-print,body.csd-printing #csd-tip{display:none!important}
-  body.csd-printing,body.csd-printing html{height:auto!important;overflow:visible!important}
-  body.csd-printing .app,body.csd-printing .main{display:block!important;height:auto!important;overflow:visible!important;padding:0!important}
-  body.csd-printing #cs-summary-view{padding:0!important}
-  body.csd-printing .csd{gap:0}
-  body.csd-printing .csd-vp{height:auto!important;min-height:0!important;overflow:visible!important;border-radius:0!important}
-  body.csd-printing .csd-vp .csd-slide{position:relative!important;inset:auto!important;transform:none!important;height:auto!important;min-height:184mm;overflow:visible!important;break-after:page;page-break-after:always;break-inside:avoid;border-radius:0}
-  body.csd-printing .csd-vp .csd-slide:last-of-type{break-after:auto;page-break-after:auto}
-  body.csd-printing .csd-card{overflow:visible!important}
+  body.csd-printing>*:not(#csd-print-root){display:none!important}
+  body.csd-printing #csd-print-root{display:block!important}
+  html,body.csd-printing{height:auto!important;overflow:visible!important;background:#fff!important;margin:0!important;padding:0!important}
+  .csd-pp{width:297mm;height:210mm;overflow:hidden;break-after:page;page-break-after:always;break-inside:avoid;position:relative}
+  .csd-pp:last-child{break-after:auto;page-break-after:auto}
   body.csd-printing *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 .csd-rate{font-size:15px;color:var(--c-mut);margin:-2px 0 4px}
@@ -3256,10 +3264,32 @@ function _cssPickR(name){window._cssSelR=(window._cssSelR===name)?null:name;_css
 function _cssPct(a,b){return b?(a/b*100).toFixed(1)+'%':'-';}
 function _cssN(n){return Number(n).toLocaleString('ko-KR');}
 function _cssPrint(){
+  var vp=document.getElementById('csd-vp');if(!vp)return;
+  var old=document.getElementById('csd-print-root');if(old&&old.parentNode)old.parentNode.removeChild(old);
+  var root=document.createElement('div');root.id='csd-print-root';
+  vp.querySelectorAll('.csd-slide').forEach(function(sl){
+    var pg=document.createElement('div');pg.className='csd-pp';
+    var ppi=document.createElement('div');ppi.className='csd csd-ppi';
+    var cl=sl.cloneNode(true);cl.removeAttribute('style');
+    ppi.appendChild(cl);pg.appendChild(ppi);root.appendChild(pg);
+  });
+  document.body.appendChild(root);
+  root.style.cssText='position:fixed;left:-99999px;top:0;display:block;visibility:hidden';
+  var BW=1400,BH=991,PW=1122;
+  root.querySelectorAll('.csd-ppi').forEach(function(ppi){
+    var cl=ppi.firstChild;
+    ppi.style.width=BW+'px';
+    cl.style.cssText='position:relative;width:'+BW+'px;height:auto;min-height:'+BH+'px';
+    var h=Math.max(BH,cl.scrollHeight),W=Math.round(BW*h/BH);
+    ppi.style.width=W+'px';ppi.style.height=h+'px';
+    cl.style.width=W+'px';cl.style.height=h+'px';
+    ppi.style.zoom=(PW/W).toFixed(4);
+  });
+  root.style.cssText='';
   document.body.classList.add('csd-printing');
-  var done=function(){document.body.classList.remove('csd-printing');window.removeEventListener('afterprint',done);};
+  var done=function(){document.body.classList.remove('csd-printing');if(root.parentNode)root.parentNode.removeChild(root);window.removeEventListener('afterprint',done);};
   window.addEventListener('afterprint',done);
-  setTimeout(function(){window.print();},50);
+  setTimeout(function(){window.print();},80);
 }
 var _cssIdx=0,_cssBusy=false;
 function _cssGo(n){
