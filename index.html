@@ -1786,6 +1786,18 @@ function _setReturnWeekDates(){
 }
 var _prevRetHeaderBrand = undefined;
 var _retChartCache = {};
+var _retViewState = {};
+function _retSaveView(brand,sv,ev,isTotal,dataRows,prevRows){ _retViewState[brand||'__total']={s:sv,e:ev,total:isTotal,dataRows:dataRows,prevRows:prevRows,seg:(document.getElementById('return-seg-month')&&document.getElementById('return-seg-month').classList.contains('on'))?'month':'week'}; }
+function _retRestoreView(brand){
+  var st=_retViewState[brand||'__total']; if(!st) return false;
+  var s=document.getElementById('return-start-date'),e=document.getElementById('return-end-date');
+  if(s) s.value=st.s; if(e) e.value=st.e;
+  var bw=document.getElementById('return-seg-week'),bm=document.getElementById('return-seg-month');
+  if(bw) bw.classList.toggle('on',st.seg!=='month'); if(bm) bm.classList.toggle('on',st.seg==='month');
+  if(st.total){ _renderReturnChartsTotal(st.dataRows,st.prevRows); }
+  else { _retTotalMode=false; _retSelBrand=null; _renderReturnCharts(st.dataRows); }
+  return true;
+}
 /* === TOTAL MODE STATE === */
 var _retTotalMode = false;
 var _retTotalCache = null;
@@ -1849,24 +1861,17 @@ function _updateReturnHeader(brand){
     show(s); show(sep); show(e); show(qb); hide(btn);
     var _rsg=document.getElementById('return-seg-group'); if(_rsg) _rsg.style.display='';
     if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
-    _setReturnWeekDates();
     if(brandChanged){
-      var _cs=document.getElementById('return-start-date'),_ce=document.getElementById('return-end-date');
-      var _ck=brand+'|'+(_cs?_cs.value||'':'')+'~'+(_ce?_ce.value||'':'');
-      var cached=_retChartCache[_ck];
-      if(cached&&cached.length){ _renderReturnCharts(cached); }
-      else { _clearReturnChart(); }
-    }
+      if(!_retRestoreView(brand)){ _clearReturnChart(); _setReturnWeekDates(); }
+    } else if(!s||!s.value) _setReturnWeekDates();
   } else {
     // 총합 뷰: 날짜+조회만 표시, 접기 버튼 숨김
     show(s); show(sep); show(e); show(qb); hide(btn);
     var _rsg2=document.getElementById('return-seg-group'); if(_rsg2) _rsg2.style.display='';
     if(rw){ rw.style.maxHeight=''; rw.style.paddingBottom='4px'; _returnCollapsed=false; }
-    if(!s||!s.value) _setReturnWeekDates();
     if(brandChanged){
-      if(_retTotalCache){ _renderReturnChartsTotal(_retTotalCache.dataRows,_retTotalCache.prevRows); }
-      else { _clearReturnChart(); }
-    }
+      if(!_retRestoreView(null)){ _clearReturnChart(); _setReturnWeekDates(); }
+    } else if(!s||!s.value) _setReturnWeekDates();
   }
 }
 (function(){
@@ -2071,6 +2076,7 @@ function _fetchReturnData(){
       });
       dataRows=_dedupeByOrderNo(dataRows);
       prevRows=_dedupeByOrderNo(prevRows);
+      _retSaveView(brand,sEl.value,eEl.value,isTotalMode,dataRows,prevRows);
       if(!isTotalMode){
         if(brand&&dataRows.length){ var _ck2=brand+'|'+(sEl.value||'')+'~'+(eEl.value||''); _retChartCache[_ck2]=dataRows; }
         _renderReturnCharts(dataRows);
