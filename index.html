@@ -411,6 +411,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
 .view-toggle-sw input:checked~.view-toggle-track .view-toggle-thumb{left:19px}
 .view-toggle-lbl{font-size:12px;font-weight:500;color:var(--fg)}
 .stock-card{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.stock-card:has(>#return-empty-msg[style*="none"]){display:none}
 .stock-table{width:100%;border-collapse:collapse;font-size:13px}
 .stock-table th{background:var(--surface-2);font-weight:600;color:var(--muted);padding:10px 14px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
 .stock-table th.num,.stock-table td.num{text-align:center}
