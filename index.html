@@ -42,7 +42,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:calc(100vh/.95)}
 /* Sidebar */
 .side{background:var(--surface);border-right:1px solid var(--line);position:sticky;top:0;height:calc(100vh/.95);overflow-y:auto;display:flex;flex-direction:column;padding:20px 14px 28px;gap:22px}
-.home-btn{margin-left:auto;display:flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:8px;padding:5px 9px;font:inherit;font-size:12px;cursor:pointer;flex:none}
+.home-btn{margin-left:auto;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:8px;padding:0;cursor:pointer;flex:none}
 .home-btn:hover{background:var(--accent-soft);color:var(--accent)}
 .brand{display:flex;align-items:center;gap:10px;padding:0 6px}
 .mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--on-accent);font-weight:700;font-size:14px;flex:none}
@@ -487,7 +487,7 @@ section .sub{color:var(--muted);font-size:12px;margin:2px 0 12px}
     <div class="brand">
       <div class="mark" aria-hidden="true">CX</div>
       <div><b>CX 대시보드</b><small>통합 대시보드</small></div>
-      <button type="button" class="home-btn" id="nav-home" aria-label="홈"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.2 8 2l6 5.2V13a1 1 0 0 1-1 1h-3V9.5H6V14H3a1 1 0 0 1-1-1z"/></svg><span>home</span></button>
+      <button type="button" class="home-btn" id="nav-home" aria-label="홈"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.2 8 2l6 5.2V13a1 1 0 0 1-1 1h-3V9.5H6V14H3a1 1 0 0 1-1-1z"/></svg></button>
     </div>
     <div class="slotgroup">
       <div class="navlabel">브랜드</div>
